@@ -1,0 +1,43 @@
+import { ReactNode } from "react";
+import { cn } from "@/lib/utils";
+import { Card, CardContent } from "@/components/ui/card";
+
+interface StatCardProps {
+  label: string;
+  value: ReactNode;
+  icon?: ReactNode;
+  variant?: "default" | "positive" | "negative";
+  className?: string;
+}
+
+export function StatCard({ label, value, icon, variant = "default", className }: StatCardProps) {
+  return (
+    <Card
+      className={cn(
+        "border-border/50 transition-all duration-200 hover:border-border",
+        variant === "positive" && "stat-card-positive",
+        variant === "negative" && "stat-card-negative",
+        className
+      )}
+    >
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between">
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">{label}</p>
+            <div className="text-2xl font-semibold font-display">{value}</div>
+          </div>
+          {icon && (
+            <div className={cn(
+              "rounded-lg p-2",
+              variant === "positive" && "bg-success/10 text-success",
+              variant === "negative" && "bg-destructive/10 text-destructive",
+              variant === "default" && "bg-muted text-muted-foreground"
+            )}>
+              {icon}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
