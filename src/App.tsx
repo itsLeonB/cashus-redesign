@@ -13,7 +13,9 @@ import RegisterPage from "@/pages/auth/RegisterPage";
 import ForgotPasswordPage from "@/pages/auth/ForgotPasswordPage";
 import DashboardPage from "@/pages/DashboardPage";
 import FriendsPage from "@/pages/FriendsPage";
+import FriendDetailPage from "@/pages/FriendDetailPage";
 import ExpensesPage from "@/pages/ExpensesPage";
+import ExpenseDetailPage from "@/pages/ExpenseDetailPage";
 import BillsPage from "@/pages/BillsPage";
 import ProfilePage from "@/pages/ProfilePage";
 import NotFound from "@/pages/NotFound";
@@ -43,7 +45,9 @@ const App = () => (
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/friends" element={<FriendsPage />} />
+              <Route path="/friends/:friendId" element={<FriendDetailPage />} />
               <Route path="/expenses" element={<ExpensesPage />} />
+              <Route path="/expenses/:expenseId" element={<ExpenseDetailPage />} />
               <Route path="/bills" element={<BillsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
             </Route>
