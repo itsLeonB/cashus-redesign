@@ -1,0 +1,77 @@
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { UserProfile, authApi, apiClient } from '@/lib/api';
+
+interface AuthContextType {
+  user: UserProfile | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, passwordConfirmation: string) => Promise<void>;
+  logout: () => void;
+  refreshUser: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const refreshUser = useCallback(async () => {
+    try {
+      const profile = await authApi.getProfile();
+      setUser(profile);
+    } catch {
+      setUser(null);
+      apiClient.setToken(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    const token = apiClient.getToken();
+    if (token) {
+      refreshUser().finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
+    }
+  }, [refreshUser]);
+
+  const login = async (email: string, password: string) => {
+    const response = await authApi.login({ email, password });
+    apiClient.setToken(response.token);
+    setUser(response.user);
+  };
+
+  const register = async (email: string, password: string, passwordConfirmation: string) => {
+    await authApi.register({ email, password, passwordConfirmation });
+  };
+
+  const logout = () => {
+    authApi.logout();
+    setUser(null);
+  };
+
+  return (
+    <AuthContext.Provider 
+      value={{ 
+        user, 
+        isLoading, 
+        isAuthenticated: !!user, 
+        login, 
+        register, 
+        logout,
+        refreshUser 
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
