@@ -16,25 +16,29 @@ export interface ResetPasswordRequest {
   passwordConfirmation: string;
 }
 
-export interface AuthResponse {
+export interface LoginResponse {
+  type: string;
   token: string;
-  user: UserProfile;
 }
 
 // User Profile
 export interface UserProfile {
   id: string;
-  email: string;
+  userId: string;
   name: string;
-  avatarUrl?: string;
+  avatar?: string;
+  email?: string;
   createdAt: string;
 }
 
 // Friendship Types
 export interface FriendshipResponse {
   id: string;
-  friendProfile: FriendProfile;
-  balance: number;
+  type: "ANON" | "REAL";
+  profileId: string;
+  profileName: string; // Used to be friendProfile.name
+  profileAvatar?: string;
+  balance?: number; // Calculated on frontend or separate? Legacy has no balance in FriendshipResponse
   createdAt: string;
 }
 
@@ -46,20 +50,65 @@ export interface FriendProfile {
   email?: string;
 }
 
+export interface FriendDetailsResponse {
+  friend: FriendDetails;
+  balance: FriendBalance;
+  transactions: FriendTransaction[];
+  redirectToRealFriendship?: string;
+}
+
+export interface FriendDetails {
+  id: string;
+  profileId: string;
+  name: string;
+  type: "ANON" | "REAL";
+  email?: string; // Only for registered friends
+  phone?: string;
+  avatar?: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+}
+
+export interface FriendBalance {
+  totalOwedToYou: number; // Amount friend owes you
+  totalYouOwe: number; // Amount you owe friend
+  netBalance: number; // Positive = they owe you, Negative = you owe them
+  currency: string;
+}
+
+export interface FriendTransaction {
+  id: string;
+  type: "LEND" | "REPAY";
+  action: "LEND" | "BORROW" | "RECEIVE" | "RETURN";
+  amount: number;
+  description: string;
+  transferMethod: string;
+  createdAt: string;
+  updatedAt: string;
+  status: "PENDING" | "COMPLETED" | "CANCELLED";
+}
+
 export interface NewAnonymousFriendshipRequest {
   name: string;
 }
 
 // Debt Transaction Types
+export type DebtType = "DEBT" | "CREDIT";
+// DEBT = You Owe (Borrow), CREDIT = You are Owed (Lend)
+// The legacy app uses type: "DEBT" | "CREDIT".
+// But the redesign uses Action: "LEND" | "BORROW" etc.
+// We need to map this in the frontend or update the type here.
+// Legacy type:
 export type DebtAction = "LEND" | "BORROW" | "RECEIVE" | "RETURN";
 
 export interface DebtTransactionResponse {
   id: string;
-  friendProfile: FriendProfile;
-  action: DebtAction;
-  amount: number;
-  description?: string;
-  transferMethod: TransferMethod;
+  profileId: string; // The friend's profile ID
+  type: DebtType;
+  amount: string; // Legacy uses string for amount
+  transferMethod: string; // Legacy returns string name
+  description: string;
   createdAt: string;
 }
 
@@ -74,20 +123,64 @@ export interface NewDebtTransactionRequest {
 export interface TransferMethod {
   id: string;
   name: string;
-  icon?: string;
+  display: string;
 }
 
 // Group Expense Types
 export interface GroupExpenseResponse {
   id: string;
-  description?: string;
+  payerProfileId?: string;
+  payerName?: string;
+  paidByUser: boolean;
   totalAmount: string;
-  subtotal: string;
-  status: "DRAFT" | "CONFIRMED";
-  payerProfile: FriendProfile;
-  items: ExpenseItem[];
-  otherFees: OtherFee[];
+  description?: string;
+  items: ExpenseItemResponse[];
+  otherFees?: OtherFeeResponse[];
+  creatorProfileId: string;
+  creatorName?: string;
+  createdByUser: boolean;
+  confirmed: boolean;
+  participantsConfirmed: boolean;
   createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+  participants?: ExpenseParticipantResponse[];
+}
+
+export interface ExpenseItemResponse {
+  id: string;
+  groupExpenseId: string;
+  name: string;
+  amount: string;
+  quantity: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+  participants: ItemParticipantResponse[];
+}
+
+export interface ItemParticipantResponse {
+  profileName: string;
+  profileId: string;
+  share: string;
+  isUser: boolean;
+}
+
+export interface OtherFeeResponse {
+  id: string;
+  name: string;
+  amount: string;
+  calculationMethod: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+}
+
+export interface ExpenseParticipantResponse {
+  profileName: string;
+  profileId: string;
+  shareAmount: string;
+  isUser: boolean;
 }
 
 export interface ExpenseItem {
@@ -144,11 +237,18 @@ export interface FriendRequest {
 }
 
 // Bill Types
-export interface BillResponse {
+export interface ExpenseBillResponse {
   id: string;
-  payerProfile: FriendProfile;
-  imageUrl: string;
+  creatorProfileId: string;
+  payerProfileId: string;
+  imageUrl?: string;
   createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+  isCreatedByUser: boolean;
+  isPaidByUser: boolean;
+  creatorProfileName: string;
+  payerProfileName: string;
 }
 
 // API Response wrapper

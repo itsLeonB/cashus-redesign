@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useFriendship, useDebts } from "@/hooks/useApi";
+import { useFriendship } from "@/hooks/useApi";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { AmountDisplay } from "@/components/AmountDisplay";
 import { TransactionModal } from "@/components/TransactionModal";
@@ -8,45 +8,37 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { 
-  ArrowLeft, 
+import {
+  ArrowLeft,
   Plus,
   ArrowUpRight,
   ArrowDownLeft,
   Calendar,
-  Wallet
+  Wallet,
 } from "lucide-react";
-import { DebtAction } from "@/lib/api/types";
-
-const actionConfig: Record<DebtAction, { label: string; icon: typeof ArrowUpRight; colorClass: string }> = {
-  LEND: { label: "Lent", icon: ArrowUpRight, colorClass: "text-success" },
-  BORROW: { label: "Borrowed", icon: ArrowDownLeft, colorClass: "text-warning" },
-  RECEIVE: { label: "Received", icon: ArrowDownLeft, colorClass: "text-success" },
-  RETURN: { label: "Returned", icon: ArrowUpRight, colorClass: "text-warning" },
-};
 
 export default function FriendDetailPage() {
   const { friendId } = useParams<{ friendId: string }>();
   const { data: friendship, isLoading } = useFriendship(friendId || "");
-  const { data: allDebts } = useDebts();
   const [transactionOpen, setTransactionOpen] = useState(false);
 
-  const friendDebts = allDebts?.filter(
-    debt => debt.friendProfile.id === friendship?.friendProfile.id
-  ) || [];
+  const friendDebts = friendship?.transactions || [];
+  const balance = friendship?.balance.netBalance || 0;
+  const totalLent = friendship?.balance.totalOwedToYou || 0;
+  const totalBorrowed = friendship?.balance.totalYouOwe || 0;
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
+    return new Date(date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "IDR",
     }).format(amount);
   };
 
@@ -74,8 +66,8 @@ export default function FriendDetailPage() {
   return (
     <div className="space-y-6 animate-fade-up">
       {/* Back Link */}
-      <Link 
-        to="/friends" 
+      <Link
+        to="/friends"
         className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -86,29 +78,26 @@ export default function FriendDetailPage() {
       <Card className="border-border/50">
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            <AvatarCircle 
-              name={friendship.friendProfile.name}
-              imageUrl={friendship.friendProfile.avatarUrl}
+            <AvatarCircle
+              name={friendship.friend.name}
+              imageUrl={friendship.friend.avatar}
               size="xl"
             />
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <h1 className="text-2xl font-display font-bold">
-                  {friendship.friendProfile.name}
+                  {friendship.friend.name}
                 </h1>
-                {friendship.friendProfile.isAnonymous && (
+                {friendship.friend.type === "ANON" && (
                   <Badge variant="secondary">Anonymous</Badge>
                 )}
               </div>
-              {friendship.friendProfile.email && (
-                <p className="text-muted-foreground">{friendship.friendProfile.email}</p>
-              )}
               <p className="text-sm text-muted-foreground mt-1">
-                Friends since {formatDate(friendship.createdAt)}
+                Friends since {formatDate(friendship.friend.createdAt)}
               </p>
             </div>
             <div className="flex flex-col items-end gap-2">
-              <AmountDisplay amount={friendship.balance} size="lg" showLabel />
+              <AmountDisplay amount={balance} size="lg" showLabel />
               <Button onClick={() => setTransactionOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Record Transaction
@@ -129,11 +118,7 @@ export default function FriendDetailPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Total Lent</p>
                 <p className="text-lg font-semibold tabular-nums">
-                  {formatCurrency(
-                    friendDebts
-                      .filter(d => d.action === "LEND")
-                      .reduce((sum, d) => sum + d.amount, 0)
-                  )}
+                  {formatCurrency(totalLent)}
                 </p>
               </div>
             </div>
@@ -148,11 +133,7 @@ export default function FriendDetailPage() {
               <div>
                 <p className="text-sm text-muted-foreground">Total Borrowed</p>
                 <p className="text-lg font-semibold tabular-nums">
-                  {formatCurrency(
-                    friendDebts
-                      .filter(d => d.action === "BORROW")
-                      .reduce((sum, d) => sum + d.amount, 0)
-                  )}
+                  {formatCurrency(totalBorrowed)}
                 </p>
               </div>
             </div>
@@ -169,23 +150,34 @@ export default function FriendDetailPage() {
           {friendDebts.length > 0 ? (
             <div className="space-y-3">
               {friendDebts.map((debt) => {
-                const config = actionConfig[debt.action];
-                const Icon = config.icon;
+                const isCredit = debt.type === "REPAY";
                 return (
                   <div
                     key={debt.id}
                     className="flex items-center gap-4 p-3 rounded-lg bg-muted/30"
                   >
-                    <div className={`h-10 w-10 rounded-lg bg-muted flex items-center justify-center ${config.colorClass}`}>
-                      <Icon className="h-5 w-5" />
+                    <div
+                      className={`h-10 w-10 rounded-lg bg-muted flex items-center justify-center ${
+                        isCredit
+                          ? "text-success bg-success/10"
+                          : "text-warning bg-warning/10"
+                      }`}
+                    >
+                      {isCredit ? (
+                        <ArrowUpRight className="h-5 w-5" />
+                      ) : (
+                        <ArrowDownLeft className="h-5 w-5" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium">{config.label}</p>
+                        <p className="font-medium">
+                          {isCredit ? "Lent/Received" : "Borrowed/Returned"}
+                        </p>
                         {debt.transferMethod && (
                           <Badge variant="outline" className="text-xs">
                             <Wallet className="h-3 w-3 mr-1" />
-                            {debt.transferMethod.name}
+                            {debt.transferMethod}
                           </Badge>
                         )}
                       </div>
@@ -199,8 +191,12 @@ export default function FriendDetailPage() {
                         {formatDate(debt.createdAt)}
                       </p>
                     </div>
-                    <p className={`text-lg font-semibold tabular-nums ${config.colorClass}`}>
-                      {debt.action === "LEND" || debt.action === "RECEIVE" ? "+" : "-"}
+                    <p
+                      className={`text-lg font-semibold tabular-nums ${
+                        isCredit ? "text-success" : "text-warning"
+                      }`}
+                    >
+                      {isCredit ? "+" : "-"}
                       {formatCurrency(debt.amount)}
                     </p>
                   </div>
@@ -212,7 +208,7 @@ export default function FriendDetailPage() {
               <Wallet className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-1">No transactions yet</h3>
               <p className="text-muted-foreground text-sm mb-4">
-                Record your first transaction with {friendship.friendProfile.name}
+                Record your first transaction with {friendship.friend.name}
               </p>
               <Button onClick={() => setTransactionOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -227,7 +223,7 @@ export default function FriendDetailPage() {
       <TransactionModal
         open={transactionOpen}
         onOpenChange={setTransactionOpen}
-        defaultFriendId={friendship.friendProfile.id}
+        defaultFriendId={friendship.friend.profileId}
       />
     </div>
   );

@@ -10,7 +10,13 @@ interface StatCardProps {
   className?: string;
 }
 
-export function StatCard({ label, value, icon, variant = "default", className }: StatCardProps) {
+export function StatCard({
+  label,
+  value,
+  icon,
+  variant = "default",
+  className,
+}: Readonly<StatCardProps>) {
   return (
     <Card
       className={cn(
@@ -27,12 +33,14 @@ export function StatCard({ label, value, icon, variant = "default", className }:
             <div className="text-2xl font-semibold font-display">{value}</div>
           </div>
           {icon && (
-            <div className={cn(
-              "rounded-lg p-2",
-              variant === "positive" && "bg-success/10 text-success",
-              variant === "negative" && "bg-destructive/10 text-destructive",
-              variant === "default" && "bg-muted text-muted-foreground"
-            )}>
+            <div
+              className={cn(
+                "rounded-lg p-2",
+                variant === "positive" && "bg-success/10 text-success",
+                variant === "negative" && "bg-destructive/10 text-destructive",
+                variant === "default" && "bg-muted text-muted-foreground"
+              )}
+            >
               {icon}
             </div>
           )}

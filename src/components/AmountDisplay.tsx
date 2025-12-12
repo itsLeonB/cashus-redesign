@@ -8,16 +8,16 @@ interface AmountDisplayProps {
   size?: "sm" | "md" | "lg" | "xl";
 }
 
-export function AmountDisplay({ 
-  amount, 
-  className, 
+export function AmountDisplay({
+  amount,
+  className,
   showSign = true,
   showLabel = false,
-  size = "md" 
-}: AmountDisplayProps) {
+  size = "md",
+}: Readonly<AmountDisplayProps>) {
   const isPositive = amount > 0;
   const isZero = amount === 0;
-  
+
   const sizes = {
     sm: "text-sm",
     md: "text-base",
@@ -25,13 +25,19 @@ export function AmountDisplay({
     xl: "text-3xl font-display",
   };
 
-  const formattedAmount = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
+  const formattedAmount = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "IDR",
     minimumFractionDigits: 2,
   }).format(Math.abs(amount));
 
-  const label = isZero ? "Settled up" : isPositive ? "They owe you" : "You owe";
+  const getLabel = (isZero: boolean, isPositive: boolean): string => {
+    if (isZero) return "Settled up";
+    if (isPositive) return "They owe you";
+    return "You owe";
+  };
+
+  const label = getLabel(isZero, isPositive);
 
   return (
     <div className={cn("flex flex-col", showLabel && "items-end")}>

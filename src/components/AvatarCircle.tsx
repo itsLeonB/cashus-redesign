@@ -9,32 +9,37 @@ interface AvatarCircleProps {
 
 function getInitials(name: string): string {
   return name
-    .split(' ')
-    .map(n => n[0])
+    .split(" ")
+    .map((n) => n[0])
     .slice(0, 2)
-    .join('')
+    .join("")
     .toUpperCase();
 }
 
 function getColorFromName(name: string): string {
   const colors = [
-    'from-teal-400 to-cyan-500',
-    'from-violet-400 to-purple-500',
-    'from-rose-400 to-pink-500',
-    'from-amber-400 to-orange-500',
-    'from-emerald-400 to-green-500',
-    'from-blue-400 to-indigo-500',
+    "from-teal-400 to-cyan-500",
+    "from-violet-400 to-purple-500",
+    "from-rose-400 to-pink-500",
+    "from-amber-400 to-orange-500",
+    "from-emerald-400 to-green-500",
+    "from-blue-400 to-indigo-500",
   ];
-  
+
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    hash = name.codePointAt(i) + ((hash << 5) - hash);
   }
-  
+
   return colors[Math.abs(hash) % colors.length];
 }
 
-export function AvatarCircle({ name, imageUrl, size = "md", className }: AvatarCircleProps) {
+export function AvatarCircle({
+  name,
+  imageUrl,
+  size = "md",
+  className,
+}: Readonly<AvatarCircleProps>) {
   const sizes = {
     xs: "h-6 w-6 text-[10px]",
     sm: "h-8 w-8 text-xs",
@@ -46,6 +51,7 @@ export function AvatarCircle({ name, imageUrl, size = "md", className }: AvatarC
   if (imageUrl) {
     return (
       <img
+        referrerPolicy="no-referrer"
         src={imageUrl}
         alt={name}
         className={cn(

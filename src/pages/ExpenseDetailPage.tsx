@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useGroupExpense, useFriendships, useConfirmGroupExpense } from "@/hooks/useApi";
+import {
+  useGroupExpense,
+  useFriendships,
+  useConfirmGroupExpense,
+} from "@/hooks/useApi";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,17 +12,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  ArrowLeft, 
+import {
+  ArrowLeft,
   Receipt,
   Calendar,
   Users,
   CheckCircle2,
   Loader2,
-  Plus
+  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { groupExpensesApi } from "@/lib/api";
+import { groupExpensesApi, NewExpenseItemRequest } from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function ExpenseDetailPage() {
@@ -29,30 +33,51 @@ export default function ExpenseDetailPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const [selectedParticipants, setSelectedParticipants] = useState<Record<string, string[]>>({});
+  const [selectedParticipants, setSelectedParticipants] = useState<
+    Record<string, string[]>
+  >({});
   const [isUpdating, setIsUpdating] = useState(false);
 
+  const calculateItemsTotal = () => {
+    if (!expense?.items) return 0;
+    return expense.items?.reduce((total, item) => {
+      return total + calculateItemAmount(item);
+    }, 0);
+  };
+
+  const calculateFeesTotal = () => {
+    if (!expense?.otherFees) return 0;
+    return expense.otherFees?.reduce((total, fee) => {
+      return total + Number.parseFloat(fee.amount);
+    }, 0);
+  };
+
+  const calculateItemAmount = (item: NewExpenseItemRequest): number => {
+    const amount = Number.parseFloat(item.amount) || 0;
+    return amount * item.quantity;
+  };
+
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
+    return new Date(date).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
   const formatCurrency = (amount: string | number) => {
-    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    const num = typeof amount === "string" ? Number.parseFloat(amount) : amount;
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "IDR",
     }).format(num);
   };
 
   const handleParticipantToggle = (itemId: string, profileId: string) => {
-    setSelectedParticipants(prev => {
+    setSelectedParticipants((prev) => {
       const current = prev[itemId] || [];
       if (current.includes(profileId)) {
-        return { ...prev, [itemId]: current.filter(id => id !== profileId) };
+        return { ...prev, [itemId]: current.filter((id) => id !== profileId) };
       }
       return { ...prev, [itemId]: [...current, profileId] };
     });
@@ -65,7 +90,8 @@ export default function ExpenseDetailPage() {
       await confirmExpense.mutateAsync(expenseId);
       toast({
         title: "Expense confirmed",
-        description: "The expense has been confirmed and debts have been recorded",
+        description:
+          "The expense has been confirmed and debts have been recorded",
       });
     } catch (error: unknown) {
       const err = error as { message?: string };
@@ -78,20 +104,45 @@ export default function ExpenseDetailPage() {
   };
 
   const handleAddParticipants = async (itemId: string) => {
-    const participants = selectedParticipants[itemId] || [];
-    if (participants.length === 0) return;
+    const newParticipantIds = selectedParticipants[itemId] || [];
+    if (newParticipantIds.length === 0) return;
+
+    const item = expense?.items.find((i) => i.id === itemId);
+    if (!item || !expense) return;
 
     setIsUpdating(true);
     try {
-      // This would call an API to add participants to the item
-      // For now, we'll just show a toast
-      await groupExpensesApi.updateItem(itemId, { participants });
-      queryClient.invalidateQueries({ queryKey: ['group-expenses', expenseId] });
+      const existingParticipantIds =
+        item.participants?.map((p) => p.profileId) || [];
+      const allParticipantIds = Array.from(
+        new Set([...existingParticipantIds, ...newParticipantIds])
+      );
+
+      const totalAmount = Number.parseFloat(item.amount) * item.quantity;
+      const shareAmount = totalAmount / allParticipantIds.length;
+
+      const participantRequests = allParticipantIds.map((profileId) => ({
+        profileId,
+        share: shareAmount.toFixed(2),
+      }));
+
+      await groupExpensesApi.updateItem(itemId, {
+        id: itemId,
+        groupExpenseId: expense.id,
+        name: item.name,
+        amount: item.amount,
+        quantity: item.quantity,
+        participants: participantRequests,
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["group-expenses", expenseId],
+      });
       toast({
         title: "Participants added",
-        description: `Added ${participants.length} participant(s) to the item`,
+        description: `Added ${newParticipantIds.length} participant(s) to the item`,
       });
-      setSelectedParticipants(prev => ({ ...prev, [itemId]: [] }));
+      setSelectedParticipants((prev) => ({ ...prev, [itemId]: [] }));
     } catch (error: unknown) {
       const err = error as { message?: string };
       toast({
@@ -125,13 +176,13 @@ export default function ExpenseDetailPage() {
     );
   }
 
-  const isConfirmed = expense.status === "CONFIRMED";
+  const isConfirmed = expense.confirmed;
 
   return (
     <div className="space-y-6 animate-fade-up">
       {/* Back Link */}
-      <Link 
-        to="/expenses" 
+      <Link
+        to="/expenses"
         className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -148,7 +199,7 @@ export default function ExpenseDetailPage() {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <h1 className="text-2xl font-display font-bold">
-                  {expense.description || 'Untitled Expense'}
+                  {expense.description || "Untitled Expense"}
                 </h1>
                 <Badge variant={isConfirmed ? "default" : "secondary"}>
                   {isConfirmed ? (
@@ -157,7 +208,7 @@ export default function ExpenseDetailPage() {
                       Confirmed
                     </>
                   ) : (
-                    'Draft'
+                    "Draft"
                   )}
                 </Badge>
               </div>
@@ -168,7 +219,11 @@ export default function ExpenseDetailPage() {
                 </span>
                 <span className="flex items-center gap-1">
                   <Users className="h-4 w-4" />
-                  {expense.items.reduce((acc, item) => acc + item.participants.length, 0)} participants
+                  {expense.items.reduce(
+                    (acc, item) => acc + item.participants?.length || 0,
+                    0
+                  )}{" "}
+                  participants
                 </span>
               </div>
             </div>
@@ -178,12 +233,10 @@ export default function ExpenseDetailPage() {
               </p>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span>Paid by</span>
-                <AvatarCircle 
-                  name={expense.payerProfile.name}
-                  imageUrl={expense.payerProfile.avatarUrl}
-                  size="xs"
-                />
-                <span className="font-medium text-foreground">{expense.payerProfile.name}</span>
+                <AvatarCircle name={expense.payerName} size="xs" />
+                <span className="font-medium text-foreground">
+                  {expense.payerName}
+                </span>
               </div>
             </div>
           </div>
@@ -197,37 +250,51 @@ export default function ExpenseDetailPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {expense.items.map((item) => (
-            <div key={item.id} className="rounded-lg border border-border/50 p-4">
+            <div
+              key={item.id}
+              className="rounded-lg border border-border/50 p-4"
+            >
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <p className="font-medium">{item.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    Qty: {item.quantity} × {formatCurrency(parseFloat(item.amount) / item.quantity)}
+                    Qty: {item.quantity} × {formatCurrency(item.amount)}
                   </p>
                 </div>
                 <p className="text-lg font-semibold tabular-nums">
-                  {formatCurrency(item.amount)}
+                  {formatCurrency(
+                    Number.parseFloat(item.amount) * item.quantity
+                  )}
                 </p>
               </div>
 
               {/* Current Participants */}
-              {item.participants.length > 0 && (
+              {item.participants?.length > 0 && (
                 <div className="mb-3">
-                  <p className="text-xs text-muted-foreground mb-2">Split between:</p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Split between:
+                  </p>
                   <div className="flex flex-wrap gap-2">
-                    {item.participants.map((participant) => (
+                    {item.participants?.map((participant) => (
                       <div
                         key={participant.profileId}
                         className="flex items-center gap-2 bg-muted/50 rounded-full px-3 py-1"
                       >
-                        <AvatarCircle 
-                          name={participant.profile.name}
-                          imageUrl={participant.profile.avatarUrl}
+                        <AvatarCircle
+                          name={participant.profileName}
                           size="xs"
                         />
-                        <span className="text-sm">{participant.profile.name}</span>
+                        <span className="text-sm">
+                          {participant.profileName}
+                        </span>
                         <span className="text-xs text-muted-foreground">
-                          ({formatCurrency(participant.share)})
+                          (
+                          {formatCurrency(
+                            Number.parseFloat(participant.share) *
+                              Number.parseFloat(item.amount) *
+                              item.quantity
+                          )}
+                          )
                         </span>
                       </div>
                     ))}
@@ -238,21 +305,30 @@ export default function ExpenseDetailPage() {
               {/* Add Participants (only for draft) */}
               {!isConfirmed && friendships && (
                 <div className="pt-3 border-t border-border/50">
-                  <p className="text-xs text-muted-foreground mb-2">Add participants:</p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Add participants:
+                  </p>
                   <div className="flex flex-wrap gap-2 mb-3">
                     {friendships.map((friendship) => {
-                      const isSelected = (selectedParticipants[item.id] || []).includes(friendship.friendProfile.id);
-                      const alreadyParticipant = item.participants.some(
-                        p => p.profileId === friendship.friendProfile.id
+                      const isSelected = (
+                        selectedParticipants[item.id] || []
+                      ).includes(friendship.profileId);
+                      const alreadyParticipant = item.participants?.some(
+                        (p) => p.profileId === friendship.profileId
                       );
-                      
+
                       if (alreadyParticipant) return null;
 
                       return (
                         <button
-                          key={friendship.friendProfile.id}
+                          key={friendship.profileId}
                           type="button"
-                          onClick={() => handleParticipantToggle(item.id, friendship.friendProfile.id)}
+                          onClick={() =>
+                            handleParticipantToggle(
+                              item.id,
+                              friendship.profileId
+                            )
+                          }
                           className={cn(
                             "flex items-center gap-2 rounded-full px-3 py-1 border transition-colors",
                             isSelected
@@ -261,23 +337,26 @@ export default function ExpenseDetailPage() {
                           )}
                         >
                           <Checkbox checked={isSelected} className="h-3 w-3" />
-                          <AvatarCircle 
-                            name={friendship.friendProfile.name}
-                            imageUrl={friendship.friendProfile.avatarUrl}
+                          <AvatarCircle
+                            name={friendship.profileName}
                             size="xs"
                           />
-                          <span className="text-sm">{friendship.friendProfile.name}</span>
+                          <span className="text-sm">
+                            {friendship.profileName}
+                          </span>
                         </button>
                       );
                     })}
                   </div>
                   {(selectedParticipants[item.id]?.length || 0) > 0 && (
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       onClick={() => handleAddParticipants(item.id)}
                       disabled={isUpdating}
                     >
-                      {isUpdating && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+                      {isUpdating && (
+                        <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                      )}
                       <Plus className="h-3 w-3 mr-1" />
                       Add {selectedParticipants[item.id]?.length} participant(s)
                     </Button>
@@ -290,15 +369,18 @@ export default function ExpenseDetailPage() {
       </Card>
 
       {/* Other Fees */}
-      {expense.otherFees.length > 0 && (
+      {expense.otherFees?.length > 0 && (
         <Card className="border-border/50">
           <CardHeader>
             <CardTitle className="font-display">Additional Fees</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {expense.otherFees.map((fee) => (
-                <div key={fee.id} className="flex items-center justify-between py-2">
+              {expense.otherFees?.map((fee) => (
+                <div
+                  key={fee.id}
+                  className="flex items-center justify-between py-2"
+                >
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{fee.name}</span>
                     <Badge variant="outline" className="text-xs">
@@ -321,31 +403,37 @@ export default function ExpenseDetailPage() {
           <div className="space-y-2">
             <div className="flex justify-between text-muted-foreground">
               <span>Subtotal</span>
-              <span className="tabular-nums">{formatCurrency(expense.subtotal)}</span>
+              <span className="tabular-nums">
+                {formatCurrency(calculateItemsTotal())}
+              </span>
             </div>
-            {expense.otherFees.length > 0 && (
+            {expense.otherFees?.length > 0 && (
               <div className="flex justify-between text-muted-foreground">
                 <span>Fees</span>
                 <span className="tabular-nums">
-                  {formatCurrency(parseFloat(expense.totalAmount) - parseFloat(expense.subtotal))}
+                  {formatCurrency(calculateFeesTotal())}
                 </span>
               </div>
             )}
             <div className="flex justify-between text-xl font-bold pt-2 border-t border-border/50">
               <span>Total</span>
-              <span className="tabular-nums">{formatCurrency(expense.totalAmount)}</span>
+              <span className="tabular-nums">
+                {formatCurrency(expense.totalAmount)}
+              </span>
             </div>
           </div>
 
           {/* Confirm Button */}
           {!isConfirmed && (
-            <Button 
-              className="w-full mt-6" 
+            <Button
+              className="w-full mt-6"
               size="lg"
               onClick={handleConfirm}
               disabled={confirmExpense.isPending}
             >
-              {confirmExpense.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              {confirmExpense.isPending && (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              )}
               <CheckCircle2 className="h-4 w-4 mr-2" />
               Confirm & Record Debts
             </Button>

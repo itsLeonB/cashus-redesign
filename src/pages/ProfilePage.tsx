@@ -4,18 +4,23 @@ import { AvatarCircle } from "@/components/AvatarCircle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { authApi } from "@/lib/api";
-import { 
-  User, 
-  Mail, 
+import {
+  User,
+  Mail,
   Calendar,
   Edit2,
   Save,
   Loader2,
-  LogOut
+  LogOut,
 } from "lucide-react";
 
 export default function ProfilePage() {
@@ -27,7 +32,7 @@ export default function ProfilePage() {
 
   const handleSave = async () => {
     if (!name.trim()) return;
-    
+
     setIsLoading(true);
     try {
       await authApi.updateProfile(name);
@@ -50,11 +55,30 @@ export default function ProfilePage() {
   };
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
+    return new Date(date).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
     });
+  };
+
+  const cardButtonDisplay = () => {
+    if (isLoading) return <Loader2 className="h-4 w-4 animate-spin" />;
+
+    if (isEditing)
+      return (
+        <>
+          <Save className="h-4 w-4 mr-2" />
+          Save
+        </>
+      );
+
+    return (
+      <>
+        <Edit2 className="h-4 w-4 mr-2" />
+        Edit
+      </>
+    );
   };
 
   return (
@@ -71,33 +95,21 @@ export default function ProfilePage() {
       <Card className="border-border/50">
         <CardHeader>
           <div className="flex items-center gap-4">
-            <AvatarCircle 
-              name={user?.name || "User"} 
-              imageUrl={user?.avatarUrl}
-              size="lg" 
+            <AvatarCircle
+              name={user?.name || "User"}
+              imageUrl={user?.avatar}
+              size="lg"
             />
             <div className="flex-1">
               <CardTitle className="font-display">{user?.name}</CardTitle>
               <CardDescription>{user?.email}</CardDescription>
             </div>
-            <Button 
+            <Button
               variant={isEditing ? "default" : "outline"}
-              onClick={() => isEditing ? handleSave() : setIsEditing(true)}
+              onClick={() => (isEditing ? handleSave() : setIsEditing(true))}
               disabled={isLoading}
             >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : isEditing ? (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save
-                </>
-              ) : (
-                <>
-                  <Edit2 className="h-4 w-4 mr-2" />
-                  Edit
-                </>
-              )}
+              {cardButtonDisplay()}
             </Button>
           </div>
         </CardHeader>
@@ -141,7 +153,7 @@ export default function ProfilePage() {
                 Member Since
               </Label>
               <p className="text-sm py-2 px-3 bg-muted/30 rounded-lg text-muted-foreground">
-                {user?.createdAt ? formatDate(user.createdAt) : 'Unknown'}
+                {user?.createdAt ? formatDate(user.createdAt) : "Unknown"}
               </p>
             </div>
           </div>
@@ -151,7 +163,9 @@ export default function ProfilePage() {
       {/* Danger Zone */}
       <Card className="border-destructive/50">
         <CardHeader>
-          <CardTitle className="text-destructive font-display">Danger Zone</CardTitle>
+          <CardTitle className="text-destructive font-display">
+            Danger Zone
+          </CardTitle>
           <CardDescription>
             Irreversible actions for your account
           </CardDescription>
@@ -164,10 +178,7 @@ export default function ProfilePage() {
                 Sign out from your account on this device
               </p>
             </div>
-            <Button 
-              variant="destructive" 
-              onClick={logout}
-            >
+            <Button variant="destructive" onClick={logout}>
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
             </Button>

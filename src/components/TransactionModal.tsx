@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { useFriendships, useCreateDebt, useTransferMethods } from "@/hooks/useApi";
+import {
+  useFriendships,
+  useCreateDebt,
+  useTransferMethods,
+} from "@/hooks/useApi";
 import { DebtAction } from "@/lib/api/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,13 +24,13 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { AvatarCircle } from "@/components/AvatarCircle";
-import { 
-  ArrowUpRight, 
-  ArrowDownLeft, 
+import {
+  ArrowUpRight,
+  ArrowDownLeft,
   Loader2,
   Wallet,
   CreditCard,
-  Banknote
+  Banknote,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -37,39 +41,47 @@ interface TransactionModalProps {
   defaultAction?: DebtAction;
 }
 
-const actionConfig: Record<DebtAction, { label: string; description: string; icon: typeof ArrowUpRight; colorClass: string }> = {
-  LEND: { 
-    label: "Lend", 
+const actionConfig: Record<
+  DebtAction,
+  {
+    label: string;
+    description: string;
+    icon: typeof ArrowUpRight;
+    colorClass: string;
+  }
+> = {
+  LEND: {
+    label: "Lend",
     description: "You gave money to friend",
     icon: ArrowUpRight,
-    colorClass: "border-success text-success bg-success/10"
+    colorClass: "border-success text-success bg-success/10",
   },
-  BORROW: { 
-    label: "Borrow", 
+  BORROW: {
+    label: "Borrow",
     description: "You received money from friend",
     icon: ArrowDownLeft,
-    colorClass: "border-warning text-warning bg-warning/10"
+    colorClass: "border-warning text-warning bg-warning/10",
   },
-  RECEIVE: { 
-    label: "Receive", 
+  RECEIVE: {
+    label: "Receive",
     description: "Friend paid you back",
     icon: ArrowDownLeft,
-    colorClass: "border-success text-success bg-success/10"
+    colorClass: "border-success text-success bg-success/10",
   },
-  RETURN: { 
-    label: "Return", 
+  RETURN: {
+    label: "Return",
     description: "You paid friend back",
     icon: ArrowUpRight,
-    colorClass: "border-warning text-warning bg-warning/10"
+    colorClass: "border-warning text-warning bg-warning/10",
   },
 };
 
-export function TransactionModal({ 
-  open, 
-  onOpenChange, 
+export function TransactionModal({
+  open,
+  onOpenChange,
   defaultFriendId,
-  defaultAction = "LEND" 
-}: TransactionModalProps) {
+  defaultAction = "LEND",
+}: Readonly<TransactionModalProps>) {
   const [friendId, setFriendId] = useState(defaultFriendId || "");
   const [action, setAction] = useState<DebtAction>(defaultAction);
   const [amount, setAmount] = useState("");
@@ -89,13 +101,15 @@ export function TransactionModal({
       await createDebt.mutateAsync({
         friendProfileId: friendId,
         action,
-        amount: parseFloat(amount),
+        amount: Number.parseFloat(amount),
         transferMethodId,
         description: description || undefined,
       });
       toast({
         title: "Transaction recorded",
-        description: `Successfully recorded ${actionConfig[action].label.toLowerCase()} transaction`,
+        description: `Successfully recorded ${actionConfig[
+          action
+        ].label.toLowerCase()} transaction`,
       });
       resetForm();
       onOpenChange(false);
@@ -165,14 +179,17 @@ export function TransactionModal({
               </SelectTrigger>
               <SelectContent>
                 {friendships?.map((friendship) => (
-                  <SelectItem key={friendship.friendProfile.id} value={friendship.friendProfile.id}>
+                  <SelectItem
+                    key={friendship.profileId}
+                    value={friendship.profileId}
+                  >
                     <div className="flex items-center gap-2">
-                      <AvatarCircle 
-                        name={friendship.friendProfile.name} 
-                        imageUrl={friendship.friendProfile.avatarUrl}
+                      <AvatarCircle
+                        name={friendship.profileName}
+                        imageUrl={friendship.profileAvatar}
                         size="xs"
                       />
-                      <span>{friendship.friendProfile.name}</span>
+                      <span>{friendship.profileName}</span>
                     </div>
                   </SelectItem>
                 ))}
@@ -185,7 +202,7 @@ export function TransactionModal({
             <Label htmlFor="amount">Amount</Label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                $
+                Rp
               </span>
               <Input
                 id="amount"
@@ -193,7 +210,7 @@ export function TransactionModal({
                 step="0.01"
                 min="0"
                 placeholder="0.00"
-                className="pl-7 text-lg tabular-nums"
+                className="pl-10 text-lg tabular-nums"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
               />
@@ -203,26 +220,30 @@ export function TransactionModal({
           {/* Transfer Method */}
           <div className="space-y-2">
             <Label>Transfer Method</Label>
-            <div className="grid grid-cols-3 gap-2">
-              {transferMethods?.map((method) => {
-                const Icon = getTransferIcon(method.name);
-                return (
-                  <button
-                    key={method.id}
-                    type="button"
-                    onClick={() => setTransferMethodId(method.id)}
-                    className={cn(
-                      "flex flex-col items-center gap-1 p-3 rounded-lg border transition-all",
-                      transferMethodId === method.id
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border/50 hover:border-border text-muted-foreground"
-                    )}
-                  >
-                    <Icon className="h-5 w-5" />
-                    <span className="text-xs">{method.name}</span>
-                  </button>
-                );
-              })}
+            <div className="grid grid-cols-2 gap-2">
+              {transferMethods
+                ?.filter(
+                  (method) => !["GROUP_EXPENSE", "app"].includes(method.name)
+                )
+                ?.map((method) => {
+                  const Icon = getTransferIcon(method.name);
+                  return (
+                    <button
+                      key={method.id}
+                      type="button"
+                      onClick={() => setTransferMethodId(method.id)}
+                      className={cn(
+                        "flex flex-col items-center gap-1 p-3 rounded-lg border transition-all",
+                        transferMethodId === method.id
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border/50 hover:border-border text-muted-foreground"
+                      )}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span className="text-xs">{method.display}</span>
+                    </button>
+                  );
+                })}
             </div>
           </div>
 
@@ -239,12 +260,16 @@ export function TransactionModal({
           </div>
 
           {/* Submit */}
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             className="w-full"
-            disabled={!friendId || !amount || !transferMethodId || createDebt.isPending}
+            disabled={
+              !friendId || !amount || !transferMethodId || createDebt.isPending
+            }
           >
-            {createDebt.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+            {createDebt.isPending && (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            )}
             Record Transaction
           </Button>
         </form>

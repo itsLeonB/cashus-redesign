@@ -6,7 +6,11 @@ interface LogoProps {
   showText?: boolean;
 }
 
-export function Logo({ className, size = "md", showText = true }: LogoProps) {
+export function Logo({
+  className,
+  size = "md",
+  showText = true,
+}: Readonly<LogoProps>) {
   const sizes = {
     sm: "h-6 w-6",
     md: "h-8 w-8",
@@ -19,13 +23,24 @@ export function Logo({ className, size = "md", showText = true }: LogoProps) {
     lg: "text-2xl",
   };
 
+  const svgSizes = {
+    sm: "h-4 w-4",
+    md: "h-5 w-5",
+    lg: "h-6 w-6",
+  };
+
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <div className={cn("gradient-primary rounded-lg flex items-center justify-center", sizes[size])}>
+      <div
+        className={cn(
+          "gradient-primary rounded-lg flex items-center justify-center",
+          sizes[size]
+        )}
+      >
         <svg
           viewBox="0 0 24 24"
           fill="none"
-          className={cn("text-primary-foreground", size === "sm" ? "h-4 w-4" : size === "md" ? "h-5 w-5" : "h-6 w-6")}
+          className={cn("text-primary-foreground", svgSizes[size])}
           stroke="currentColor"
           strokeWidth="2"
           strokeLinecap="round"
@@ -37,7 +52,12 @@ export function Logo({ className, size = "md", showText = true }: LogoProps) {
         </svg>
       </div>
       {showText && (
-        <span className={cn("font-display font-bold text-foreground", textSizes[size])}>
+        <span
+          className={cn(
+            "font-display font-bold text-foreground",
+            textSizes[size]
+          )}
+        >
           Cashus
         </span>
       )}
