@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFriendships, useDebts, useGroupExpenses } from "@/hooks/useApi";
 import { StatCard } from "@/components/StatCard";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { AmountDisplay } from "@/components/AmountDisplay";
+import { TransactionModal } from "@/components/TransactionModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,12 +20,16 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMemo } from "react";
+import { DebtAction } from "@/lib/api/types";
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const { data: friendships, isLoading: friendshipsLoading } = useFriendships();
   const { data: debts, isLoading: debtsLoading } = useDebts();
   const { data: expenses, isLoading: expensesLoading } = useGroupExpenses();
+
+  const [transactionOpen, setTransactionOpen] = useState(false);
+  const [defaultAction, setDefaultAction] = useState<DebtAction>("LEND");
 
   const isLoading = friendshipsLoading || debtsLoading || expensesLoading;
 
@@ -111,7 +117,7 @@ export default function DashboardPage() {
               Friends
             </Link>
           </Button>
-          <Button variant="premium">
+          <Button variant="premium" onClick={() => { setDefaultAction("LEND"); setTransactionOpen(true); }}>
             <Plus className="h-4 w-4 mr-2" />
             New Transaction
           </Button>
@@ -282,11 +288,19 @@ export default function DashboardPage() {
                 <span>Add Friend</span>
               </Link>
             </Button>
-            <Button variant="secondary" className="h-auto py-4 flex-col gap-2">
+            <Button 
+              variant="secondary" 
+              className="h-auto py-4 flex-col gap-2"
+              onClick={() => { setDefaultAction("LEND"); setTransactionOpen(true); }}
+            >
               <ArrowUpRight className="h-6 w-6" />
               <span>Record Lend</span>
             </Button>
-            <Button variant="secondary" className="h-auto py-4 flex-col gap-2">
+            <Button 
+              variant="secondary" 
+              className="h-auto py-4 flex-col gap-2"
+              onClick={() => { setDefaultAction("BORROW"); setTransactionOpen(true); }}
+            >
               <ArrowDownRight className="h-6 w-6" />
               <span>Record Borrow</span>
             </Button>
@@ -299,6 +313,13 @@ export default function DashboardPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Transaction Modal */}
+      <TransactionModal
+        open={transactionOpen}
+        onOpenChange={setTransactionOpen}
+        defaultAction={defaultAction}
+      />
     </div>
   );
 }

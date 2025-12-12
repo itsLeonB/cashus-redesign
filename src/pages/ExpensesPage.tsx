@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { useGroupExpenses } from "@/hooks/useApi";
 import { AvatarCircle } from "@/components/AvatarCircle";
+import { NewExpenseModal } from "@/components/NewExpenseModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,6 +17,7 @@ import { Link } from "react-router-dom";
 
 export default function ExpensesPage() {
   const { data: expenses, isLoading } = useGroupExpenses();
+  const [newExpenseOpen, setNewExpenseOpen] = useState(false);
 
   const formatCurrency = (amount: string) => {
     return new Intl.NumberFormat('en-US', {
@@ -41,7 +44,7 @@ export default function ExpensesPage() {
             Split bills with multiple people
           </p>
         </div>
-        <Button variant="premium">
+        <Button variant="premium" onClick={() => setNewExpenseOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           New Expense
         </Button>
@@ -121,13 +124,16 @@ export default function ExpensesPage() {
             <p className="text-muted-foreground text-sm text-center max-w-sm mb-6">
               Create your first group expense to split bills with friends easily
             </p>
-            <Button variant="premium">
+            <Button variant="premium" onClick={() => setNewExpenseOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Create Group Expense
             </Button>
           </CardContent>
         </Card>
       )}
+
+      {/* New Expense Modal */}
+      <NewExpenseModal open={newExpenseOpen} onOpenChange={setNewExpenseOpen} />
     </div>
   );
 }

@@ -4,6 +4,7 @@ interface AmountDisplayProps {
   amount: number;
   className?: string;
   showSign?: boolean;
+  showLabel?: boolean;
   size?: "sm" | "md" | "lg" | "xl";
 }
 
@@ -11,6 +12,7 @@ export function AmountDisplay({
   amount, 
   className, 
   showSign = true,
+  showLabel = false,
   size = "md" 
 }: AmountDisplayProps) {
   const isPositive = amount > 0;
@@ -29,19 +31,26 @@ export function AmountDisplay({
     minimumFractionDigits: 2,
   }).format(Math.abs(amount));
 
+  const label = isZero ? "Settled up" : isPositive ? "They owe you" : "You owe";
+
   return (
-    <span
-      className={cn(
-        "tabular-nums font-semibold",
-        sizes[size],
-        isZero && "text-muted-foreground",
-        isPositive && !isZero && "text-success",
-        !isPositive && !isZero && "text-destructive",
-        className
+    <div className={cn("flex flex-col", showLabel && "items-end")}>
+      {showLabel && (
+        <span className="text-xs text-muted-foreground">{label}</span>
       )}
-    >
-      {showSign && !isZero && (isPositive ? "+" : "-")}
-      {formattedAmount}
-    </span>
+      <span
+        className={cn(
+          "tabular-nums font-semibold",
+          sizes[size],
+          isZero && "text-muted-foreground",
+          isPositive && !isZero && "text-success",
+          !isPositive && !isZero && "text-destructive",
+          className
+        )}
+      >
+        {showSign && !isZero && (isPositive ? "+" : "-")}
+        {formattedAmount}
+      </span>
+    </div>
   );
 }

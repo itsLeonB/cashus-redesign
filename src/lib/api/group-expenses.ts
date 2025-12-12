@@ -9,9 +9,12 @@ import {
   BillResponse 
 } from './types';
 
-interface UpdateExpenseItemRequest extends NewExpenseItemRequest {
-  id: string;
-  participants: { profileId: string; share: string }[];
+interface UpdateExpenseItemRequest {
+  id?: string;
+  name?: string;
+  amount?: string;
+  quantity?: number;
+  participants?: string[];
 }
 
 interface UpdateOtherFeeRequest extends NewOtherFeeRequest {
@@ -31,8 +34,8 @@ export const groupExpensesApi = {
   addItem: (groupExpenseId: string, data: NewExpenseItemRequest) => 
     apiClient.post<ExpenseItem>(`/group-expenses/${groupExpenseId}/items`, data),
   
-  updateItem: (groupExpenseId: string, itemId: string, data: UpdateExpenseItemRequest) => 
-    apiClient.put<ExpenseItem>(`/group-expenses/${groupExpenseId}/items/${itemId}`, data),
+  updateItem: (itemId: string, data: UpdateExpenseItemRequest) => 
+    apiClient.put<ExpenseItem>(`/group-expenses/items/${itemId}`, data),
   
   removeItem: (groupExpenseId: string, itemId: string) => 
     apiClient.delete(`/group-expenses/${groupExpenseId}/items/${itemId}`),
