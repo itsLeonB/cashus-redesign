@@ -19,6 +19,7 @@ import ExpenseDetailPage from "@/pages/ExpenseDetailPage";
 import BillsPage from "@/pages/BillsPage";
 import ProfilePage from "@/pages/ProfilePage";
 import NotFound from "@/pages/NotFound";
+import { useUserJotTracker } from "@/hooks/useUserJotTracker";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,38 +30,53 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route element={<AuthLayout />}>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            </Route>
-            <Route element={<AppLayout />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/friends" element={<FriendsPage />} />
-              <Route path="/friends/:friendId" element={<FriendDetailPage />} />
-              <Route path="/expenses" element={<ExpensesPage />} />
-              <Route
-                path="/expenses/:expenseId"
-                element={<ExpenseDetailPage />}
-              />
-              <Route path="/bills" element={<BillsPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-            </Route>
-            <Route path="/" element={<Navigate to="/login" replace />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const UserJotTracker = () => {
+  useUserJotTracker();
+  return null;
+};
+
+const App = () => {
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <UserJotTracker />
+            <Routes>
+              <Route element={<AuthLayout />}>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route
+                  path="/forgot-password"
+                  element={<ForgotPasswordPage />}
+                />
+              </Route>
+              <Route element={<AppLayout />}>
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/friends" element={<FriendsPage />} />
+                <Route
+                  path="/friends/:friendId"
+                  element={<FriendDetailPage />}
+                />
+                <Route path="/expenses" element={<ExpensesPage />} />
+                <Route
+                  path="/expenses/:expenseId"
+                  element={<ExpenseDetailPage />}
+                />
+                <Route path="/bills" element={<BillsPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+              </Route>
+              <Route path="/" element={<Navigate to="/login" replace />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
