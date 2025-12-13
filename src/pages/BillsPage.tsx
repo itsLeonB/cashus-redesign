@@ -1,12 +1,15 @@
+import { useState } from "react";
 import { useBills } from "@/hooks/useApi";
 import { AvatarCircle } from "@/components/AvatarCircle";
+import { BillDetailModal } from "@/components/BillDetailModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FileText, Calendar, Trash2, Upload } from "lucide-react";
+import { FileText, Calendar, Upload, ChevronRight } from "lucide-react";
 
 export default function BillsPage() {
   const { data: bills, isLoading } = useBills();
+  const [selectedBillId, setSelectedBillId] = useState<string | null>(null);
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString("en-US", {
@@ -16,51 +19,47 @@ export default function BillsPage() {
     });
   };
 
-  const getBillsGrid = () => {
+  const handleDeleteBill = (billId: string) => {
+    // TODO: Implement delete mutation
+    console.log("Delete bill:", billId);
+  };
+
+  const getBillsList = () => {
     if (isLoading)
       return (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {new Array(6).map((_, i) => (
-            <Skeleton key={i} className="aspect-[3/4]" />
+        <div className="space-y-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-lg" />
           ))}
         </div>
       );
 
-    if (bills?.length > 0)
+    if (bills && bills.length > 0)
       return (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-2">
           {bills.map((bill) => (
             <Card
               key={bill.id}
-              className="border-border/50 overflow-hidden group"
+              className="border-border/50 hover:bg-muted/50 transition-colors cursor-pointer"
+              onClick={() => setSelectedBillId(bill.id)}
             >
-              <div className="aspect-[3/4] relative bg-muted">
-                <img
-                  src={bill.imageUrl}
-                  alt="Bill"
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform">
-                  <Button variant="destructive" size="sm" className="w-full">
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </Button>
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <FileText className="h-5 w-5 text-primary" />
                 </div>
-              </div>
-              <CardContent className="p-3">
-                <div className="flex items-center gap-2">
-                  <AvatarCircle name={bill.payerProfileName} size="sm" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">
-                      {bill.payerProfileName}
-                    </p>
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      {formatDate(bill.createdAt)}
-                    </p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <AvatarCircle name={bill.payerProfileName} size="sm" />
+                    <span className="font-medium truncate">
+                      {bill.isPaidByUser ? "You" : bill.payerProfileName}
+                    </span>
                   </div>
+                  <p className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
+                    <Calendar className="h-3 w-3" />
+                    {formatDate(bill.createdAt)}
+                  </p>
                 </div>
+                <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
               </CardContent>
             </Card>
           ))}
@@ -101,7 +100,15 @@ export default function BillsPage() {
           Upload Bill
         </Button>
       </div>
-      {getBillsGrid()}
+
+      {getBillsList()}
+
+      <BillDetailModal
+        billId={selectedBillId}
+        open={!!selectedBillId}
+        onOpenChange={(open) => !open && setSelectedBillId(null)}
+        onDelete={handleDeleteBill}
+      />
     </div>
   );
 }
