@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useFriendship } from "@/hooks/useApi";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { AmountDisplay } from "@/components/AmountDisplay";
 import { TransactionModal } from "@/components/TransactionModal";
+import { AssociateProfileModal } from "@/components/AssociateProfileModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,12 +16,15 @@ import {
   ArrowDownLeft,
   Calendar,
   Wallet,
+  Link2,
 } from "lucide-react";
 
 export default function FriendDetailPage() {
   const { friendId } = useParams<{ friendId: string }>();
+  const navigate = useNavigate();
   const { data: friendship, isLoading } = useFriendship(friendId || "");
   const [transactionOpen, setTransactionOpen] = useState(false);
+  const [associateOpen, setAssociateOpen] = useState(false);
 
   const friendDebts = friendship?.transactions || [];
   const balance = friendship?.balance.netBalance || 0;
@@ -95,6 +99,17 @@ export default function FriendDetailPage() {
               <p className="text-sm text-muted-foreground mt-1">
                 Friends since {formatDate(friendship.friend.createdAt)}
               </p>
+              {friendship.friend.type === "ANON" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => setAssociateOpen(true)}
+                >
+                  <Link2 className="h-4 w-4 mr-2" />
+                  Link to Real Profile
+                </Button>
+              )}
             </div>
             <div className="flex flex-col items-end gap-2">
               <AmountDisplay amount={balance} size="lg" showLabel />
@@ -224,6 +239,17 @@ export default function FriendDetailPage() {
         open={transactionOpen}
         onOpenChange={setTransactionOpen}
         defaultFriendId={friendship.friend.profileId}
+      />
+
+      {/* Associate Profile Modal */}
+      <AssociateProfileModal
+        open={associateOpen}
+        onOpenChange={setAssociateOpen}
+        anonProfileId={friendship.friend.profileId}
+        anonProfileName={friendship.friend.name}
+        onSuccess={(realFriendshipId) => {
+          navigate(`/friends/${realFriendshipId}`);
+        }}
       />
     </div>
   );

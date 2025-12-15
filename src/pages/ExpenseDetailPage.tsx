@@ -6,6 +6,8 @@ import {
   useConfirmGroupExpense,
 } from "@/hooks/useApi";
 import { AvatarCircle } from "@/components/AvatarCircle";
+import { ExpenseItemModal } from "@/components/ExpenseItemModal";
+import { ExpenseFeeModal } from "@/components/ExpenseFeeModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,10 +22,13 @@ import {
   CheckCircle2,
   Loader2,
   Plus,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { groupExpensesApi, NewExpenseItemRequest } from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
+import type { ExpenseItemResponse, OtherFeeResponse } from "@/lib/api/types";
 
 export default function ExpenseDetailPage() {
   const { expenseId } = useParams<{ expenseId: string }>();
@@ -37,6 +42,16 @@ export default function ExpenseDetailPage() {
     Record<string, string[]>
   >({});
   const [isUpdating, setIsUpdating] = useState(false);
+  const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+  const [deletingFeeId, setDeletingFeeId] = useState<string | null>(null);
+
+  // Item modal state
+  const [itemModalOpen, setItemModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<ExpenseItemResponse | null>(null);
+
+  // Fee modal state
+  const [feeModalOpen, setFeeModalOpen] = useState(false);
+  const [editingFee, setEditingFee] = useState<OtherFeeResponse | null>(null);
 
   const calculateItemsTotal = () => {
     if (!expense?.items) return 0;
@@ -155,6 +170,72 @@ export default function ExpenseDetailPage() {
     }
   };
 
+  const handleDeleteItem = async (itemId: string) => {
+    if (!expense) return;
+    
+    setDeletingItemId(itemId);
+    try {
+      await groupExpensesApi.removeItem(expense.id, itemId);
+      queryClient.invalidateQueries({ queryKey: ["group-expenses", expenseId] });
+      toast({
+        title: "Item removed",
+        description: "The item has been removed from the expense.",
+      });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast({
+        variant: "destructive",
+        title: "Failed to remove item",
+        description: err.message || "Something went wrong",
+      });
+    } finally {
+      setDeletingItemId(null);
+    }
+  };
+
+  const handleDeleteFee = async (feeId: string) => {
+    if (!expense) return;
+    
+    setDeletingFeeId(feeId);
+    try {
+      await groupExpensesApi.removeFee(expense.id, feeId);
+      queryClient.invalidateQueries({ queryKey: ["group-expenses", expenseId] });
+      toast({
+        title: "Fee removed",
+        description: "The fee has been removed from the expense.",
+      });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast({
+        variant: "destructive",
+        title: "Failed to remove fee",
+        description: err.message || "Something went wrong",
+      });
+    } finally {
+      setDeletingFeeId(null);
+    }
+  };
+
+  const openAddItemModal = () => {
+    setEditingItem(null);
+    setItemModalOpen(true);
+  };
+
+  const openEditItemModal = (item: ExpenseItemResponse) => {
+    setEditingItem(item);
+    setItemModalOpen(true);
+  };
+
+  const openAddFeeModal = () => {
+    setEditingFee(null);
+    setFeeModalOpen(true);
+  };
+
+  const openEditFeeModal = (fee: OtherFeeResponse) => {
+    setEditingFee(fee);
+    setFeeModalOpen(true);
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -245,8 +326,14 @@ export default function ExpenseDetailPage() {
 
       {/* Items */}
       <Card className="border-border/50">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="font-display">Items</CardTitle>
+          {!isConfirmed && (
+            <Button size="sm" variant="outline" onClick={openAddItemModal}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add Item
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           {expense.items.map((item) => (
@@ -261,11 +348,38 @@ export default function ExpenseDetailPage() {
                     Qty: {item.quantity} × {formatCurrency(item.amount)}
                   </p>
                 </div>
-                <p className="text-lg font-semibold tabular-nums">
-                  {formatCurrency(
-                    Number.parseFloat(item.amount) * item.quantity
+                <div className="flex items-center gap-2">
+                  <p className="text-lg font-semibold tabular-nums">
+                    {formatCurrency(
+                      Number.parseFloat(item.amount) * item.quantity
+                    )}
+                  </p>
+                  {!isConfirmed && (
+                    <div className="flex gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        onClick={() => openEditItemModal(item)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => handleDeleteItem(item.id)}
+                        disabled={deletingItemId === item.id}
+                      >
+                        {deletingItemId === item.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                   )}
-                </p>
+                </div>
               </div>
 
               {/* Current Participants */}
@@ -365,16 +479,38 @@ export default function ExpenseDetailPage() {
               )}
             </div>
           ))}
+          
+          {expense.items.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No items yet.</p>
+              {!isConfirmed && (
+                <Button
+                  variant="outline"
+                  className="mt-2"
+                  onClick={openAddItemModal}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add your first item
+                </Button>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {/* Other Fees */}
-      {expense.otherFees?.length > 0 && (
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="font-display">Additional Fees</CardTitle>
-          </CardHeader>
-          <CardContent>
+      <Card className="border-border/50">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="font-display">Additional Fees</CardTitle>
+          {!isConfirmed && (
+            <Button size="sm" variant="outline" onClick={openAddFeeModal}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add Fee
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {expense.otherFees && expense.otherFees.length > 0 ? (
             <div className="space-y-2">
               {expense.otherFees?.map((fee) => (
                 <div
@@ -387,15 +523,46 @@ export default function ExpenseDetailPage() {
                       {fee.calculationMethod === "PERCENTAGE" ? "%" : "Flat"}
                     </Badge>
                   </div>
-                  <span className="font-semibold tabular-nums">
-                    {formatCurrency(fee.amount)}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold tabular-nums">
+                      {formatCurrency(fee.amount)}
+                    </span>
+                    {!isConfirmed && (
+                      <div className="flex gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => openEditFeeModal(fee)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteFee(fee.id)}
+                          disabled={deletingFeeId === fee.id}
+                        >
+                          {deletingFeeId === fee.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <div className="text-center py-4 text-muted-foreground">
+              <p>No additional fees.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Summary */}
       <Card className="border-border/50">
@@ -407,7 +574,7 @@ export default function ExpenseDetailPage() {
                 {formatCurrency(calculateItemsTotal())}
               </span>
             </div>
-            {expense.otherFees?.length > 0 && (
+            {expense.otherFees && expense.otherFees.length > 0 && (
               <div className="flex justify-between text-muted-foreground">
                 <span>Fees</span>
                 <span className="tabular-nums">
@@ -440,6 +607,22 @@ export default function ExpenseDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Item Modal */}
+      <ExpenseItemModal
+        open={itemModalOpen}
+        onOpenChange={setItemModalOpen}
+        expenseId={expenseId || ""}
+        item={editingItem}
+      />
+
+      {/* Fee Modal */}
+      <ExpenseFeeModal
+        open={feeModalOpen}
+        onOpenChange={setFeeModalOpen}
+        expenseId={expenseId || ""}
+        fee={editingFee}
+      />
     </div>
   );
 }

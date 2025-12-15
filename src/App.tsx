@@ -13,6 +13,9 @@ import { AppLayout } from "@/layouts/AppLayout";
 import LoginPage from "@/pages/auth/LoginPage";
 import RegisterPage from "@/pages/auth/RegisterPage";
 import ForgotPasswordPage from "@/pages/auth/ForgotPasswordPage";
+import VerifyRegistrationPage from "@/pages/auth/VerifyRegistrationPage";
+import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
+import OAuthCallbackPage from "@/pages/auth/OAuthCallbackPage";
 import DashboardPage from "@/pages/DashboardPage";
 import FriendsPage from "@/pages/FriendsPage";
 import FriendDetailPage from "@/pages/FriendDetailPage";
@@ -51,10 +54,10 @@ const App = () => {
               <Route element={<AuthLayout />}>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
-                <Route
-                  path="/forgot-password"
-                  element={<ForgotPasswordPage />}
-                />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/verify-registration" element={<VerifyRegistrationPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/auth/:provider/callback" element={<OAuthCallbackPage />} />
               </Route>
               <Route element={<AppLayout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
