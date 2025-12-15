@@ -333,15 +333,10 @@ export function NewExpenseModal({
                       </SelectTrigger>
                       <SelectContent>
                         {calculationMethods?.map((method) => (
-                          <SelectItem key={method} value={method}>
-                            {method === "PERCENTAGE" ? "%" : "Rp"}
+                          <SelectItem key={method.name} value={method.name}>
+                            {method.display}
                           </SelectItem>
-                        )) || (
-                          <>
-                            <SelectItem value="FLAT">Rp</SelectItem>
-                            <SelectItem value="PERCENTAGE">%</SelectItem>
-                          </>
-                        )}
+                        ))}
                       </SelectContent>
                     </Select>
                     <Input

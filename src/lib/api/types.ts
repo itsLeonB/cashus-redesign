@@ -227,6 +227,12 @@ export interface NewOtherFeeRequest {
   calculationMethod: string;
 }
 
+export interface FeeCalculationMethodInfo {
+  name: string;
+  display: string;
+  description: string;
+}
+
 // Friend Request Types
 export interface FriendRequest {
   id: string;

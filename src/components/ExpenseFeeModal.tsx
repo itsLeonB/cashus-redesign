@@ -60,7 +60,7 @@ export function ExpenseFeeModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!name.trim() || !amount) {
       toast({
         variant: "destructive",
@@ -80,7 +80,7 @@ export function ExpenseFeeModal({
           amount,
           calculationMethod,
         });
-        
+
         toast({
           title: "Fee updated",
           description: `"${name}" has been updated.`,
@@ -92,14 +92,16 @@ export function ExpenseFeeModal({
           amount,
           calculationMethod,
         });
-        
+
         toast({
           title: "Fee added",
           description: `"${name}" has been added to the expense.`,
         });
       }
 
-      queryClient.invalidateQueries({ queryKey: ["group-expenses", expenseId] });
+      queryClient.invalidateQueries({
+        queryKey: ["group-expenses", expenseId],
+      });
       onOpenChange(false);
     } catch (error: unknown) {
       const err = error as { message?: string };
@@ -151,14 +153,17 @@ export function ExpenseFeeModal({
             </div>
             <div className="space-y-2">
               <Label htmlFor="calcMethod">Type</Label>
-              <Select value={calculationMethod} onValueChange={setCalculationMethod}>
+              <Select
+                value={calculationMethod}
+                onValueChange={setCalculationMethod}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
                   {calculationMethods?.map((method) => (
-                    <SelectItem key={method} value={method}>
-                      {method === "PERCENTAGE" ? "Percentage (%)" : "Flat Amount"}
+                    <SelectItem key={method.name} value={method.name}>
+                      {method.display}
                     </SelectItem>
                   )) || (
                     <>

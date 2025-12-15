@@ -7,6 +7,7 @@ import {
   ExpenseItem,
   OtherFee,
   ExpenseBillResponse,
+  FeeCalculationMethodInfo,
 } from "./types";
 
 interface UpdateExpenseItemRequest {
@@ -73,7 +74,9 @@ export const groupExpensesApi = {
     ),
 
   getCalculationMethods: () =>
-    apiClient.get<string[]>("/group-expenses/fee-calculation-methods"),
+    apiClient.get<FeeCalculationMethodInfo[]>(
+      "/group-expenses/fee-calculation-methods"
+    ),
 
   // Bills
   uploadBill: (payerProfileId: string, file: File) => {
