@@ -41,7 +41,6 @@ const UserJotTracker = () => {
 };
 
 const App = () => {
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -54,10 +53,22 @@ const App = () => {
               <Route element={<AuthLayout />}>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                <Route path="/verify-registration" element={<VerifyRegistrationPage />} />
-                <Route path="/reset-password" element={<ResetPasswordPage />} />
-                <Route path="/auth/:provider/callback" element={<OAuthCallbackPage />} />
+                <Route
+                  path="/forgot-password"
+                  element={<ForgotPasswordPage />}
+                />
+                <Route
+                  path="/auth/verify-registration"
+                  element={<VerifyRegistrationPage />}
+                />
+                <Route
+                  path="/auth/reset-password"
+                  element={<ResetPasswordPage />}
+                />
+                <Route
+                  path="/auth/:provider/callback"
+                  element={<OAuthCallbackPage />}
+                />
               </Route>
               <Route element={<AppLayout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />

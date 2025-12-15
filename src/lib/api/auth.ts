@@ -38,4 +38,10 @@ export const authApi = {
     `${
       import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api"
     }/auth/${provider}`,
+
+  handleOAuthCallback: (provider: string, code: string, state: string | null) =>
+    apiClient.get<{ accessToken: string }>(`/auth/${provider}/callback`, {
+      code,
+      state,
+    }),
 };

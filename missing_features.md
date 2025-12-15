@@ -14,7 +14,10 @@ The following features from the original `cashus` application have been identifi
 ## 2. Friends Management
 
 - **Associate Profile**:
+
   - The API supports linking an Anonymous Profile to a Real Profile (`associateProfile`), but no UI controls (buttons, modals) were found in `FriendsPage.tsx` or `FriendDetailPage.tsx` to initiate this action.
+
+- Add real friend request
 
 ## 3. Group Expenses (Draft Management)
 
@@ -24,3 +27,8 @@ The following features from the original `cashus` application have been identifi
   - There is no option to modify the name, amount, or quantity of existing items/fees in `ExpenseDetailPage`. Note: Adding participants to an item is implemented.
 - **Remove Items/Fees**:
   - There is no option to delete items or fees from an existing draft in `ExpenseDetailPage`.
+
+### Bills Management
+
+- Upload bill
+- Delete bill

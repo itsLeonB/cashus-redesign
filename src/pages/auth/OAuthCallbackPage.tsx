@@ -1,18 +1,23 @@
 import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate, useParams } from "react-router-dom";
+import {
+  useSearchParams,
+  useNavigate,
+  useParams,
+  Link,
+} from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { authApi } from "@/lib/api/auth";
 import { apiClient } from "@/lib/api/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 
 export default function OAuthCallbackPage() {
   const { provider } = useParams<{ provider: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { refreshUser } = useAuth();
-  
+
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -23,7 +28,9 @@ export default function OAuthCallbackPage() {
       const errorDescription = searchParams.get("error_description");
 
       if (errorParam) {
-        setError(errorDescription || errorParam || "OAuth authentication failed");
+        setError(
+          errorDescription || errorParam || "OAuth authentication failed"
+        );
         return;
       }
 
@@ -34,17 +41,18 @@ export default function OAuthCallbackPage() {
 
       try {
         // Exchange the code for tokens
-        const response = await apiClient.post<{ accessToken: string }>(
-          `/auth/${provider}/callback`,
-          { code, state }
+        const response = await authApi.handleOAuthCallback(
+          provider,
+          code,
+          state
         );
-        
+
         // Store the token
         apiClient.setToken(response.accessToken);
-        
+
         // Refresh user data
         await refreshUser();
-        
+
         // Redirect to dashboard
         navigate("/dashboard", { replace: true });
       } catch (err: unknown) {
@@ -80,9 +88,7 @@ export default function OAuthCallbackPage() {
       <Card className="w-full max-w-md border-border/50">
         <CardContent className="flex flex-col items-center gap-4 text-center py-8">
           <Loader2 className="h-12 w-12 text-primary animate-spin" />
-          <p className="text-muted-foreground">
-            Completing authentication...
-          </p>
+          <p className="text-muted-foreground">Completing authentication...</p>
         </CardContent>
       </Card>
     </div>
