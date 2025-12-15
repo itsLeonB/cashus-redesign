@@ -16,7 +16,7 @@ export default function ExpensesPage() {
   const formatCurrency = (amount: string) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "USD",
+      currency: "IDR",
     }).format(Number.parseFloat(amount));
   };
 

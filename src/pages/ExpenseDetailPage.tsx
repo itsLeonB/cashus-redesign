@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   useGroupExpense,
   useFriendships,
   useConfirmGroupExpense,
+  useCalculationMethods,
 } from "@/hooks/useApi";
+import { useAuth } from "@/contexts/AuthContext";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { ExpenseItemModal } from "@/components/ExpenseItemModal";
 import { ExpenseFeeModal } from "@/components/ExpenseFeeModal";
@@ -37,6 +39,16 @@ export default function ExpenseDetailPage() {
   const confirmExpense = useConfirmGroupExpense();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { data: calculationMethods } = useCalculationMethods();
+
+  const calculationMethodDisplayByName = useMemo(() => {
+    if (!calculationMethods) return {};
+    return calculationMethods.reduce((acc, method) => {
+      acc[method.name] = method.display;
+      return acc;
+    }, {} as Record<string, string>);
+  }, [calculationMethods]);
 
   const [selectedParticipants, setSelectedParticipants] = useState<
     Record<string, string[]>
@@ -47,11 +59,27 @@ export default function ExpenseDetailPage() {
 
   // Item modal state
   const [itemModalOpen, setItemModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<ExpenseItemResponse | null>(null);
+  const [editingItem, setEditingItem] = useState<ExpenseItemResponse | null>(
+    null
+  );
 
   // Fee modal state
   const [feeModalOpen, setFeeModalOpen] = useState(false);
   const [editingFee, setEditingFee] = useState<OtherFeeResponse | null>(null);
+
+  const allParticipants = useMemo(() => {
+    const participants = friendships || [];
+    if (!user) return participants;
+
+    return [
+      {
+        profileId: user.id,
+        profileName: "You",
+        profileAvatar: user.avatar,
+      },
+      ...participants,
+    ];
+  }, [user, friendships]);
 
   const calculateItemsTotal = () => {
     if (!expense?.items) return 0;
@@ -133,12 +161,11 @@ export default function ExpenseDetailPage() {
         new Set([...existingParticipantIds, ...newParticipantIds])
       );
 
-      const totalAmount = Number.parseFloat(item.amount) * item.quantity;
-      const shareAmount = totalAmount / allParticipantIds.length;
+      const shareRatio = 1 / allParticipantIds.length;
 
       const participantRequests = allParticipantIds.map((profileId) => ({
         profileId,
-        share: shareAmount.toFixed(2),
+        share: shareRatio.toFixed(4),
       }));
 
       await groupExpensesApi.updateItem(itemId, {
@@ -172,11 +199,13 @@ export default function ExpenseDetailPage() {
 
   const handleDeleteItem = async (itemId: string) => {
     if (!expense) return;
-    
+
     setDeletingItemId(itemId);
     try {
       await groupExpensesApi.removeItem(expense.id, itemId);
-      queryClient.invalidateQueries({ queryKey: ["group-expenses", expenseId] });
+      queryClient.invalidateQueries({
+        queryKey: ["group-expenses", expenseId],
+      });
       toast({
         title: "Item removed",
         description: "The item has been removed from the expense.",
@@ -195,11 +224,13 @@ export default function ExpenseDetailPage() {
 
   const handleDeleteFee = async (feeId: string) => {
     if (!expense) return;
-    
+
     setDeletingFeeId(feeId);
     try {
       await groupExpensesApi.removeFee(expense.id, feeId);
-      queryClient.invalidateQueries({ queryKey: ["group-expenses", expenseId] });
+      queryClient.invalidateQueries({
+        queryKey: ["group-expenses", expenseId],
+      });
       toast({
         title: "Fee removed",
         description: "The fee has been removed from the expense.",
@@ -423,24 +454,24 @@ export default function ExpenseDetailPage() {
                     Add participants:
                   </p>
                   <div className="flex flex-wrap gap-2 mb-3">
-                    {friendships.map((friendship) => {
+                    {allParticipants.map((participant) => {
                       const isSelected = (
                         selectedParticipants[item.id] || []
-                      ).includes(friendship.profileId);
+                      ).includes(participant.profileId);
                       const alreadyParticipant = item.participants?.some(
-                        (p) => p.profileId === friendship.profileId
+                        (p) => p.profileId === participant.profileId
                       );
 
                       if (alreadyParticipant) return null;
 
                       return (
                         <button
-                          key={friendship.profileId}
+                          key={participant.profileId}
                           type="button"
                           onClick={() =>
                             handleParticipantToggle(
                               item.id,
-                              friendship.profileId
+                              participant.profileId
                             )
                           }
                           className={cn(
@@ -452,11 +483,12 @@ export default function ExpenseDetailPage() {
                         >
                           <Checkbox checked={isSelected} className="h-3 w-3" />
                           <AvatarCircle
-                            name={friendship.profileName}
+                            name={participant.profileName}
+                            imageUrl={participant.profileAvatar}
                             size="xs"
                           />
                           <span className="text-sm">
-                            {friendship.profileName}
+                            {participant.profileName}
                           </span>
                         </button>
                       );
@@ -479,7 +511,7 @@ export default function ExpenseDetailPage() {
               )}
             </div>
           ))}
-          
+
           {expense.items.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               <p>No items yet.</p>
@@ -520,7 +552,7 @@ export default function ExpenseDetailPage() {
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{fee.name}</span>
                     <Badge variant="outline" className="text-xs">
-                      {fee.calculationMethod === "PERCENTAGE" ? "%" : "Flat"}
+                      {calculationMethodDisplayByName[fee.calculationMethod]}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2">

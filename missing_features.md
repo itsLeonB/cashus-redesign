@@ -15,9 +15,8 @@ The following features from the original `cashus` application have been identifi
 - **Add Items/Fees to Existing Draft**:
   - Add currency hint to the amount input in Add Item modal
 - **Edit Items/Fees**:
-  - There is no option to modify the name, amount, or quantity of existing items/fees in `ExpenseDetailPage`. Note: Adding participants to an item is implemented.
-- **Remove Items/Fees**:
-  - There is no option to delete items or fees from an existing draft in `ExpenseDetailPage`.
+  - Add customizable share ratio for each participant (must total to 1)
+  - Remove participant
 
 ## Bills Management
 
