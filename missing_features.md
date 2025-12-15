@@ -4,13 +4,13 @@ The following features from the original `cashus` application have been identifi
 
 ## Profile Management
 
-- Reset password
+- Reset password: add a button to trigger the same forgotPassword email in profile page
 
 ## Friends Management
 
 - Add real friend request
 
-## 3. Group Expenses (Draft Management)
+## Group Expenses (Draft Management)
 
 - **Add Items/Fees to Existing Draft**:
   - Add currency hint to the amount input in Add Item modal
