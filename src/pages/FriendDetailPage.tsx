@@ -247,8 +247,8 @@ export default function FriendDetailPage() {
         onOpenChange={setAssociateOpen}
         anonProfileId={friendship.friend.profileId}
         anonProfileName={friendship.friend.name}
-        onSuccess={(realFriendshipId) => {
-          navigate(`/friends/${realFriendshipId}`);
+        onSuccess={() => {
+          navigate(`/friends`);
         }}
       />
     </div>

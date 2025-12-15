@@ -20,7 +20,7 @@ interface AssociateProfileModalProps {
   onOpenChange: (open: boolean) => void;
   anonProfileId: string;
   anonProfileName: string;
-  onSuccess?: (realFriendshipId: string) => void;
+  onSuccess?: () => void;
 }
 
 export function AssociateProfileModal({
@@ -29,31 +29,37 @@ export function AssociateProfileModal({
   anonProfileId,
   anonProfileName,
   onSuccess,
-}: AssociateProfileModalProps) {
+}: Readonly<AssociateProfileModalProps>) {
   const [searchQuery, setSearchQuery] = useState("");
-  const { data: profiles, isLoading: isSearching } = useSearchProfiles(searchQuery);
+  const { data: profiles, isLoading: isSearching } =
+    useSearchProfiles(searchQuery);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isAssociating, setIsAssociating] = useState(false);
-  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
+    null
+  );
 
   const handleAssociate = async (realProfileId: string) => {
     setIsAssociating(true);
     setSelectedProfileId(realProfileId);
-    
+
     try {
-      const response = await friendshipsApi.associateProfile(realProfileId, anonProfileId);
-      
+      const response = await friendshipsApi.associateProfile(
+        realProfileId,
+        anonProfileId
+      );
+
       toast({
         title: "Profile linked",
         description: `${anonProfileName} has been linked to the selected profile.`,
       });
-      
+
       queryClient.invalidateQueries({ queryKey: ["friendships"] });
       onOpenChange(false);
-      
-      if (onSuccess && response && typeof response === "object" && "id" in response) {
-        onSuccess(response.id as string);
+
+      if (onSuccess) {
+        onSuccess();
       }
     } catch (error: unknown) {
       const err = error as { message?: string };
@@ -77,8 +83,8 @@ export function AssociateProfileModal({
             Link to Real Profile
           </DialogTitle>
           <DialogDescription>
-            Search for a registered user to link "{anonProfileName}" to their real profile.
-            All transactions will be transferred.
+            Search for a registered user to link "{anonProfileName}" to their
+            real profile. All transactions will be transferred.
           </DialogDescription>
         </DialogHeader>
 
@@ -99,14 +105,14 @@ export function AssociateProfileModal({
                 Type at least 2 characters to search
               </p>
             )}
-            
+
             {isSearching && (
               <div className="flex justify-center py-4">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
             )}
 
-            {profiles && profiles.length === 0 && searchQuery.length >= 2 && (
+            {profiles?.length === 0 && searchQuery.length >= 2 && (
               <p className="text-sm text-muted-foreground text-center py-4">
                 No users found
               </p>
@@ -126,7 +132,9 @@ export function AssociateProfileModal({
                   <div>
                     <p className="font-medium">{profile.name}</p>
                     {profile.email && (
-                      <p className="text-xs text-muted-foreground">{profile.email}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {profile.email}
+                      </p>
                     )}
                   </div>
                 </div>

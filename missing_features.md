@@ -11,6 +11,10 @@ The following features from the original `cashus` application have been identifi
 - **OAuth Callback Handling**:
   - While the Google Login button redirects to the correct URL, there is no frontend route (e.g., `/auth/google/callback`) configured to handle the redirect from the OAuth provider and process the returned code/token.
 
+## Profile Management
+
+- Reset password
+
 ## 2. Friends Management
 
 - **Associate Profile**:
@@ -28,7 +32,7 @@ The following features from the original `cashus` application have been identifi
 - **Remove Items/Fees**:
   - There is no option to delete items or fees from an existing draft in `ExpenseDetailPage`.
 
-### Bills Management
+## Bills Management
 
 - Upload bill
 - Delete bill
