@@ -26,6 +26,7 @@ import {
   Plus,
   Pencil,
   Trash2,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { groupExpensesApi, NewExpenseItemRequest } from "@/lib/api";
@@ -56,6 +57,7 @@ export default function ExpenseDetailPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [deletingFeeId, setDeletingFeeId] = useState<string | null>(null);
+  const [removingParticipant, setRemovingParticipant] = useState<{itemId: string; profileId: string} | null>(null);
 
   // Item modal state
   const [itemModalOpen, setItemModalOpen] = useState(false);
@@ -247,6 +249,61 @@ export default function ExpenseDetailPage() {
     }
   };
 
+  const handleRemoveParticipant = async (itemId: string, profileId: string) => {
+    const item = expense?.items.find((i) => i.id === itemId);
+    if (!item || !expense) return;
+
+    setRemovingParticipant({ itemId, profileId });
+    try {
+      const remainingParticipants = item.participants?.filter(
+        (p) => p.profileId !== profileId
+      ) || [];
+
+      if (remainingParticipants.length === 0) {
+        await groupExpensesApi.updateItem(itemId, {
+          id: itemId,
+          groupExpenseId: expense.id,
+          name: item.name,
+          amount: item.amount,
+          quantity: item.quantity,
+          participants: [],
+        });
+      } else {
+        const shareRatio = 1 / remainingParticipants.length;
+        const participantRequests = remainingParticipants.map((p) => ({
+          profileId: p.profileId,
+          share: shareRatio.toFixed(4),
+        }));
+
+        await groupExpensesApi.updateItem(itemId, {
+          id: itemId,
+          groupExpenseId: expense.id,
+          name: item.name,
+          amount: item.amount,
+          quantity: item.quantity,
+          participants: participantRequests,
+        });
+      }
+
+      queryClient.invalidateQueries({
+        queryKey: ["group-expenses", expenseId],
+      });
+      toast({
+        title: "Participant removed",
+        description: "The participant has been removed from the item",
+      });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast({
+        variant: "destructive",
+        title: "Failed to remove participant",
+        description: err.message || "Something went wrong",
+      });
+    } finally {
+      setRemovingParticipant(null);
+    }
+  };
+
   const openAddItemModal = () => {
     setEditingItem(null);
     setItemModalOpen(true);
@@ -420,29 +477,50 @@ export default function ExpenseDetailPage() {
                     Split between:
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {item.participants?.map((participant) => (
-                      <div
-                        key={participant.profileId}
-                        className="flex items-center gap-2 bg-muted/50 rounded-full px-3 py-1"
-                      >
-                        <AvatarCircle
-                          name={participant.profileName}
-                          size="xs"
-                        />
-                        <span className="text-sm">
-                          {participant.profileName}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          (
-                          {formatCurrency(
-                            Number.parseFloat(participant.share) *
-                              Number.parseFloat(item.amount) *
-                              item.quantity
+                    {item.participants?.map((participant) => {
+                      const isRemoving =
+                        removingParticipant?.itemId === item.id &&
+                        removingParticipant?.profileId === participant.profileId;
+                      return (
+                        <div
+                          key={participant.profileId}
+                          className="flex items-center gap-2 bg-muted/50 rounded-full px-3 py-1 group"
+                        >
+                          <AvatarCircle
+                            name={participant.profileName}
+                            size="xs"
+                          />
+                          <span className="text-sm">
+                            {participant.profileName}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            (
+                            {formatCurrency(
+                              Number.parseFloat(participant.share) *
+                                Number.parseFloat(item.amount) *
+                                item.quantity
+                            )}
+                            )
+                          </span>
+                          {!isConfirmed && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleRemoveParticipant(item.id, participant.profileId)
+                              }
+                              disabled={isRemoving}
+                              className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
+                            >
+                              {isRemoving ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <X className="h-3 w-3" />
+                              )}
+                            </button>
                           )}
-                          )
-                        </span>
-                      </div>
-                    ))}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
