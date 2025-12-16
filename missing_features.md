@@ -1,9 +1,15 @@
 # Missing Features in Redesign
 
-All features have been implemented! ✓
+## Friends Management
 
-## Completed Features
+- Block Received Request
+- Unblock Blocked Request
 
-- ✓ Friends Management: Send, accept, ignore, cancel friend requests
-- ✓ Group Expenses: Currency hint in item modal, remove participant functionality
-- ✓ Bills Management: Upload and delete bills with modal
+## Group Expenses
+
+- Remove participant still broken, update item logic should be refactored
+
+## Bills Management
+
+- Bill modal should have a skeletion loader for the image display
+- Delete bill has no loading animation, modal immediately closes after delete
