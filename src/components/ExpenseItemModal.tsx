@@ -134,17 +134,23 @@ export function ExpenseItemModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="amount">Amount</Label>
-              <Input
-                id="amount"
-                type="number"
-                placeholder="0"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                min="0"
-                step="0.01"
-                required
-              />
+              <Label htmlFor="amount">Amount (IDR)</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                  Rp
+                </span>
+                <Input
+                  id="amount"
+                  type="number"
+                  placeholder="0"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  min="0"
+                  step="0.01"
+                  required
+                  className="pl-9"
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="quantity">Quantity</Label>

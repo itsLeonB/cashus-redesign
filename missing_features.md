@@ -1,24 +1,10 @@
 # Missing Features in Redesign
 
-The following features from the original `cashus` application have been identified as missing or incomplete in the `cashus-feature-explorer` redesign.
+All features have been implemented! ✓
 
-## Profile Management
+## Completed Features
 
-- Reset password: add a button to trigger the same forgotPassword email in profile page
-
-## Friends Management
-
-- Add real friend request
-
-## Group Expenses (Draft Management)
-
-- **Add Items/Fees to Existing Draft**:
-  - Add currency hint to the amount input in Add Item modal
-- **Edit Items/Fees**:
-  - Add customizable share ratio for each participant (must total to 1)
-  - Remove participant
-
-## Bills Management
-
-- Upload bill
-- Delete bill
+- ✓ Profile Management: Reset password button added
+- ✓ Friends Management: Send, accept, ignore, cancel friend requests
+- ✓ Group Expenses: Currency hint in item modal, remove participant functionality
+- ✓ Bills Management: Upload and delete bills with modal

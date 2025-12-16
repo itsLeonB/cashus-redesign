@@ -4,6 +4,10 @@ import {
   useFriendRequests,
   useSearchProfiles,
   useCreateAnonymousFriend,
+  useSendFriendRequest,
+  useAcceptFriendRequest,
+  useIgnoreFriendRequest,
+  useCancelFriendRequest,
   useDebts,
 } from "@/hooks/useApi";
 import { AvatarCircle } from "@/components/AvatarCircle";
@@ -38,6 +42,7 @@ export default function FriendsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [anonymousName, setAnonymousName] = useState("");
+  const [pendingRequestIds, setPendingRequestIds] = useState<Set<string>>(new Set());
 
   const { data: friendships, isLoading } = useFriendships();
   const { data: debts } = useDebts();
@@ -45,6 +50,10 @@ export default function FriendsPage() {
   const { data: searchResults, isLoading: searching } =
     useSearchProfiles(searchQuery);
   const createAnonymousFriend = useCreateAnonymousFriend();
+  const sendFriendRequest = useSendFriendRequest();
+  const acceptFriendRequest = useAcceptFriendRequest();
+  const ignoreFriendRequest = useIgnoreFriendRequest();
+  const cancelFriendRequest = useCancelFriendRequest();
   const { toast } = useToast();
 
   const balances = useMemo(() => {
@@ -78,6 +87,81 @@ export default function FriendsPage() {
       toast({
         variant: "destructive",
         title: "Failed to add friend",
+        description: err.message || "Something went wrong",
+      });
+    }
+  };
+
+  const handleSendFriendRequest = async (profileId: string) => {
+    setPendingRequestIds((prev) => new Set(prev).add(profileId));
+    try {
+      await sendFriendRequest.mutateAsync(profileId);
+      toast({
+        title: "Request sent",
+        description: "Friend request has been sent",
+      });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast({
+        variant: "destructive",
+        title: "Failed to send request",
+        description: err.message || "Something went wrong",
+      });
+    } finally {
+      setPendingRequestIds((prev) => {
+        const next = new Set(prev);
+        next.delete(profileId);
+        return next;
+      });
+    }
+  };
+
+  const handleAcceptRequest = async (requestId: string) => {
+    try {
+      await acceptFriendRequest.mutateAsync(requestId);
+      toast({
+        title: "Request accepted",
+        description: "You are now friends",
+      });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast({
+        variant: "destructive",
+        title: "Failed to accept request",
+        description: err.message || "Something went wrong",
+      });
+    }
+  };
+
+  const handleIgnoreRequest = async (requestId: string) => {
+    try {
+      await ignoreFriendRequest.mutateAsync(requestId);
+      toast({
+        title: "Request ignored",
+        description: "The request has been removed",
+      });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast({
+        variant: "destructive",
+        title: "Failed to ignore request",
+        description: err.message || "Something went wrong",
+      });
+    }
+  };
+
+  const handleCancelRequest = async (requestId: string) => {
+    try {
+      await cancelFriendRequest.mutateAsync(requestId);
+      toast({
+        title: "Request cancelled",
+        description: "The request has been cancelled",
+      });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast({
+        variant: "destructive",
+        title: "Failed to cancel request",
         description: err.message || "Something went wrong",
       });
     }
@@ -184,10 +268,29 @@ export default function FriendsPage() {
                 </p>
               </div>
               <div className="flex gap-2">
-                <Button size="sm" variant="outline">
-                  Ignore
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleIgnoreRequest(request.id)}
+                  disabled={ignoreFriendRequest.isPending}
+                >
+                  {ignoreFriendRequest.isPending ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    "Ignore"
+                  )}
                 </Button>
-                <Button size="sm">Accept</Button>
+                <Button
+                  size="sm"
+                  onClick={() => handleAcceptRequest(request.id)}
+                  disabled={acceptFriendRequest.isPending}
+                >
+                  {acceptFriendRequest.isPending ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    "Accept"
+                  )}
+                </Button>
               </div>
             </div>
           ))}
@@ -231,8 +334,18 @@ export default function FriendsPage() {
                   {new Date(request.createdAt).toLocaleDateString()}
                 </p>
               </div>
-              <Button size="sm" variant="ghost" className="text-destructive">
-                Cancel
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive"
+                onClick={() => handleCancelRequest(request.id)}
+                disabled={cancelFriendRequest.isPending}
+              >
+                {cancelFriendRequest.isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  "Cancel"
+                )}
               </Button>
             </div>
           ))}
@@ -334,8 +447,17 @@ export default function FriendsPage() {
                             </p>
                           )}
                         </div>
-                        <Button size="sm" variant="outline">
-                          <UserPlus className="h-4 w-4" />
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleSendFriendRequest(profile.id)}
+                          disabled={pendingRequestIds.has(profile.id)}
+                        >
+                          {pendingRequestIds.has(profile.id) ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <UserPlus className="h-4 w-4" />
+                          )}
                         </Button>
                       </div>
                     ))}

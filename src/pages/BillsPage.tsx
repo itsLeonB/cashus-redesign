@@ -1,15 +1,20 @@
 import { useState } from "react";
-import { useBills } from "@/hooks/useApi";
+import { useBills, useDeleteBill } from "@/hooks/useApi";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { BillDetailModal } from "@/components/BillDetailModal";
+import { UploadBillModal } from "@/components/UploadBillModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 import { FileText, Calendar, Upload, ChevronRight } from "lucide-react";
 
 export default function BillsPage() {
   const { data: bills, isLoading } = useBills();
+  const deleteBill = useDeleteBill();
+  const { toast } = useToast();
   const [selectedBillId, setSelectedBillId] = useState<string | null>(null);
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString("en-US", {
@@ -19,9 +24,22 @@ export default function BillsPage() {
     });
   };
 
-  const handleDeleteBill = (billId: string) => {
-    // TODO: Implement delete mutation
-    console.log("Delete bill:", billId);
+  const handleDeleteBill = async (billId: string) => {
+    try {
+      await deleteBill.mutateAsync(billId);
+      toast({
+        title: "Bill deleted",
+        description: "The bill has been deleted successfully",
+      });
+      setSelectedBillId(null);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast({
+        variant: "destructive",
+        title: "Failed to delete bill",
+        description: err.message || "Something went wrong",
+      });
+    }
   };
 
   const getBillsList = () => {
@@ -76,7 +94,7 @@ export default function BillsPage() {
           <p className="text-muted-foreground text-sm text-center max-w-sm mb-6">
             Upload receipt images to keep track of your expenses
           </p>
-          <Button variant="premium">
+          <Button variant="premium" onClick={() => setUploadModalOpen(true)}>
             <Upload className="h-4 w-4 mr-2" />
             Upload your first bill
           </Button>
@@ -95,7 +113,7 @@ export default function BillsPage() {
             Upload and manage receipt images
           </p>
         </div>
-        <Button variant="premium">
+        <Button variant="premium" onClick={() => setUploadModalOpen(true)}>
           <Upload className="h-4 w-4 mr-2" />
           Upload Bill
         </Button>
@@ -108,6 +126,11 @@ export default function BillsPage() {
         open={!!selectedBillId}
         onOpenChange={(open) => !open && setSelectedBillId(null)}
         onDelete={handleDeleteBill}
+      />
+
+      <UploadBillModal
+        open={uploadModalOpen}
+        onOpenChange={setUploadModalOpen}
       />
     </div>
   );

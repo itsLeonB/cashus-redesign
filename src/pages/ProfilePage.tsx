@@ -21,6 +21,7 @@ import {
   Save,
   Loader2,
   LogOut,
+  KeyRound,
 } from "lucide-react";
 
 export default function ProfilePage() {
@@ -28,7 +29,30 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || "");
   const [isLoading, setIsLoading] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const { toast } = useToast();
+
+  const handleResetPassword = async () => {
+    if (!user?.email) return;
+    
+    setIsResettingPassword(true);
+    try {
+      await authApi.forgotPassword(user.email);
+      toast({
+        title: "Password reset email sent",
+        description: "Check your email for instructions to reset your password",
+      });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast({
+        variant: "destructive",
+        title: "Failed to send reset email",
+        description: err.message || "Something went wrong",
+      });
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!name.trim()) return;
@@ -156,6 +180,36 @@ export default function ProfilePage() {
                 {user?.createdAt ? formatDate(user.createdAt) : "Unknown"}
               </p>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Security */}
+      <Card className="border-border/50">
+        <CardHeader>
+          <CardTitle className="font-display">Security</CardTitle>
+          <CardDescription>Manage your account security</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Reset Password</p>
+              <p className="text-sm text-muted-foreground">
+                Send a password reset link to your email
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleResetPassword}
+              disabled={isResettingPassword}
+            >
+              {isResettingPassword ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <KeyRound className="h-4 w-4 mr-2" />
+              )}
+              Reset Password
+            </Button>
           </div>
         </CardContent>
       </Card>

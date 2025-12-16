@@ -55,6 +55,62 @@ export function useFriendRequests() {
   return { sent, received };
 }
 
+export function useSendFriendRequest() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (profileId: string) => friendshipsApi.sendFriendRequest(profileId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['friend-requests', 'sent'] });
+    },
+  });
+}
+
+export function useAcceptFriendRequest() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (requestId: string) => friendshipsApi.acceptRequest(requestId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['friend-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['friendships'] });
+    },
+  });
+}
+
+export function useIgnoreFriendRequest() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (requestId: string) => friendshipsApi.ignoreRequest(requestId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['friend-requests', 'received'] });
+    },
+  });
+}
+
+export function useCancelFriendRequest() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (requestId: string) => friendshipsApi.cancelRequest(requestId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['friend-requests', 'sent'] });
+    },
+  });
+}
+
+export function useDeleteBill() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (billId: string) => groupExpensesApi.deleteBill(billId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bills'] });
+    },
+  });
+}
+
 // Debts hooks
 export function useDebts() {
   return useQuery({
