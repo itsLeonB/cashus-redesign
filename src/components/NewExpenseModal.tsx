@@ -1,9 +1,6 @@
 import { useState } from "react";
-import {
-  useFriendships,
-  useCreateGroupExpense,
-  useCalculationMethods,
-} from "@/hooks/useApi";
+import { useFriendships, useCreateGroupExpense } from "@/hooks/useApi";
+import { useCalculationMethods } from "@/hooks/useMasterData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

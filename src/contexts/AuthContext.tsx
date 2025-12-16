@@ -5,6 +5,7 @@ import {
   useEffect,
   useCallback,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { UserProfile, authApi, apiClient } from "@/lib/api";
 
 interface AuthContextType {
@@ -28,6 +29,7 @@ export function AuthProvider({
 }: Readonly<{ children: React.ReactNode }>) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   const refreshUser = useCallback(async () => {
     try {
@@ -53,6 +55,14 @@ export function AuthProvider({
     apiClient.setToken(response.token);
     const profile = await authApi.getProfile();
     setUser(profile);
+
+    // Invalidate useApi.ts queries
+    queryClient.invalidateQueries({ queryKey: ["friendships"] });
+    queryClient.invalidateQueries({ queryKey: ["friend-requests"] });
+    queryClient.invalidateQueries({ queryKey: ["debts"] });
+    queryClient.invalidateQueries({ queryKey: ["group-expenses"] });
+    queryClient.invalidateQueries({ queryKey: ["bills"] });
+    queryClient.invalidateQueries({ queryKey: ["profiles"] });
   };
 
   const register = async (
