@@ -5,6 +5,7 @@ import { StatCard } from "@/components/StatCard";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { AmountDisplay } from "@/components/AmountDisplay";
 import { TransactionModal } from "@/components/TransactionModal";
+import { NewGroupExpenseModal } from "@/components/NewGroupExpenseModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,6 +31,7 @@ export default function DashboardPage() {
   const { data: expenses, isLoading: expensesLoading } = useGroupExpenses();
 
   const [transactionOpen, setTransactionOpen] = useState(false);
+  const [expenseModalOpen, setExpenseModalOpen] = useState(false);
   const [defaultAction, setDefaultAction] = useState<DebtAction>("LEND");
 
   const isLoading = friendshipsLoading || debtsLoading || expensesLoading;
@@ -258,13 +260,10 @@ export default function DashboardPage() {
           </Button>
           <Button
             variant="premium"
-            onClick={() => {
-              setDefaultAction("LEND");
-              setTransactionOpen(true);
-            }}
+            onClick={() => setExpenseModalOpen(true)}
           >
             <Plus className="h-4 w-4 mr-2" />
-            New Transaction
+            New Expense
           </Button>
         </div>
       </div>
@@ -410,6 +409,12 @@ export default function DashboardPage() {
         open={transactionOpen}
         onOpenChange={setTransactionOpen}
         defaultAction={defaultAction}
+      />
+
+      {/* New Group Expense Modal */}
+      <NewGroupExpenseModal
+        open={expenseModalOpen}
+        onOpenChange={setExpenseModalOpen}
       />
     </div>
   );
