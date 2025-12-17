@@ -598,22 +598,21 @@ export default function ExpenseDetailPage() {
             </div>
           ))}
 
-          {expense.items?.length ||
-            (0 === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>No items yet.</p>
-                {!isConfirmed && (
-                  <Button
-                    variant="outline"
-                    className="mt-2"
-                    onClick={openAddItemModal}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add your first item
-                  </Button>
-                )}
-              </div>
-            ))}
+          {expense.items?.length < 1 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No items yet.</p>
+              {!isConfirmed && (
+                <Button
+                  variant="outline"
+                  className="mt-2"
+                  onClick={openAddItemModal}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add your first item
+                </Button>
+              )}
+            </div>
+          ) : null}
         </CardContent>
       </Card>
 
