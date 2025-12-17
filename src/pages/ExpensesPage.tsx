@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useGroupExpenses } from "@/hooks/useApi";
 import { AvatarCircle } from "@/components/AvatarCircle";
-import { NewExpenseModal } from "@/components/NewExpenseModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Receipt, Calendar, Users, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import { NewGroupExpenseModal } from "@/components/NewGroupExpenseModal";
 
 export default function ExpensesPage() {
   const { data: expenses, isLoading } = useGroupExpenses();
@@ -68,7 +68,7 @@ export default function ExpensesPage() {
                         </span>
                         <span className="flex items-center gap-1">
                           <Users className="h-3.5 w-3.5" />
-                          {expense.items.reduce(
+                          {expense.items?.reduce(
                             (acc, item) => acc + item.participants?.length || 0,
                             0
                           )}{" "}
@@ -81,9 +81,15 @@ export default function ExpensesPage() {
                         <p className="text-lg font-semibold tabular-nums">
                           {formatCurrency(expense.totalAmount)}
                         </p>
-                        <p className="text-xs text-muted-foreground">Paid by</p>
+                        {expense.payerName && (
+                          <p className="text-xs text-muted-foreground">
+                            Paid by
+                          </p>
+                        )}
                       </div>
-                      <AvatarCircle name={expense.payerName} size="sm" />
+                      {expense.payerName && (
+                        <AvatarCircle name={expense.payerName} size="sm" />
+                      )}
                       <ChevronRight className="h-5 w-5 text-muted-foreground" />
                     </div>
                   </div>
@@ -134,7 +140,10 @@ export default function ExpensesPage() {
       {expensesList()}
 
       {/* New Expense Modal */}
-      <NewExpenseModal open={newExpenseOpen} onOpenChange={setNewExpenseOpen} />
+      <NewGroupExpenseModal
+        open={newExpenseOpen}
+        onOpenChange={setNewExpenseOpen}
+      />
     </div>
   );
 }

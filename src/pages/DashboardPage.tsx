@@ -162,18 +162,22 @@ export default function DashboardPage() {
             key={activity.id}
             className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
           >
-            <AvatarCircle
-              name={activity.profileName}
-              imageUrl={activity.avatarUrl}
-              size="sm"
-            />
+            {activity.profileName && (
+              <AvatarCircle
+                name={activity.profileName}
+                imageUrl={activity.avatarUrl}
+                size="sm"
+              />
+            )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
                 {activity.description}
               </p>
-              <p className="text-xs text-muted-foreground">
-                with {activity.profileName}
-              </p>
+              {activity.profileName && (
+                <p className="text-xs text-muted-foreground">
+                  with {activity.profileName}
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-1">
               {arrowDisplay(activity)}
@@ -258,10 +262,7 @@ export default function DashboardPage() {
               Friends
             </Link>
           </Button>
-          <Button
-            variant="premium"
-            onClick={() => setExpenseModalOpen(true)}
-          >
+          <Button variant="premium" onClick={() => setExpenseModalOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             New Expense
           </Button>
@@ -357,7 +358,7 @@ export default function DashboardPage() {
           <h3 className="text-lg font-display font-semibold mb-4">
             Quick Actions
           </h3>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 grid-cols-2">
             <Button
               variant="secondary"
               className="h-auto py-4 flex-col gap-2"
@@ -372,33 +373,11 @@ export default function DashboardPage() {
               variant="secondary"
               className="h-auto py-4 flex-col gap-2"
               onClick={() => {
-                setDefaultAction("LEND");
                 setTransactionOpen(true);
               }}
             >
               <ArrowUpRight className="h-6 w-6" />
-              <span>Record Lend</span>
-            </Button>
-            <Button
-              variant="secondary"
-              className="h-auto py-4 flex-col gap-2"
-              onClick={() => {
-                setDefaultAction("BORROW");
-                setTransactionOpen(true);
-              }}
-            >
-              <ArrowDownRight className="h-6 w-6" />
-              <span>Record Borrow</span>
-            </Button>
-            <Button
-              variant="secondary"
-              className="h-auto py-4 flex-col gap-2"
-              asChild
-            >
-              <Link to="/expenses">
-                <Receipt className="h-6 w-6" />
-                <span>Group Expense</span>
-              </Link>
+              <span>Record Transaction</span>
             </Button>
           </div>
         </CardContent>

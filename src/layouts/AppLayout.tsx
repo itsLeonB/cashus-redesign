@@ -3,25 +3,22 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Logo } from "@/components/Logo";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { Button } from "@/components/ui/button";
-import { 
-  LayoutDashboard, 
-  Users, 
-  Receipt, 
-  FileText, 
-  User, 
+import {
+  LayoutDashboard,
+  Users,
+  Receipt,
+  User,
   LogOut,
   Menu,
   X,
-  Plus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Friends", href: "/friends", icon: Users },
   { name: "Expenses", href: "/expenses", icon: Receipt },
-  { name: "Bills", href: "/bills", icon: FileText },
+  { name: "Friends", href: "/friends", icon: Users },
 ];
 
 export function AppLayout() {
@@ -47,7 +44,7 @@ export function AppLayout() {
     <div className="min-h-screen bg-background">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
@@ -74,16 +71,8 @@ export function AppLayout() {
             </Button>
           </div>
 
-          {/* Quick Action */}
-          <div className="p-4">
-            <Button variant="premium" className="w-full" size="lg">
-              <Plus className="h-5 w-5" />
-              New Transaction
-            </Button>
-          </div>
-
           {/* Navigation */}
-          <nav className="flex-1 px-3 space-y-1 overflow-y-auto scrollbar-thin">
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-thin">
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
               return (
@@ -111,23 +100,20 @@ export function AppLayout() {
               <AvatarCircle name={user?.name || "User"} size="md" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{user?.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {user?.email}
+                </p>
               </div>
             </div>
             <div className="flex gap-2">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="flex-1"
-                asChild
-              >
+              <Button variant="ghost" size="sm" className="flex-1" asChild>
                 <NavLink to="/profile">
                   <User className="h-4 w-4 mr-1" />
                   Profile
                 </NavLink>
               </Button>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="sm"
                 onClick={logout}
                 className="text-destructive hover:text-destructive hover:bg-destructive/10"

@@ -390,11 +390,7 @@ export default function ExpenseDetailPage() {
                 </span>
                 <span className="flex items-center gap-1">
                   <Users className="h-4 w-4" />
-                  {expense.items.reduce(
-                    (acc, item) => acc + item.participants?.length || 0,
-                    0
-                  )}{" "}
-                  participants
+                  {expense.participants?.length || 0} participants
                 </span>
               </div>
             </div>
@@ -403,11 +399,17 @@ export default function ExpenseDetailPage() {
                 {formatCurrency(expense.totalAmount)}
               </p>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>Paid by</span>
-                <AvatarCircle name={expense.payerName} size="xs" />
-                <span className="font-medium text-foreground">
-                  {expense.payerName}
-                </span>
+                {expense.payerName ? (
+                  <>
+                    <span>Paid by</span>
+                    <AvatarCircle name={expense.payerName} size="xs" />
+                    <span className="font-medium text-foreground">
+                      {expense.payerName}
+                    </span>
+                  </>
+                ) : (
+                  <span>No payer yet</span>
+                )}
               </div>
             </div>
           </div>
@@ -426,7 +428,7 @@ export default function ExpenseDetailPage() {
           )}
         </CardHeader>
         <CardContent className="space-y-4">
-          {expense.items.map((item) => (
+          {expense.items?.map((item) => (
             <div
               key={item.id}
               className="rounded-lg border border-border/50 p-4"
@@ -596,21 +598,22 @@ export default function ExpenseDetailPage() {
             </div>
           ))}
 
-          {expense.items.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>No items yet.</p>
-              {!isConfirmed && (
-                <Button
-                  variant="outline"
-                  className="mt-2"
-                  onClick={openAddItemModal}
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add your first item
-                </Button>
-              )}
-            </div>
-          )}
+          {expense.items?.length ||
+            (0 === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No items yet.</p>
+                {!isConfirmed && (
+                  <Button
+                    variant="outline"
+                    className="mt-2"
+                    onClick={openAddItemModal}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add your first item
+                  </Button>
+                )}
+              </div>
+            ))}
         </CardContent>
       </Card>
 
@@ -626,7 +629,7 @@ export default function ExpenseDetailPage() {
           )}
         </CardHeader>
         <CardContent>
-          {expense.otherFees && expense.otherFees.length > 0 ? (
+          {expense.otherFees?.length > 0 ? (
             <div className="space-y-2">
               {expense.otherFees?.map((fee) => (
                 <div
@@ -690,7 +693,7 @@ export default function ExpenseDetailPage() {
                 {formatCurrency(calculateItemsTotal())}
               </span>
             </div>
-            {expense.otherFees && expense.otherFees.length > 0 && (
+            {expense.otherFees?.length > 0 && (
               <div className="flex justify-between text-muted-foreground">
                 <span>Fees</span>
                 <span className="tabular-nums">

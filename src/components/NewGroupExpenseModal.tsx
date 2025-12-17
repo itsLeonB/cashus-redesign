@@ -9,10 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreateDraftExpense } from "@/hooks/useApiV2";
-import { Loader2, Camera, PenLine } from "lucide-react";
+import { Loader2, Camera, PenLine, Receipt } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 type InputType = "upload" | "manual";
 
@@ -26,29 +26,34 @@ export function NewGroupExpenseModal({
   onOpenChange,
 }: NewGroupExpenseModalProps) {
   const [description, setDescription] = useState("");
-  const [inputType, setInputType] = useState<InputType>("manual");
+  const [inputType, setInputType] = useState<InputType>("upload");
   const createDraft = useCreateDraftExpense();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
       const expense = await createDraft.mutateAsync(description || "");
-      toast.success("Group expense created");
+      toast({ title: "Group expense created" });
       onOpenChange(false);
       setDescription("");
-      setInputType("manual");
 
       // Navigate to the expense detail page
       if (inputType === "upload") {
-        // TODO: Navigate to bill upload flow
+        // TODO: Prompt for upload bill image
         navigate(`/expenses/${expense.id}`);
       } else {
         navigate(`/expenses/${expense.id}`);
       }
-    } catch (error) {
-      toast.error("Failed to create expense");
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast({
+        variant: "destructive",
+        title: "Failed to create expense",
+        description: err.message || "Something went wrong",
+      });
     }
   };
 
@@ -56,7 +61,10 @@ export function NewGroupExpenseModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-display">New Group Expense</DialogTitle>
+          <DialogTitle className="font-display flex items-center gap-2">
+            <Receipt className="h-5 w-5 text-primary" />
+            New Group Expense
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -110,7 +118,7 @@ export function NewGroupExpenseModal({
             {createDraft.isPending && (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             )}
-            Create Expense
+            {inputType === "upload" ? "Upload Bill" : "Create Expense"}
           </Button>
         </form>
       </DialogContent>
