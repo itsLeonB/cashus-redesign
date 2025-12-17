@@ -42,7 +42,9 @@ export default function FriendsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [anonymousName, setAnonymousName] = useState("");
-  const [pendingRequestIds, setPendingRequestIds] = useState<Set<string>>(new Set());
+  const [pendingRequestIds, setPendingRequestIds] = useState<Set<string>>(
+    new Set()
+  );
 
   const { data: friendships, isLoading } = useFriendships();
   const { data: debts } = useDebts();
@@ -100,6 +102,7 @@ export default function FriendsPage() {
         title: "Request sent",
         description: "Friend request has been sent",
       });
+      setAddDialogOpen(false);
     } catch (error: unknown) {
       const err = error as { message?: string };
       toast({
@@ -257,12 +260,12 @@ export default function FriendsPage() {
               className="flex items-center gap-3 p-3 rounded-lg bg-muted/30"
             >
               <AvatarCircle
-                name={request.fromProfile.name}
-                imageUrl={request.fromProfile.avatarUrl}
+                name={request.senderName}
+                imageUrl={request.senderAvatar}
                 size="md"
               />
               <div className="flex-1">
-                <p className="font-medium">{request.fromProfile.name}</p>
+                <p className="font-medium">{request.senderName}</p>
                 <p className="text-xs text-muted-foreground">
                   Sent {new Date(request.createdAt).toLocaleDateString()}
                 </p>
@@ -323,12 +326,12 @@ export default function FriendsPage() {
               className="flex items-center gap-3 p-3 rounded-lg bg-muted/30"
             >
               <AvatarCircle
-                name={request.toProfile.name}
-                imageUrl={request.toProfile.avatarUrl}
+                name={request.recipientName}
+                imageUrl={request.recipientAvatar}
                 size="md"
               />
               <div className="flex-1">
-                <p className="font-medium">{request.toProfile.name}</p>
+                <p className="font-medium">{request.recipientName}</p>
                 <p className="text-xs text-muted-foreground">
                   Pending since{" "}
                   {new Date(request.createdAt).toLocaleDateString()}

@@ -62,14 +62,14 @@ const App = () => {
                   element={<VerifyRegistrationPage />}
                 />
                 <Route
-                  path="/auth/reset-password"
-                  element={<ResetPasswordPage />}
-                />
-                <Route
                   path="/auth/:provider/callback"
                   element={<OAuthCallbackPage />}
                 />
               </Route>
+              <Route
+                path="/auth/reset-password"
+                element={<ResetPasswordPage />}
+              />
               <Route element={<AppLayout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/friends" element={<FriendsPage />} />

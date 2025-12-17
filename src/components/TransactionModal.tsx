@@ -1,9 +1,6 @@
 import { useState } from "react";
-import {
-  useFriendships,
-  useCreateDebt,
-  useTransferMethods,
-} from "@/hooks/useApi";
+import { useFriendships, useCreateDebt } from "@/hooks/useApi";
+import { useTransferMethods } from "@/hooks/useMasterData";
 import { DebtAction } from "@/lib/api/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

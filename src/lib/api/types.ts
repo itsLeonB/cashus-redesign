@@ -236,10 +236,15 @@ export interface FeeCalculationMethodInfo {
 // Friend Request Types
 export interface FriendRequest {
   id: string;
-  fromProfile: FriendProfile;
-  toProfile: FriendProfile;
-  status: "PENDING" | "ACCEPTED" | "BLOCKED";
+  senderAvatar?: string;
+  senderName: string;
+  recipientAvatar?: string;
+  recipientName: string;
   createdAt: string;
+  blockedAt: string;
+  isSentByUser: boolean;
+  isReceivedByUser: boolean;
+  isBlocked: boolean;
 }
 
 // Bill Types

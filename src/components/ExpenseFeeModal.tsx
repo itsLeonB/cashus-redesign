@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { groupExpensesApi } from "@/lib/api";
-import { useCalculationMethods } from "@/hooks/useApi";
+import { useCalculationMethods } from "@/hooks/useMasterData";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Receipt } from "lucide-react";
 import type { OtherFeeResponse } from "@/lib/api/types";
@@ -34,7 +34,7 @@ export function ExpenseFeeModal({
   onOpenChange,
   expenseId,
   fee,
-}: ExpenseFeeModalProps) {
+}: Readonly<ExpenseFeeModalProps>) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: calculationMethods } = useCalculationMethods();

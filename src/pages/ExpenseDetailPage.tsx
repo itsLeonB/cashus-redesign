@@ -4,8 +4,8 @@ import {
   useGroupExpense,
   useFriendships,
   useConfirmGroupExpense,
-  useCalculationMethods,
 } from "@/hooks/useApi";
+import { useCalculationMethods } from "@/hooks/useMasterData";
 import { useAuth } from "@/contexts/AuthContext";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { ExpenseItemModal } from "@/components/ExpenseItemModal";
@@ -57,7 +57,10 @@ export default function ExpenseDetailPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [deletingFeeId, setDeletingFeeId] = useState<string | null>(null);
-  const [removingParticipant, setRemovingParticipant] = useState<{itemId: string; profileId: string} | null>(null);
+  const [removingParticipant, setRemovingParticipant] = useState<{
+    itemId: string;
+    profileId: string;
+  } | null>(null);
 
   // Item modal state
   const [itemModalOpen, setItemModalOpen] = useState(false);
@@ -255,9 +258,8 @@ export default function ExpenseDetailPage() {
 
     setRemovingParticipant({ itemId, profileId });
     try {
-      const remainingParticipants = item.participants?.filter(
-        (p) => p.profileId !== profileId
-      ) || [];
+      const remainingParticipants =
+        item.participants?.filter((p) => p.profileId !== profileId) || [];
 
       if (remainingParticipants.length === 0) {
         await groupExpensesApi.updateItem(itemId, {
@@ -480,7 +482,8 @@ export default function ExpenseDetailPage() {
                     {item.participants?.map((participant) => {
                       const isRemoving =
                         removingParticipant?.itemId === item.id &&
-                        removingParticipant?.profileId === participant.profileId;
+                        removingParticipant?.profileId ===
+                          participant.profileId;
                       return (
                         <div
                           key={participant.profileId}
@@ -506,7 +509,10 @@ export default function ExpenseDetailPage() {
                             <button
                               type="button"
                               onClick={() =>
-                                handleRemoveParticipant(item.id, participant.profileId)
+                                handleRemoveParticipant(
+                                  item.id,
+                                  participant.profileId
+                                )
                               }
                               disabled={isRemoving}
                               className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
