@@ -6,6 +6,7 @@ import { AvatarCircle } from "@/components/AvatarCircle";
 import { AmountDisplay } from "@/components/AmountDisplay";
 import { TransactionModal } from "@/components/TransactionModal";
 import { NewGroupExpenseModal } from "@/components/NewGroupExpenseModal";
+import { AddFriendModal } from "@/components/AddFriendModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,7 +33,7 @@ export default function DashboardPage() {
 
   const [transactionOpen, setTransactionOpen] = useState(false);
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
-  const [defaultAction, setDefaultAction] = useState<DebtAction>("LEND");
+  const [addFriendModalOpen, setAddFriendModalOpen] = useState(false);
 
   const isLoading = friendshipsLoading || debtsLoading || expensesLoading;
 
@@ -362,12 +363,10 @@ export default function DashboardPage() {
             <Button
               variant="secondary"
               className="h-auto py-4 flex-col gap-2"
-              asChild
+              onClick={() => setAddFriendModalOpen(true)}
             >
-              <Link to="/friends">
-                <Users className="h-6 w-6" />
-                <span>Add Friend</span>
-              </Link>
+              <Users className="h-6 w-6" />
+              <span>Add Friend</span>
             </Button>
             <Button
               variant="secondary"
@@ -387,13 +386,18 @@ export default function DashboardPage() {
       <TransactionModal
         open={transactionOpen}
         onOpenChange={setTransactionOpen}
-        defaultAction={defaultAction}
       />
 
       {/* New Group Expense Modal */}
       <NewGroupExpenseModal
         open={expenseModalOpen}
         onOpenChange={setExpenseModalOpen}
+      />
+
+      {/* Add Friend Modal */}
+      <AddFriendModal
+        open={addFriendModalOpen}
+        onOpenChange={setAddFriendModalOpen}
       />
     </div>
   );
