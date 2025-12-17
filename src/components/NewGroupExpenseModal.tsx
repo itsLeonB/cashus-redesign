@@ -8,17 +8,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useCreateDraftExpense } from "@/hooks/useApiV2";
-import { Loader2 } from "lucide-react";
+import { Loader2, Camera, PenLine } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 type InputType = "upload" | "manual";
 
@@ -77,19 +71,35 @@ export function NewGroupExpenseModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="inputType">Input Method</Label>
-            <Select
-              value={inputType}
-              onValueChange={(value: InputType) => setInputType(value)}
-            >
-              <SelectTrigger id="inputType">
-                <SelectValue placeholder="Select input method" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="upload">Upload Bill</SelectItem>
-                <SelectItem value="manual">Manual Input</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label>Input Method</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setInputType("upload")}
+                className={cn(
+                  "flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all",
+                  inputType === "upload"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-muted/30 text-muted-foreground hover:border-primary/50 hover:bg-muted/50"
+                )}
+              >
+                <Camera className="h-6 w-6" />
+                <span className="text-sm font-medium">Upload Bill</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setInputType("manual")}
+                className={cn(
+                  "flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all",
+                  inputType === "manual"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-muted/30 text-muted-foreground hover:border-primary/50 hover:bg-muted/50"
+                )}
+              >
+                <PenLine className="h-6 w-6" />
+                <span className="text-sm font-medium">Manual Input</span>
+              </button>
+            </div>
           </div>
 
           <Button
