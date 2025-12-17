@@ -2,8 +2,8 @@
 
 ## Friends Management
 
-- Block Received Request
-- Unblock Blocked Request
+- ✅ Block Received Request
+- ✅ Unblock Blocked Request
 
 ## Group Expenses
 
@@ -11,5 +11,5 @@
 
 ## Bills Management
 
-- Bill modal should have a skeletion loader for the image display
-- Delete bill has no loading animation, modal immediately closes after delete
+- ✅ Bill modal should have a skeleton loader for the image display
+- ✅ Delete bill has no loading animation, modal immediately closes after delete

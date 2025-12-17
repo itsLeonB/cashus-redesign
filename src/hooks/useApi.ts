@@ -104,6 +104,28 @@ export function useCancelFriendRequest() {
   });
 }
 
+export function useBlockFriendRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (requestId: string) => friendshipsApi.blockRequest(requestId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["friend-requests"] });
+    },
+  });
+}
+
+export function useUnblockFriendRequest() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (requestId: string) => friendshipsApi.unblockRequest(requestId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["friend-requests"] });
+    },
+  });
+}
+
 export function useDeleteBill() {
   const queryClient = useQueryClient();
 
