@@ -147,4 +147,5 @@ class ApiClient {
   }
 }
 
-export const apiClient = new ApiClient(API_BASE_URL);
+export const apiClient = new ApiClient(API_BASE_URL + "/v1");
+export const apiClientV2 = new ApiClient(API_BASE_URL + "/v2");
