@@ -8,6 +8,8 @@ import {
   useAcceptFriendRequest,
   useIgnoreFriendRequest,
   useCancelFriendRequest,
+  useBlockFriendRequest,
+  useUnblockFriendRequest,
   useDebts,
 } from "@/hooks/useApi";
 import { AvatarCircle } from "@/components/AvatarCircle";
@@ -35,6 +37,8 @@ import {
   UserCheck,
   Clock,
   Loader2,
+  Ban,
+  ShieldOff,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -56,6 +60,8 @@ export default function FriendsPage() {
   const acceptFriendRequest = useAcceptFriendRequest();
   const ignoreFriendRequest = useIgnoreFriendRequest();
   const cancelFriendRequest = useCancelFriendRequest();
+  const blockFriendRequest = useBlockFriendRequest();
+  const unblockFriendRequest = useUnblockFriendRequest();
   const { toast } = useToast();
 
   const balances = useMemo(() => {
@@ -170,7 +176,43 @@ export default function FriendsPage() {
     }
   };
 
-  const pendingCount = received.data?.length || 0;
+  const handleBlockRequest = async (requestId: string) => {
+    try {
+      await blockFriendRequest.mutateAsync(requestId);
+      toast({
+        title: "Request blocked",
+        description: "The user has been blocked",
+      });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast({
+        variant: "destructive",
+        title: "Failed to block request",
+        description: err.message || "Something went wrong",
+      });
+    }
+  };
+
+  const handleUnblockRequest = async (requestId: string) => {
+    try {
+      await unblockFriendRequest.mutateAsync(requestId);
+      toast({
+        title: "Request unblocked",
+        description: "The user has been unblocked",
+      });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast({
+        variant: "destructive",
+        title: "Failed to unblock request",
+        description: err.message || "Something went wrong",
+      });
+    }
+  };
+
+  const activeReceivedRequests = received.data?.filter((r) => !r.isBlocked) || [];
+  const blockedRequests = received.data?.filter((r) => r.isBlocked) || [];
+  const pendingCount = activeReceivedRequests.length;
 
   const allFriendsTabContent = () => {
     if (isLoading)
@@ -251,10 +293,10 @@ export default function FriendsPage() {
         </div>
       );
 
-    if (received?.data?.length > 0)
+    if (activeReceivedRequests.length > 0)
       return (
         <div className="space-y-3">
-          {received.data.map((request) => (
+          {activeReceivedRequests.map((request) => (
             <div
               key={request.id}
               className="flex items-center gap-3 p-3 rounded-lg bg-muted/30"
@@ -271,6 +313,20 @@ export default function FriendsPage() {
                 </p>
               </div>
               <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-destructive"
+                  onClick={() => handleBlockRequest(request.id)}
+                  disabled={blockFriendRequest.isPending}
+                  title="Block user"
+                >
+                  {blockFriendRequest.isPending ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Ban className="h-4 w-4" />
+                  )}
+                </Button>
                 <Button
                   size="sm"
                   variant="outline"
@@ -303,6 +359,62 @@ export default function FriendsPage() {
     return (
       <p className="text-center text-muted-foreground py-8">
         No pending requests
+      </p>
+    );
+  };
+
+  const blockedRequestsTabContent = () => {
+    if (received.isLoading)
+      return (
+        <div className="space-y-3">
+          {new Array(2).map((_, i) => (
+            <Skeleton key={i} className="h-14" />
+          ))}
+        </div>
+      );
+
+    if (blockedRequests.length > 0)
+      return (
+        <div className="space-y-3">
+          {blockedRequests.map((request) => (
+            <div
+              key={request.id}
+              className="flex items-center gap-3 p-3 rounded-lg bg-muted/30"
+            >
+              <AvatarCircle
+                name={request.senderName}
+                imageUrl={request.senderAvatar}
+                size="md"
+              />
+              <div className="flex-1">
+                <p className="font-medium">{request.senderName}</p>
+                <p className="text-xs text-muted-foreground">
+                  Blocked {request.blockedAt ? new Date(request.blockedAt).toLocaleDateString() : ""}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleUnblockRequest(request.id)}
+                disabled={unblockFriendRequest.isPending}
+              >
+                {unblockFriendRequest.isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <>
+                    <ShieldOff className="h-4 w-4 mr-1" />
+                    Unblock
+                  </>
+                )}
+              </Button>
+            </div>
+          ))}
+        </div>
+      );
+
+    return (
+      <p className="text-center text-muted-foreground py-8">
+        No blocked requests
       </p>
     );
   };
@@ -536,6 +648,17 @@ export default function FriendsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>{sentRequestsTabContent()}</CardContent>
+          </Card>
+
+          {/* Blocked Requests */}
+          <Card className="border-border/50">
+            <CardHeader>
+              <CardTitle className="text-lg font-display flex items-center gap-2">
+                <Ban className="h-5 w-5 text-destructive" />
+                Blocked Requests
+              </CardTitle>
+            </CardHeader>
+            <CardContent>{blockedRequestsTabContent()}</CardContent>
           </Card>
         </TabsContent>
       </Tabs>

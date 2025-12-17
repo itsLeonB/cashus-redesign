@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { groupExpensesApi } from "@/lib/api";
 import { AvatarCircle } from "@/components/AvatarCircle";
@@ -9,13 +10,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, User, CreditCard, Trash2 } from "lucide-react";
+import { Calendar, User, CreditCard, Trash2, Loader2 } from "lucide-react";
 
 interface BillDetailModalProps {
   billId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onDelete?: (billId: string) => void;
+  onDelete?: (billId: string) => Promise<void>;
+  isDeleting?: boolean;
 }
 
 export function BillDetailModal({
@@ -23,7 +25,10 @@ export function BillDetailModal({
   open,
   onOpenChange,
   onDelete,
+  isDeleting = false,
 }: BillDetailModalProps) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+
   const { data: bill, isLoading } = useQuery({
     queryKey: ["bills", billId],
     queryFn: () => groupExpensesApi.getBillById(billId!),
@@ -46,8 +51,23 @@ export function BillDetailModal({
     });
   };
 
+  const handleDelete = async () => {
+    if (bill && onDelete) {
+      await onDelete(bill.id);
+      onOpenChange(false);
+    }
+  };
+
+  // Reset image loaded state when modal opens with new bill
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      setImageLoaded(false);
+    }
+    onOpenChange(newOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Bill Details</DialogTitle>
@@ -57,9 +77,9 @@ export function BillDetailModal({
           <div className="space-y-4">
             <Skeleton className="aspect-[4/3] w-full rounded-lg" />
             <div className="space-y-3">
-              <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-5 w-48" />
-              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-16 w-full rounded-lg" />
+              <Skeleton className="h-16 w-full rounded-lg" />
+              <Skeleton className="h-20 w-full rounded-lg" />
             </div>
           </div>
         ) : bill ? (
@@ -67,10 +87,16 @@ export function BillDetailModal({
             {/* Bill Image */}
             {bill.imageUrl && (
               <div className="relative rounded-lg overflow-hidden bg-muted">
+                {!imageLoaded && (
+                  <Skeleton className="aspect-[4/3] w-full rounded-lg absolute inset-0" />
+                )}
                 <img
                   src={bill.imageUrl}
                   alt="Bill receipt"
-                  className="w-full h-auto max-h-[400px] object-contain"
+                  className={`w-full h-auto max-h-[400px] object-contain transition-opacity ${
+                    imageLoaded ? "opacity-100" : "opacity-0"
+                  }`}
+                  onLoad={() => setImageLoaded(true)}
                 />
               </div>
             )}
@@ -129,13 +155,15 @@ export function BillDetailModal({
               <Button
                 variant="destructive"
                 className="w-full"
-                onClick={() => {
-                  onDelete(bill.id);
-                  onOpenChange(false);
-                }}
+                onClick={handleDelete}
+                disabled={isDeleting}
               >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Bill
+                {isDeleting ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4 mr-2" />
+                )}
+                {isDeleting ? "Deleting..." : "Delete Bill"}
               </Button>
             )}
           </div>

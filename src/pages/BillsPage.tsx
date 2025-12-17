@@ -126,6 +126,7 @@ export default function BillsPage() {
         open={!!selectedBillId}
         onOpenChange={(open) => !open && setSelectedBillId(null)}
         onDelete={handleDeleteBill}
+        isDeleting={deleteBill.isPending}
       />
 
       <UploadBillModal
