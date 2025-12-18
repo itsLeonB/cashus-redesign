@@ -145,11 +145,12 @@ export interface GroupExpenseResponse {
   confirmed: boolean;
   // Deprecated: refer to status instead
   participantsConfirmed: boolean;
-  status: "DRAFT" | "PROCESSING_BILL" | "READY" | "CONFIRMED";
+  status: "DRAFT" | "READY" | "CONFIRMED";
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;
   participants?: ExpenseParticipantResponse[];
+  bill: ExpenseBillResponse;
 }
 
 export interface ExpenseItemResponse {
@@ -258,6 +259,7 @@ export interface ExpenseBillResponse {
   creatorProfileId: string;
   payerProfileId: string;
   imageUrl?: string;
+  status: "PENDING" | "PARSED" | "FAILED";
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;

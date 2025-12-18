@@ -3,7 +3,6 @@ import { ExpenseBillResponse } from "../types";
 
 export const statusDisplay = {
   DRAFT: "Draft",
-  PROCESSING_BILL: "Processing Bill...",
   READY: "Ready to Confirm",
   CONFIRMED: "Confirmed",
 };
@@ -13,7 +12,7 @@ export interface GroupExpense {
   createdAt: string;
   updatedAt: string;
   description: string;
-  status: "DRAFT" | "PROCESSING_BILL" | "READY" | "CONFIRMED";
+  status: "DRAFT" | "READY" | "CONFIRMED";
   totalAmount: string;
   itemsTotalAmount: string;
   feesTotalAmount: string;
