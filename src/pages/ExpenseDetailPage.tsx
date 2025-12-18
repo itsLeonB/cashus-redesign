@@ -6,6 +6,7 @@ import {
   useConfirmGroupExpense,
   useDeleteGroupExpense,
 } from "@/hooks/useApi";
+import { useRetryBillParsing } from "@/hooks/useApiV2";
 import { useCalculationMethods } from "@/hooks/useMasterData";
 import { useAuth } from "@/contexts/AuthContext";
 import { AvatarCircle } from "@/components/AvatarCircle";
@@ -29,6 +30,12 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   ArrowLeft,
   Receipt,
   Calendar,
@@ -39,6 +46,9 @@ import {
   Pencil,
   Trash2,
   X,
+  Image,
+  RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { groupExpensesApi, NewExpenseItemRequest } from "@/lib/api";
@@ -53,6 +63,7 @@ export default function ExpenseDetailPage() {
   const { data: friendships } = useFriendships();
   const confirmExpense = useConfirmGroupExpense();
   const deleteExpense = useDeleteGroupExpense();
+  const retryBillParsing = useRetryBillParsing();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -86,6 +97,10 @@ export default function ExpenseDetailPage() {
   // Fee modal state
   const [feeModalOpen, setFeeModalOpen] = useState(false);
   const [editingFee, setEditingFee] = useState<OtherFeeResponse | null>(null);
+
+  // Bill modal state
+  const [viewBillModalOpen, setViewBillModalOpen] = useState(false);
+  const [retryBillModalOpen, setRetryBillModalOpen] = useState(false);
 
   const allParticipants = useMemo(() => {
     const participants = friendships || [];
@@ -341,6 +356,35 @@ export default function ExpenseDetailPage() {
     setFeeModalOpen(true);
   };
 
+  const handleRetryBillParsing = async () => {
+    if (!expenseId || !expense?.bill?.id) return;
+
+    try {
+      await retryBillParsing.mutateAsync({
+        expenseId,
+        billId: expense.bill.id,
+      });
+      setRetryBillModalOpen(false);
+      toast({
+        title: "Retry initiated",
+        description: "Bill processing has been restarted.",
+      });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast({
+        variant: "destructive",
+        title: "Failed to retry",
+        description: err.message || "Something went wrong",
+      });
+    }
+  };
+
+  const billStatusDisplay: Record<string, { label: string; variant: "default" | "secondary" | "destructive" }> = {
+    PENDING: { label: "Processing...", variant: "secondary" },
+    PARSED: { label: "Parsed", variant: "default" },
+    FAILED: { label: "Failed", variant: "destructive" },
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -424,6 +468,53 @@ export default function ExpenseDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Bill Information */}
+      {expense.bill && (
+        <Card className="border-border/50">
+          <CardHeader>
+            <CardTitle className="font-display">Bill Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-lg bg-muted/50 flex items-center justify-center">
+                  <Image className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="font-medium">Uploaded Bill</p>
+                  <Badge variant={billStatusDisplay[expense.bill.status]?.variant || "secondary"}>
+                    {billStatusDisplay[expense.bill.status]?.label || expense.bill.status}
+                  </Badge>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {expense.bill.imageUrl && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setViewBillModalOpen(true)}
+                  >
+                    <Image className="h-4 w-4 mr-1" />
+                    View Image
+                  </Button>
+                )}
+                {expense.bill.status === "FAILED" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => setRetryBillModalOpen(true)}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-1" />
+                    Retry
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Items */}
       <Card className="border-border/50">
@@ -808,6 +899,52 @@ export default function ExpenseDetailPage() {
         expenseId={expenseId || ""}
         fee={editingFee}
       />
+
+      {/* View Bill Image Modal */}
+      <Dialog open={viewBillModalOpen} onOpenChange={setViewBillModalOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Bill Image</DialogTitle>
+          </DialogHeader>
+          {expense?.bill?.imageUrl && (
+            <div className="flex items-center justify-center">
+              <img
+                src={expense.bill.imageUrl}
+                alt="Bill"
+                className="max-h-[70vh] w-auto rounded-lg object-contain"
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Retry Bill Parsing Confirmation Modal */}
+      <AlertDialog open={retryBillModalOpen} onOpenChange={setRetryBillModalOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Retry Bill Processing
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              The bill processing seems to have failed. Would you like to retry
+              processing the bill image? This will attempt to parse the bill again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleRetryBillParsing}
+              disabled={retryBillParsing.isPending}
+            >
+              {retryBillParsing.isPending && (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              )}
+              Retry Processing
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

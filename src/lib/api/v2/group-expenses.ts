@@ -42,4 +42,10 @@ export const groupExpensesApi = {
       formData
     );
   },
+
+  retryBillParsing: (expenseId: string, billId: string) => {
+    return apiClientV2.post<ExpenseBillResponse>(
+      `/group-expenses/${expenseId}/bills/${billId}/retry`
+    );
+  },
 };

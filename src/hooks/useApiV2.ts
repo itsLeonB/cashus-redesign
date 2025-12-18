@@ -18,3 +18,20 @@ export function useUploadExpenseBill() {
       groupExpensesApi.uploadBill(expenseId, file),
   });
 }
+
+export function useRetryBillParsing() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      expenseId,
+      billId,
+    }: {
+      expenseId: string;
+      billId: string;
+    }) => groupExpensesApi.retryBillParsing(expenseId, billId),
+    onSuccess: (_, { expenseId }) => {
+      queryClient.invalidateQueries({ queryKey: ["group-expenses", expenseId] });
+    },
+  });
+}
