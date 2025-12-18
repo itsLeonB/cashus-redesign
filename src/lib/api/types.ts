@@ -133,8 +133,8 @@ export interface GroupExpenseResponse {
   payerName?: string;
   paidByUser: boolean;
   totalAmount: string;
-  itemsTotal: string;
-  feesTotal: string;
+  itemsTotalAmount: string;
+  feesTotalAmount: string;
   description?: string;
   items: ExpenseItemResponse[];
   otherFees?: OtherFeeResponse[];
