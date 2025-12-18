@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   useGroupExpense,
   useFriendships,
   useConfirmGroupExpense,
+  useDeleteGroupExpense,
 } from "@/hooks/useApi";
 import { useCalculationMethods } from "@/hooks/useMasterData";
 import { useAuth } from "@/contexts/AuthContext";
@@ -35,9 +36,11 @@ import type { ExpenseItemResponse, OtherFeeResponse } from "@/lib/api/types";
 
 export default function ExpenseDetailPage() {
   const { expenseId } = useParams<{ expenseId: string }>();
+  const navigate = useNavigate();
   const { data: expense, isLoading } = useGroupExpense(expenseId || "");
   const { data: friendships } = useFriendships();
   const confirmExpense = useConfirmGroupExpense();
+  const deleteExpense = useDeleteGroupExpense();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -708,20 +711,52 @@ export default function ExpenseDetailPage() {
             </div>
           </div>
 
-          {/* Confirm Button */}
-          {!isConfirmed && (
-            <Button
-              className="w-full mt-6"
-              size="lg"
-              onClick={handleConfirm}
-              disabled={confirmExpense.isPending}
-            >
-              {confirmExpense.isPending && (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              )}
-              <CheckCircle2 className="h-4 w-4 mr-2" />
-              Confirm & Record Debts
-            </Button>
+          {/* Action Buttons */}
+          {expense.status !== "CONFIRMED" && (
+            <div className="flex flex-col gap-3 mt-6">
+              <Button
+                className="w-full"
+                size="lg"
+                onClick={handleConfirm}
+                disabled={confirmExpense.isPending || deleteExpense.isPending}
+              >
+                {confirmExpense.isPending && (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                )}
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Confirm & Record Debts
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                size="lg"
+                onClick={async () => {
+                  if (!expenseId) return;
+                  try {
+                    await deleteExpense.mutateAsync(expenseId);
+                    toast({
+                      title: "Expense deleted",
+                      description: "The expense has been deleted successfully.",
+                    });
+                    navigate("/expenses");
+                  } catch (error: unknown) {
+                    const err = error as { message?: string };
+                    toast({
+                      variant: "destructive",
+                      title: "Failed to delete",
+                      description: err.message || "Something went wrong",
+                    });
+                  }
+                }}
+                disabled={deleteExpense.isPending || confirmExpense.isPending}
+              >
+                {deleteExpense.isPending && (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                )}
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete Expense
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
