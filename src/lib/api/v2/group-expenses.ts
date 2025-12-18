@@ -1,6 +1,13 @@
 import { apiClientV2 } from "../client";
 import { ExpenseBillResponse } from "../types";
 
+export const statusDisplay = {
+  DRAFT: "Draft",
+  PROCESSING_BILL: "Processing Bill...",
+  READY: "Ready to Confirm",
+  CONFIRMED: "Confirmed",
+};
+
 export interface GroupExpense {
   id: string;
   createdAt: string;

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Receipt, Calendar, Users, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { NewGroupExpenseModal } from "@/components/NewGroupExpenseModal";
+import { statusDisplay } from "@/lib/api/v2/group-expenses";
 
 export default function ExpensesPage() {
   const { data: expenses, isLoading } = useGroupExpenses();
@@ -58,7 +59,7 @@ export default function ExpensesPage() {
                           variant={expense.confirmed ? "default" : "secondary"}
                           className="text-xs"
                         >
-                          {expense.confirmed ? "Confirmed" : "Draft"}
+                          {statusDisplay[expense.status]}
                         </Badge>
                       </div>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -71,7 +72,7 @@ export default function ExpensesPage() {
                           {expense.items?.reduce(
                             (acc, item) => acc + item.participants?.length || 0,
                             0
-                          )}{" "}
+                          ) || 0}{" "}
                           participants
                         </span>
                       </div>

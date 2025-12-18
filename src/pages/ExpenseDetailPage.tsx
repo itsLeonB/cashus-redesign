@@ -44,6 +44,7 @@ import { cn } from "@/lib/utils";
 import { groupExpensesApi, NewExpenseItemRequest } from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ExpenseItemResponse, OtherFeeResponse } from "@/lib/api/types";
+import { statusDisplay } from "@/lib/api/v2/group-expenses";
 
 export default function ExpenseDetailPage() {
   const { expenseId } = useParams<{ expenseId: string }>();
@@ -361,7 +362,7 @@ export default function ExpenseDetailPage() {
     );
   }
 
-  const isConfirmed = expense.confirmed;
+  const isConfirmed = expense.confirmed || expense.status === "CONFIRMED";
 
   return (
     <div className="space-y-6 animate-fade-up">
@@ -387,14 +388,8 @@ export default function ExpenseDetailPage() {
                   {expense.description || "Untitled Expense"}
                 </h1>
                 <Badge variant={isConfirmed ? "default" : "secondary"}>
-                  {isConfirmed ? (
-                    <>
-                      <CheckCircle2 className="h-3 w-3 mr-1" />
-                      Confirmed
-                    </>
-                  ) : (
-                    "Draft"
-                  )}
+                  {isConfirmed && <CheckCircle2 className="h-3 w-3 mr-1" />}
+                  {statusDisplay[expense.status]}
                 </Badge>
               </div>
               <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
@@ -723,8 +718,8 @@ export default function ExpenseDetailPage() {
           </div>
 
           {/* Action Buttons */}
-          {expense.status !== "CONFIRMED" && (
-            <div className="flex flex-col gap-3 mt-6">
+          <div className="flex flex-col gap-3 mt-6">
+            {expense.status === "READY" && (
               <Button
                 className="w-full"
                 size="lg"
@@ -737,13 +732,17 @@ export default function ExpenseDetailPage() {
                 <CheckCircle2 className="h-4 w-4 mr-2" />
                 Confirm & Record Debts
               </Button>
+            )}
+            {!isConfirmed && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="outline"
                     className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
                     size="lg"
-                    disabled={deleteExpense.isPending || confirmExpense.isPending}
+                    disabled={
+                      deleteExpense.isPending || confirmExpense.isPending
+                    }
                   >
                     {deleteExpense.isPending && (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -756,7 +755,8 @@ export default function ExpenseDetailPage() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete Expense</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to delete this expense? This action cannot be undone.
+                      Are you sure you want to delete this expense? This action
+                      cannot be undone.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -769,7 +769,8 @@ export default function ExpenseDetailPage() {
                           await deleteExpense.mutateAsync(expenseId);
                           toast({
                             title: "Expense deleted",
-                            description: "The expense has been deleted successfully.",
+                            description:
+                              "The expense has been deleted successfully.",
                           });
                           navigate("/expenses");
                         } catch (error: unknown) {
@@ -787,8 +788,8 @@ export default function ExpenseDetailPage() {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-            </div>
-          )}
+            )}
+          </div>
         </CardContent>
       </Card>
 
