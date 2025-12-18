@@ -195,6 +195,17 @@ export function useConfirmGroupExpense() {
   });
 }
 
+export function useDeleteGroupExpense() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (expenseId: string) => groupExpensesApi.delete(expenseId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["group-expenses"] });
+    },
+  });
+}
+
 // Bills hooks
 export function useBills() {
   return useQuery({

@@ -37,6 +37,9 @@ export const groupExpensesApi = {
   create: (data: NewGroupExpenseRequest) =>
     apiClient.post<GroupExpenseResponse>("/group-expenses", data),
 
+  delete: (expenseId: string) =>
+    apiClient.delete(`/group-expenses/${expenseId}`),
+
   addItem: (groupExpenseId: string, data: NewExpenseItemRequest) =>
     apiClient.post<ExpenseItem>(
       `/group-expenses/${groupExpenseId}/items`,

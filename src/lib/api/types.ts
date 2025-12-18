@@ -133,14 +133,19 @@ export interface GroupExpenseResponse {
   payerName?: string;
   paidByUser: boolean;
   totalAmount: string;
+  itemsTotal: string;
+  feesTotal: string;
   description?: string;
   items: ExpenseItemResponse[];
   otherFees?: OtherFeeResponse[];
   creatorProfileId: string;
   creatorName?: string;
   createdByUser: boolean;
+  // Deprecated: refer to status instead
   confirmed: boolean;
+  // Deprecated: refer to status instead
   participantsConfirmed: boolean;
+  status: "DRAFT" | "PROCESSING_BILL" | "READY" | "CONFIRMED";
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;
