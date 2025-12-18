@@ -18,6 +18,17 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   ArrowLeft,
   Receipt,
   Calendar,
@@ -726,36 +737,56 @@ export default function ExpenseDetailPage() {
                 <CheckCircle2 className="h-4 w-4 mr-2" />
                 Confirm & Record Debts
               </Button>
-              <Button
-                variant="outline"
-                className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
-                size="lg"
-                onClick={async () => {
-                  if (!expenseId) return;
-                  try {
-                    await deleteExpense.mutateAsync(expenseId);
-                    toast({
-                      title: "Expense deleted",
-                      description: "The expense has been deleted successfully.",
-                    });
-                    navigate("/expenses");
-                  } catch (error: unknown) {
-                    const err = error as { message?: string };
-                    toast({
-                      variant: "destructive",
-                      title: "Failed to delete",
-                      description: err.message || "Something went wrong",
-                    });
-                  }
-                }}
-                disabled={deleteExpense.isPending || confirmExpense.isPending}
-              >
-                {deleteExpense.isPending && (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                )}
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Expense
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                    size="lg"
+                    disabled={deleteExpense.isPending || confirmExpense.isPending}
+                  >
+                    {deleteExpense.isPending && (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    )}
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Expense
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Expense</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete this expense? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      onClick={async () => {
+                        if (!expenseId) return;
+                        try {
+                          await deleteExpense.mutateAsync(expenseId);
+                          toast({
+                            title: "Expense deleted",
+                            description: "The expense has been deleted successfully.",
+                          });
+                          navigate("/expenses");
+                        } catch (error: unknown) {
+                          const err = error as { message?: string };
+                          toast({
+                            variant: "destructive",
+                            title: "Failed to delete",
+                            description: err.message || "Something went wrong",
+                          });
+                        }
+                      }}
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           )}
         </CardContent>
