@@ -11,3 +11,10 @@ export function useCreateDraftExpense() {
     },
   });
 }
+
+export function useUploadExpenseBill() {
+  return useMutation({
+    mutationFn: ({ expenseId, file }: { expenseId: string; file: File }) =>
+      groupExpensesApi.uploadBill(expenseId, file),
+  });
+}

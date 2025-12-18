@@ -1,4 +1,5 @@
 import { apiClientV2 } from "../client";
+import { ExpenseBillResponse } from "../types";
 
 export interface GroupExpense {
   id: string;
@@ -25,5 +26,14 @@ export const groupExpensesApi = {
     return apiClientV2.post<GroupExpense>("/group-expenses", {
       description,
     });
+  },
+
+  uploadBill: (expenseId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("bill", file);
+    return apiClientV2.uploadFile<ExpenseBillResponse>(
+      `/group-expenses/${expenseId}/bills`,
+      formData
+    );
   },
 };
