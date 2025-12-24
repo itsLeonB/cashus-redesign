@@ -151,6 +151,7 @@ export interface GroupExpenseResponse {
   deletedAt?: string;
   participants?: ExpenseParticipantResponse[];
   bill: ExpenseBillResponse;
+  billExists: boolean;
 }
 
 export interface ExpenseItemResponse {
@@ -259,7 +260,13 @@ export interface ExpenseBillResponse {
   creatorProfileId: string;
   payerProfileId: string;
   imageUrl?: string;
-  status: "PENDING" | "EXTRACTED" | "FAILED_EXTRACTING" | "PARSED" | "FAILED_PARSING" | "NOT_DETECTED";
+  status:
+    | "PENDING"
+    | "EXTRACTED"
+    | "FAILED_EXTRACTING"
+    | "PARSED"
+    | "FAILED_PARSING"
+    | "NOT_DETECTED";
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;
