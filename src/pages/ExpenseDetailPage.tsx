@@ -6,7 +6,7 @@ import {
   useConfirmGroupExpense,
   useDeleteGroupExpense,
 } from "@/hooks/useApi";
-import { useRetryBillParsing } from "@/hooks/useApiV2";
+import { useRetryBillParsing, useUploadExpenseBill } from "@/hooks/useApiV2";
 import { useCalculationMethods } from "@/hooks/useMasterData";
 import { useAuth } from "@/contexts/AuthContext";
 import { AvatarCircle } from "@/components/AvatarCircle";
@@ -49,6 +49,7 @@ import {
   Image,
   RefreshCw,
   AlertTriangle,
+  Upload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { groupExpensesApi, NewExpenseItemRequest } from "@/lib/api";
@@ -101,6 +102,11 @@ export default function ExpenseDetailPage() {
   // Bill modal state
   const [viewBillModalOpen, setViewBillModalOpen] = useState(false);
   const [retryBillModalOpen, setRetryBillModalOpen] = useState(false);
+  const [uploadBillModalOpen, setUploadBillModalOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const uploadBill = useUploadExpenseBill();
 
   const allParticipants = useMemo(() => {
     const participants = friendships || [];
@@ -379,10 +385,61 @@ export default function ExpenseDetailPage() {
     }
   };
 
-  const billStatusDisplay: Record<string, { label: string; variant: "default" | "secondary" | "destructive" }> = {
+  const billStatusDisplay: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
     PENDING: { label: "Processing...", variant: "secondary" },
+    EXTRACTED: { label: "Extracting...", variant: "secondary" },
+    FAILED_EXTRACTING: { label: "Extraction Failed", variant: "destructive" },
     PARSED: { label: "Parsed", variant: "default" },
-    FAILED: { label: "Failed", variant: "destructive" },
+    FAILED_PARSING: { label: "Parsing Failed", variant: "destructive" },
+    NOT_DETECTED: { label: "Not Detected", variant: "outline" },
+  };
+
+  const isRetryableStatus = (status: string) => {
+    return status === "FAILED_EXTRACTING" || status === "FAILED_PARSING";
+  };
+
+  const handleFileSelect = (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast({
+        variant: "destructive",
+        title: "Invalid file type",
+        description: "Please select an image file.",
+      });
+      return;
+    }
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const handleUploadBill = async () => {
+    if (!expenseId || !selectedFile) return;
+
+    try {
+      await uploadBill.mutateAsync({ expenseId, file: selectedFile });
+      setUploadBillModalOpen(false);
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      queryClient.invalidateQueries({ queryKey: ["group-expenses", expenseId] });
+      toast({
+        title: "Bill uploaded",
+        description: "Your bill image has been uploaded and is being processed.",
+      });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast({
+        variant: "destructive",
+        title: "Upload failed",
+        description: err.message || "Something went wrong",
+      });
+    }
+  };
+
+  const clearFile = () => {
+    setSelectedFile(null);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
   };
 
   if (isLoading) {
@@ -466,55 +523,78 @@ export default function ExpenseDetailPage() {
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Bill Information */}
-      {expense.bill && (
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="font-display">Bill Information</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-lg bg-muted/50 flex items-center justify-center">
-                  <Image className="h-5 w-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="font-medium">Uploaded Bill</p>
+          {/* Divider */}
+          <div className="border-t border-border/50 my-6" />
+
+          {/* Bill Information */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-muted/50 flex items-center justify-center">
+                <Image className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="font-medium">Bill Image</p>
+                {expense.bill ? (
                   <Badge variant={billStatusDisplay[expense.bill.status]?.variant || "secondary"}>
                     {billStatusDisplay[expense.bill.status]?.label || expense.bill.status}
                   </Badge>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {expense.bill.imageUrl && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setViewBillModalOpen(true)}
-                  >
-                    <Image className="h-4 w-4 mr-1" />
-                    View Image
-                  </Button>
-                )}
-                {expense.bill.status === "FAILED" && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => setRetryBillModalOpen(true)}
-                  >
-                    <RefreshCw className="h-4 w-4 mr-1" />
-                    Retry
-                  </Button>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No bill uploaded</p>
                 )}
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+            <div className="flex items-center gap-2">
+              {expense.bill ? (
+                <>
+                  {expense.bill.imageUrl && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setViewBillModalOpen(true)}
+                    >
+                      <Image className="h-4 w-4 mr-1" />
+                      View Image
+                    </Button>
+                  )}
+                  {isRetryableStatus(expense.bill.status) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setRetryBillModalOpen(true)}
+                    >
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                      Retry
+                    </Button>
+                  )}
+                  {expense.bill.status === "NOT_DETECTED" && !isConfirmed && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setUploadBillModalOpen(true)}
+                    >
+                      <Upload className="h-4 w-4 mr-1" />
+                      Upload New
+                    </Button>
+                  )}
+                </>
+              ) : (
+                !isConfirmed && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setUploadBillModalOpen(true)}
+                  >
+                    <Upload className="h-4 w-4 mr-1" />
+                    Upload Bill
+                  </Button>
+                )
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Items */}
       <Card className="border-border/50">
@@ -941,6 +1021,93 @@ export default function ExpenseDetailPage() {
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               )}
               Retry Processing
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Upload Bill Modal */}
+      <AlertDialog open={uploadBillModalOpen} onOpenChange={(open) => {
+        setUploadBillModalOpen(open);
+        if (!open) clearFile();
+      }}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-warning" />
+              Upload Bill Image
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Uploading a bill image will trigger automatic parsing. If successful, 
+              this may overwrite existing items with the parsed data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="space-y-4">
+            {previewUrl ? (
+              <div className="relative">
+                <img
+                  src={previewUrl}
+                  alt="Preview"
+                  className="w-full h-48 object-contain rounded-lg border border-border"
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-2 right-2 h-8 w-8 bg-background/80 hover:bg-background"
+                  onClick={clearFile}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div
+                className={cn(
+                  "border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer",
+                  isDragging
+                    ? "border-primary bg-primary/5"
+                    : "border-muted-foreground/25 hover:border-primary/50"
+                )}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                  const file = e.dataTransfer.files[0];
+                  if (file) handleFileSelect(file);
+                }}
+                onClick={() => {
+                  const input = document.createElement("input");
+                  input.type = "file";
+                  input.accept = "image/*";
+                  input.onchange = (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) handleFileSelect(file);
+                  };
+                  input.click();
+                }}
+              >
+                <Upload className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  Drag and drop an image, or click to select
+                </p>
+              </div>
+            )}
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={clearFile}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleUploadBill}
+              disabled={!selectedFile || uploadBill.isPending}
+            >
+              {uploadBill.isPending && (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              )}
+              Upload Bill
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
