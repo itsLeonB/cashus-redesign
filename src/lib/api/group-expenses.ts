@@ -8,6 +8,7 @@ import {
   OtherFee,
   ExpenseBillResponse,
   FeeCalculationMethodInfo,
+  ExpenseParticipantsRequest,
 } from "./types";
 
 interface UpdateExpenseItemRequest {
@@ -80,6 +81,9 @@ export const groupExpensesApi = {
     apiClient.get<FeeCalculationMethodInfo[]>(
       "/group-expenses/fee-calculation-methods"
     ),
+
+  syncParticipants: (expenseId: string, data: ExpenseParticipantsRequest) =>
+    apiClient.put(`/group-expenses/${expenseId}/participants`, data),
 
   // Bills
   uploadBill: (payerProfileId: string, file: File) => {

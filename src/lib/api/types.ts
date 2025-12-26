@@ -240,6 +240,11 @@ export interface FeeCalculationMethodInfo {
   description: string;
 }
 
+export interface ExpenseParticipantsRequest {
+  participantProfileIds: string[];
+  payerProfileId: string;
+}
+
 // Friend Request Types
 export interface FriendRequest {
   id: string;

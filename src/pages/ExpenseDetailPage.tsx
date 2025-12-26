@@ -393,7 +393,7 @@ export default function ExpenseDetailPage() {
     }
   > = {
     PENDING: { label: "Processing...", variant: "secondary" },
-    EXTRACTED: { label: "Extracting...", variant: "secondary" },
+    EXTRACTED: { label: "Processing...", variant: "secondary" },
     FAILED_EXTRACTING: { label: "Extraction Failed", variant: "destructive" },
     PARSED: { label: "Parsed", variant: "default" },
     FAILED_PARSING: { label: "Parsing Failed", variant: "destructive" },

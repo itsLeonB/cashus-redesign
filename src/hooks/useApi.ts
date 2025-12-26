@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { friendshipsApi, debtsApi, groupExpensesApi } from "@/lib/api";
 import type {
+  ExpenseParticipantsRequest,
   NewAnonymousFriendshipRequest,
   NewDebtTransactionRequest,
   NewGroupExpenseRequest,
@@ -202,6 +203,20 @@ export function useDeleteGroupExpense() {
     mutationFn: (expenseId: string) => groupExpensesApi.delete(expenseId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["group-expenses"] });
+    },
+  });
+}
+
+export function useSyncParticipants(expenseId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: ExpenseParticipantsRequest) =>
+      groupExpensesApi.syncParticipants(expenseId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["group-expenses", expenseId],
+      });
     },
   });
 }
