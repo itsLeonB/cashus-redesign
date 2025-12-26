@@ -1,3 +1,4 @@
+import { sortByCreatedAtAsc } from "../utils";
 import { apiClient } from "./client";
 import {
   GroupExpenseResponse,
@@ -32,8 +33,15 @@ interface UpdateOtherFeeRequest extends NewOtherFeeRequest {
 export const groupExpensesApi = {
   getAll: () => apiClient.get<GroupExpenseResponse[]>("/group-expenses"),
 
-  getById: (expenseId: string) =>
-    apiClient.get<GroupExpenseResponse>(`/group-expenses/${expenseId}`),
+  getById: async (expenseId: string) => {
+    const data = await apiClient.get<GroupExpenseResponse>(
+      `/group-expenses/${expenseId}`
+    );
+    return {
+      ...data,
+      items: sortByCreatedAtAsc(data.items),
+    };
+  },
 
   create: (data: NewGroupExpenseRequest) =>
     apiClient.post<GroupExpenseResponse>("/group-expenses", data),
