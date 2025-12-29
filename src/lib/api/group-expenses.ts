@@ -75,9 +75,11 @@ export const groupExpensesApi = {
   removeFee: (groupExpenseId: string, feeId: string) =>
     apiClient.delete(`/group-expenses/${groupExpenseId}/fees/${feeId}`),
 
-  confirm: (groupExpenseId: string) =>
+  confirm: (groupExpenseId: string, dryRun: boolean) =>
     apiClient.patch<GroupExpenseResponse>(
-      `/group-expenses/${groupExpenseId}/confirmed`
+      `/group-expenses/${groupExpenseId}/confirmed${
+        dryRun ? "?dry-run=true" : ""
+      }`
     ),
 
   getCalculationMethods: () =>

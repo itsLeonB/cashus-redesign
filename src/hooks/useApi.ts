@@ -186,11 +186,12 @@ export function useCreateGroupExpense() {
   });
 }
 
-export function useConfirmGroupExpense() {
+export function useConfirmGroupExpense(expenseId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (expenseId: string) => groupExpensesApi.confirm(expenseId),
+    mutationFn: (dryRun: boolean) =>
+      groupExpensesApi.confirm(expenseId, dryRun),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["group-expenses"] });
     },

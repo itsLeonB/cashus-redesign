@@ -60,7 +60,7 @@ export default function ExpenseDetailPage() {
   const { expenseId } = useParams<{ expenseId: string }>();
   const navigate = useNavigate();
   const { data: expense, isLoading } = useGroupExpense(expenseId || "");
-  const confirmExpense = useConfirmGroupExpense();
+  const confirmExpense = useConfirmGroupExpense(expenseId);
   const deleteExpense = useDeleteGroupExpense();
   const retryBillParsing = useRetryBillParsing();
   const { toast } = useToast();
@@ -140,7 +140,7 @@ export default function ExpenseDetailPage() {
     if (!expenseId) return;
 
     try {
-      await confirmExpense.mutateAsync(expenseId);
+      await confirmExpense.mutateAsync(false);
       toast({
         title: "Expense confirmed",
         description:
