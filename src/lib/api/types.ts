@@ -126,21 +126,20 @@ export interface TransferMethod {
   display: string;
 }
 
+export interface SimpleProfile {
+  id: string;
+  name: string;
+  avatar: string;
+  isUser: boolean;
+}
+
 // Group Expense Types
 export interface GroupExpenseResponse {
   id: string;
-  payerProfileId?: string;
-  payerName?: string;
-  paidByUser: boolean;
   totalAmount: string;
   itemsTotalAmount: string;
   feesTotalAmount: string;
   description?: string;
-  items: ExpenseItemResponse[];
-  otherFees?: OtherFeeResponse[];
-  creatorProfileId: string;
-  creatorName?: string;
-  createdByUser: boolean;
   // Deprecated: refer to status instead
   confirmed: boolean;
   // Deprecated: refer to status instead
@@ -149,6 +148,12 @@ export interface GroupExpenseResponse {
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;
+
+  // Relationships
+  payer: SimpleProfile;
+  creator: SimpleProfile;
+  items: ExpenseItemResponse[];
+  otherFees?: OtherFeeResponse[];
   participants?: ExpenseParticipantResponse[];
   bill: ExpenseBillResponse;
   billExists: boolean;
@@ -167,10 +172,8 @@ export interface ExpenseItemResponse {
 }
 
 export interface ItemParticipantResponse {
-  profileName: string;
-  profileId: string;
-  share: string;
-  isUser: boolean;
+  profile: SimpleProfile;
+  shareRatio: string;
 }
 
 export interface OtherFeeResponse {
@@ -184,10 +187,8 @@ export interface OtherFeeResponse {
 }
 
 export interface ExpenseParticipantResponse {
-  profileName: string;
-  profileId: string;
+  profile: SimpleProfile;
   shareAmount: string;
-  isUser: boolean;
 }
 
 export interface ExpenseItem {

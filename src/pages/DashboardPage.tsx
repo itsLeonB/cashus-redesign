@@ -94,7 +94,7 @@ export default function DashboardPage() {
         description: expense.description || "Group expense",
         amount: Number.parseFloat(expense.totalAmount),
         date: expense.createdAt,
-        profileName: expense.payerName,
+        profileName: expense.payer.name,
       });
     });
 

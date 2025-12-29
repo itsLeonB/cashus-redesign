@@ -33,8 +33,8 @@ export default function ExpensesPage() {
     if (isLoading)
       return (
         <div className="space-y-4">
-          {new Array(4).map((_, i) => (
-            <Skeleton key={i} className="h-24" />
+          {Array.from({ length: 4 }, (_, i) => (
+            <Skeleton key={`expense-loading-${i}`} className="h-24" />
           ))}
         </div>
       );
@@ -82,14 +82,18 @@ export default function ExpensesPage() {
                         <p className="text-lg font-semibold tabular-nums">
                           {formatCurrency(expense.totalAmount)}
                         </p>
-                        {expense.payerName && (
+                        {expense.payer.name && (
                           <p className="text-xs text-muted-foreground">
                             Paid by
                           </p>
                         )}
                       </div>
-                      {expense.payerName && (
-                        <AvatarCircle name={expense.payerName} size="sm" />
+                      {expense.payer.name && (
+                        <AvatarCircle
+                          name={expense.payer.name}
+                          imageUrl={expense.payer.avatar}
+                          size="sm"
+                        />
                       )}
                       <ChevronRight className="h-5 w-5 text-muted-foreground" />
                     </div>

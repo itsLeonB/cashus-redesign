@@ -197,7 +197,7 @@ export default function ExpenseDetailPage() {
     setIsUpdating(true);
     try {
       const existingParticipantIds =
-        item.participants?.map((p) => p.profileId) || [];
+        item.participants?.map((p) => p.profile.id) || [];
       const allParticipantIds = Array.from(
         new Set([...existingParticipantIds, ...newParticipantIds])
       );
@@ -295,7 +295,7 @@ export default function ExpenseDetailPage() {
     setRemovingParticipant({ itemId, profileId });
     try {
       const remainingParticipants =
-        item.participants?.filter((p) => p.profileId !== profileId) || [];
+        item.participants?.filter((p) => !p.profile.isUser) || [];
 
       if (remainingParticipants.length === 0) {
         await groupExpensesApi.updateItem(itemId, {
@@ -309,7 +309,7 @@ export default function ExpenseDetailPage() {
       } else {
         const shareRatio = 1 / remainingParticipants.length;
         const participantRequests = remainingParticipants.map((p) => ({
-          profileId: p.profileId,
+          profileId: p.profile.id,
           share: shareRatio.toFixed(4),
         }));
 
@@ -601,12 +601,16 @@ export default function ExpenseDetailPage() {
                 {formatCurrency(expense.totalAmount)}
               </p>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                {expense.payerName ? (
+                {expense.payer.name ? (
                   <>
                     <span>Paid by</span>
-                    <AvatarCircle name={expense.payerName} size="xs" />
+                    <AvatarCircle
+                      name={expense.payer.name}
+                      imageUrl={expense.payer.avatar}
+                      size="xs"
+                    />
                     <span className="font-medium text-foreground">
-                      {expense.payerName}
+                      {expense.payer.name}
                     </span>
                   </>
                 ) : (
@@ -689,23 +693,23 @@ export default function ExpenseDetailPage() {
                       const isRemoving =
                         removingParticipant?.itemId === item.id &&
                         removingParticipant?.profileId ===
-                          participant.profileId;
+                          participant.profile.id;
                       return (
                         <div
-                          key={participant.profileId}
+                          key={participant.profile.id}
                           className="flex items-center gap-2 bg-muted/50 rounded-full px-3 py-1 group"
                         >
                           <AvatarCircle
-                            name={participant.profileName}
+                            name={participant.profile.name}
                             size="xs"
                           />
                           <span className="text-sm">
-                            {participant.profileName}
+                            {participant.profile.name}
                           </span>
                           <span className="text-xs text-muted-foreground">
                             (
                             {formatCurrency(
-                              Number.parseFloat(participant.share) *
+                              Number.parseFloat(participant.shareRatio) *
                                 Number.parseFloat(item.amount) *
                                 item.quantity
                             )}
@@ -717,7 +721,7 @@ export default function ExpenseDetailPage() {
                               onClick={() =>
                                 handleRemoveParticipant(
                                   item.id,
-                                  participant.profileId
+                                  participant.profile.id
                                 )
                               }
                               disabled={isRemoving}
@@ -749,7 +753,7 @@ export default function ExpenseDetailPage() {
                         selectedParticipants[item.id] || []
                       ).includes(participant.profileId);
                       const alreadyParticipant = item.participants?.some(
-                        (p) => p.profileId === participant.profileId
+                        (p) => p.profile.id === participant.profileId
                       );
 
                       if (alreadyParticipant) return null;
