@@ -12,6 +12,7 @@ import {
   ExpenseParticipantsRequest,
   UpdateExpenseItemRequest,
   UpdateOtherFeeRequest,
+  SyncItemParticipantsRequest,
 } from "./types";
 
 export const groupExpensesApi = {
@@ -51,7 +52,7 @@ export const groupExpensesApi = {
   syncItemParticipants: (
     expenseId: string,
     itemId: string,
-    data: ExpenseParticipantsRequest
+    data: SyncItemParticipantsRequest
   ) =>
     apiClient.put(
       `/group-expenses/${expenseId}/items/${itemId}/participants`,

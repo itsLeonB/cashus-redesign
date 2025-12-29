@@ -69,11 +69,7 @@ export default function ExpensesPage() {
                         </span>
                         <span className="flex items-center gap-1">
                           <Users className="h-3.5 w-3.5" />
-                          {expense.items?.reduce(
-                            (acc, item) => acc + item.participants?.length || 0,
-                            0
-                          ) || 0}{" "}
-                          participants
+                          {expense.participants?.length || 0} participants
                         </span>
                       </div>
                     </div>

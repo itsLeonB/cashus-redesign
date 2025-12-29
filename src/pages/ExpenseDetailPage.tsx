@@ -2,21 +2,20 @@ import { useState, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   useGroupExpense,
-  useFriendships,
   useConfirmGroupExpense,
   useDeleteGroupExpense,
 } from "@/hooks/useApi";
 import { useRetryBillParsing, useUploadExpenseBill } from "@/hooks/useApiV2";
 import { useCalculationMethods } from "@/hooks/useMasterData";
-import { useAuth } from "@/contexts/AuthContext";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { ExpenseItemModal } from "@/components/ExpenseItemModal";
 import { ExpenseFeeModal } from "@/components/ExpenseFeeModal";
+import { ItemParticipantManager } from "@/components/ItemParticipantManager";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -61,13 +60,11 @@ export default function ExpenseDetailPage() {
   const { expenseId } = useParams<{ expenseId: string }>();
   const navigate = useNavigate();
   const { data: expense, isLoading } = useGroupExpense(expenseId || "");
-  const { data: friendships } = useFriendships();
   const confirmExpense = useConfirmGroupExpense();
   const deleteExpense = useDeleteGroupExpense();
   const retryBillParsing = useRetryBillParsing();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
   const { data: calculationMethods } = useCalculationMethods();
 
   const calculationMethodDisplayByName = useMemo(() => {
@@ -78,16 +75,8 @@ export default function ExpenseDetailPage() {
     }, {} as Record<string, string>);
   }, [calculationMethods]);
 
-  const [selectedParticipants, setSelectedParticipants] = useState<
-    Record<string, string[]>
-  >({});
-  const [isUpdating, setIsUpdating] = useState(false);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [deletingFeeId, setDeletingFeeId] = useState<string | null>(null);
-  const [removingParticipant, setRemovingParticipant] = useState<{
-    itemId: string;
-    profileId: string;
-  } | null>(null);
 
   // Item modal state
   const [itemModalOpen, setItemModalOpen] = useState(false);
@@ -108,19 +97,9 @@ export default function ExpenseDetailPage() {
   const [isDragging, setIsDragging] = useState(false);
   const uploadBill = useUploadExpenseBill();
 
-  const allParticipants = useMemo(() => {
-    const participants = friendships || [];
-    if (!user) return participants;
-
-    return [
-      {
-        profileId: user.id,
-        profileName: "You",
-        profileAvatar: user.avatar,
-      },
-      ...participants,
-    ];
-  }, [user, friendships]);
+  const participantProfiles = (expense?.participants || []).map(
+    (p) => p.profile
+  );
 
   const calculateItemsTotal = () => {
     if (!expense?.items) return 0;
@@ -157,16 +136,6 @@ export default function ExpenseDetailPage() {
     }).format(num);
   };
 
-  const handleParticipantToggle = (itemId: string, profileId: string) => {
-    setSelectedParticipants((prev) => {
-      const current = prev[itemId] || [];
-      if (current.includes(profileId)) {
-        return { ...prev, [itemId]: current.filter((id) => id !== profileId) };
-      }
-      return { ...prev, [itemId]: [...current, profileId] };
-    });
-  };
-
   const handleConfirm = async () => {
     if (!expenseId) return;
 
@@ -184,57 +153,6 @@ export default function ExpenseDetailPage() {
         title: "Failed to confirm",
         description: err.message || "Something went wrong",
       });
-    }
-  };
-
-  const handleAddParticipants = async (itemId: string) => {
-    const newParticipantIds = selectedParticipants[itemId] || [];
-    if (newParticipantIds.length === 0) return;
-
-    const item = expense?.items.find((i) => i.id === itemId);
-    if (!item || !expense) return;
-
-    setIsUpdating(true);
-    try {
-      const existingParticipantIds =
-        item.participants?.map((p) => p.profile.id) || [];
-      const allParticipantIds = Array.from(
-        new Set([...existingParticipantIds, ...newParticipantIds])
-      );
-
-      const shareRatio = 1 / allParticipantIds.length;
-
-      const participantRequests = allParticipantIds.map((profileId) => ({
-        profileId,
-        share: shareRatio.toFixed(4),
-      }));
-
-      await groupExpensesApi.updateItem(itemId, {
-        id: itemId,
-        groupExpenseId: expense.id,
-        name: item.name,
-        amount: item.amount,
-        quantity: item.quantity,
-        participants: participantRequests,
-      });
-
-      queryClient.invalidateQueries({
-        queryKey: ["group-expenses", expenseId],
-      });
-      toast({
-        title: "Participants added",
-        description: `Added ${newParticipantIds.length} participant(s) to the item`,
-      });
-      setSelectedParticipants((prev) => ({ ...prev, [itemId]: [] }));
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast({
-        variant: "destructive",
-        title: "Failed to add participants",
-        description: err.message || "Something went wrong",
-      });
-    } finally {
-      setIsUpdating(false);
     }
   };
 
@@ -285,60 +203,6 @@ export default function ExpenseDetailPage() {
       });
     } finally {
       setDeletingFeeId(null);
-    }
-  };
-
-  const handleRemoveParticipant = async (itemId: string, profileId: string) => {
-    const item = expense?.items.find((i) => i.id === itemId);
-    if (!item || !expense) return;
-
-    setRemovingParticipant({ itemId, profileId });
-    try {
-      const remainingParticipants =
-        item.participants?.filter((p) => !p.profile.isUser) || [];
-
-      if (remainingParticipants.length === 0) {
-        await groupExpensesApi.updateItem(itemId, {
-          id: itemId,
-          groupExpenseId: expense.id,
-          name: item.name,
-          amount: item.amount,
-          quantity: item.quantity,
-          participants: [],
-        });
-      } else {
-        const shareRatio = 1 / remainingParticipants.length;
-        const participantRequests = remainingParticipants.map((p) => ({
-          profileId: p.profile.id,
-          share: shareRatio.toFixed(4),
-        }));
-
-        await groupExpensesApi.updateItem(itemId, {
-          id: itemId,
-          groupExpenseId: expense.id,
-          name: item.name,
-          amount: item.amount,
-          quantity: item.quantity,
-          participants: participantRequests,
-        });
-      }
-
-      queryClient.invalidateQueries({
-        queryKey: ["group-expenses", expenseId],
-      });
-      toast({
-        title: "Participant removed",
-        description: "The participant has been removed from the item",
-      });
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast({
-        variant: "destructive",
-        title: "Failed to remove participant",
-        description: err.message || "Something went wrong",
-      });
-    } finally {
-      setRemovingParticipant(null);
     }
   };
 
@@ -557,6 +421,76 @@ export default function ExpenseDetailPage() {
     );
   };
 
+  const otherFeeSection = () => {
+    if (isConfirmed && (expense.otherFees?.length || 0) === 0) return null;
+    return (
+      <Card className="border-border/50">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="font-display">Additional Fees</CardTitle>
+          {!isConfirmed && (
+            <Button size="sm" variant="outline" onClick={openAddFeeModal}>
+              <Plus className="h-4 w-4 mr-1" />
+              Add Fee
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {expense.otherFees?.length > 0 ? (
+            <div className="space-y-2">
+              {expense.otherFees?.map((fee) => (
+                <div
+                  key={fee.id}
+                  className="flex items-center justify-between py-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{fee.name}</span>
+                    <Badge variant="outline" className="text-xs">
+                      {calculationMethodDisplayByName[fee.calculationMethod]}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold tabular-nums">
+                      {formatCurrency(fee.amount)}
+                    </span>
+                    {!isConfirmed && (
+                      <div className="flex gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => openEditFeeModal(fee)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteFee(fee.id)}
+                          disabled={deletingFeeId === fee.id}
+                        >
+                          {deletingFeeId === fee.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-4 text-muted-foreground">
+              <p>No additional fees.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <div className="space-y-6 animate-fade-up">
       {/* Back Link */}
@@ -682,127 +616,14 @@ export default function ExpenseDetailPage() {
                 </div>
               </div>
 
-              {/* Current Participants */}
-              {item.participants?.length > 0 && (
-                <div className="mb-3">
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Split between:
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {item.participants?.map((participant) => {
-                      const isRemoving =
-                        removingParticipant?.itemId === item.id &&
-                        removingParticipant?.profileId ===
-                          participant.profile.id;
-                      return (
-                        <div
-                          key={participant.profile.id}
-                          className="flex items-center gap-2 bg-muted/50 rounded-full px-3 py-1 group"
-                        >
-                          <AvatarCircle
-                            name={participant.profile.name}
-                            size="xs"
-                          />
-                          <span className="text-sm">
-                            {participant.profile.name}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            (
-                            {formatCurrency(
-                              Number.parseFloat(participant.shareRatio) *
-                                Number.parseFloat(item.amount) *
-                                item.quantity
-                            )}
-                            )
-                          </span>
-                          {!isConfirmed && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleRemoveParticipant(
-                                  item.id,
-                                  participant.profile.id
-                                )
-                              }
-                              disabled={isRemoving}
-                              className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
-                            >
-                              {isRemoving ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                <X className="h-3 w-3" />
-                              )}
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Add Participants (only for draft) */}
-              {!isConfirmed && friendships && (
-                <div className="pt-3 border-t border-border/50">
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Add participants:
-                  </p>
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {allParticipants.map((participant) => {
-                      const isSelected = (
-                        selectedParticipants[item.id] || []
-                      ).includes(participant.profileId);
-                      const alreadyParticipant = item.participants?.some(
-                        (p) => p.profile.id === participant.profileId
-                      );
-
-                      if (alreadyParticipant) return null;
-
-                      return (
-                        <button
-                          key={participant.profileId}
-                          type="button"
-                          onClick={() =>
-                            handleParticipantToggle(
-                              item.id,
-                              participant.profileId
-                            )
-                          }
-                          className={cn(
-                            "flex items-center gap-2 rounded-full px-3 py-1 border transition-colors",
-                            isSelected
-                              ? "border-primary bg-primary/10 text-primary"
-                              : "border-border/50 hover:border-border"
-                          )}
-                        >
-                          <Checkbox checked={isSelected} className="h-3 w-3" />
-                          <AvatarCircle
-                            name={participant.profileName}
-                            imageUrl={participant.profileAvatar}
-                            size="xs"
-                          />
-                          <span className="text-sm">
-                            {participant.profileName}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {(selectedParticipants[item.id]?.length || 0) > 0 && (
-                    <Button
-                      size="sm"
-                      onClick={() => handleAddParticipants(item.id)}
-                      disabled={isUpdating}
-                    >
-                      {isUpdating && (
-                        <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                      )}
-                      <Plus className="h-3 w-3 mr-1" />
-                      Add {selectedParticipants[item.id]?.length} participant(s)
-                    </Button>
-                  )}
-                </div>
-              )}
+              <div className="mt-4">
+                <ItemParticipantManager
+                  item={item}
+                  expenseId={expense.id}
+                  availableParticipants={participantProfiles}
+                  isConfirmed={isConfirmed}
+                />
+              </div>
             </div>
           ))}
 
@@ -824,71 +645,7 @@ export default function ExpenseDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Other Fees */}
-      <Card className="border-border/50">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="font-display">Additional Fees</CardTitle>
-          {!isConfirmed && (
-            <Button size="sm" variant="outline" onClick={openAddFeeModal}>
-              <Plus className="h-4 w-4 mr-1" />
-              Add Fee
-            </Button>
-          )}
-        </CardHeader>
-        <CardContent>
-          {expense.otherFees?.length > 0 ? (
-            <div className="space-y-2">
-              {expense.otherFees?.map((fee) => (
-                <div
-                  key={fee.id}
-                  className="flex items-center justify-between py-2"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{fee.name}</span>
-                    <Badge variant="outline" className="text-xs">
-                      {calculationMethodDisplayByName[fee.calculationMethod]}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold tabular-nums">
-                      {formatCurrency(fee.amount)}
-                    </span>
-                    {!isConfirmed && (
-                      <div className="flex gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          onClick={() => openEditFeeModal(fee)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => handleDeleteFee(fee.id)}
-                          disabled={deletingFeeId === fee.id}
-                        >
-                          {deletingFeeId === fee.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-4 text-muted-foreground">
-              <p>No additional fees.</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {otherFeeSection()}
 
       {/* Summary */}
       <Card className="border-border/50">

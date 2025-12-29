@@ -5,6 +5,7 @@ import type {
   NewAnonymousFriendshipRequest,
   NewDebtTransactionRequest,
   NewGroupExpenseRequest,
+  SyncItemParticipantsRequest,
 } from "@/lib/api";
 
 // Friendships hooks
@@ -225,7 +226,7 @@ export function useSyncItemParticipants(expenseId: string, itemId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: ExpenseParticipantsRequest) =>
+    mutationFn: (data: SyncItemParticipantsRequest) =>
       groupExpensesApi.syncItemParticipants(expenseId, itemId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
