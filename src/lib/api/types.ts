@@ -246,6 +246,28 @@ export interface ExpenseParticipantsRequest {
   payerProfileId: string;
 }
 
+export interface UpdateExpenseItemRequest {
+  id: string;
+  groupExpenseId: string;
+  name: string;
+  amount: string;
+  quantity: number;
+  participants: ItemParticipantRequest[];
+}
+
+export interface UpdateOtherFeeRequest extends NewOtherFeeRequest {
+  id: string;
+}
+
+export interface SyncItemParticipantsRequest {
+  participants: ItemParticipantRequest[];
+}
+
+export interface ItemParticipantRequest {
+  profileId: string;
+  share: string;
+}
+
 // Friend Request Types
 export interface FriendRequest {
   id: string;

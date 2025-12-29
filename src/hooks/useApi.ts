@@ -221,6 +221,20 @@ export function useSyncParticipants(expenseId: string) {
   });
 }
 
+export function useSyncItemParticipants(expenseId: string, itemId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: ExpenseParticipantsRequest) =>
+      groupExpensesApi.syncItemParticipants(expenseId, itemId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["group-expenses", expenseId],
+      });
+    },
+  });
+}
+
 // Bills hooks
 export function useBills() {
   return useQuery({

@@ -10,25 +10,9 @@ import {
   ExpenseBillResponse,
   FeeCalculationMethodInfo,
   ExpenseParticipantsRequest,
+  UpdateExpenseItemRequest,
+  UpdateOtherFeeRequest,
 } from "./types";
-
-interface UpdateExpenseItemRequest {
-  id: string;
-  groupExpenseId: string;
-  name: string;
-  amount: string;
-  quantity: number;
-  participants: ItemParticipantRequest[];
-}
-
-interface ItemParticipantRequest {
-  profileId: string;
-  share: string;
-}
-
-interface UpdateOtherFeeRequest extends NewOtherFeeRequest {
-  id: string;
-}
 
 export const groupExpensesApi = {
   getAll: () => apiClient.get<GroupExpenseResponse[]>("/group-expenses"),
@@ -63,6 +47,16 @@ export const groupExpensesApi = {
 
   removeItem: (groupExpenseId: string, itemId: string) =>
     apiClient.delete(`/group-expenses/${groupExpenseId}/items/${itemId}`),
+
+  syncItemParticipants: (
+    expenseId: string,
+    itemId: string,
+    data: ExpenseParticipantsRequest
+  ) =>
+    apiClient.put(
+      `/group-expenses/${expenseId}/items/${itemId}/participants`,
+      data
+    ),
 
   addFee: (groupExpenseId: string, data: NewOtherFeeRequest) =>
     apiClient.post<OtherFee>(`/group-expenses/${groupExpenseId}/fees`, data),
