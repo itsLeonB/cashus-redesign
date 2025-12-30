@@ -252,7 +252,6 @@ export interface UpdateExpenseItemRequest {
   name: string;
   amount: string;
   quantity: number;
-  participants: ItemParticipantRequest[];
 }
 
 export interface UpdateOtherFeeRequest extends NewOtherFeeRequest {

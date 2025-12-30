@@ -26,7 +26,7 @@ export function ExpenseItemModal({
   onOpenChange,
   expenseId,
   item,
-}: ExpenseItemModalProps) {
+}: Readonly<ExpenseItemModalProps>) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
@@ -51,7 +51,7 @@ export function ExpenseItemModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!name.trim() || !amount) {
       toast({
         variant: "destructive",
@@ -64,20 +64,14 @@ export function ExpenseItemModal({
     setIsLoading(true);
     try {
       if (isEditing && item) {
-        const participantRequests = item.participants?.map((p) => ({
-          profileId: p.profileId,
-          share: p.share,
-        })) || [];
-
         await groupExpensesApi.updateItem(item.id, {
           id: item.id,
           groupExpenseId: expenseId,
           name: name.trim(),
           amount,
           quantity,
-          participants: participantRequests,
         });
-        
+
         toast({
           title: "Item updated",
           description: `"${name}" has been updated.`,
@@ -89,14 +83,16 @@ export function ExpenseItemModal({
           amount,
           quantity,
         });
-        
+
         toast({
           title: "Item added",
           description: `"${name}" has been added to the expense.`,
         });
       }
 
-      queryClient.invalidateQueries({ queryKey: ["group-expenses", expenseId] });
+      queryClient.invalidateQueries({
+        queryKey: ["group-expenses", expenseId],
+      });
       onOpenChange(false);
     } catch (error: unknown) {
       const err = error as { message?: string };
@@ -158,7 +154,9 @@ export function ExpenseItemModal({
                 id="quantity"
                 type="number"
                 value={quantity}
-                onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                onChange={(e) =>
+                  setQuantity(Number.parseInt(e.target.value) || 1)
+                }
                 min="1"
                 required
               />

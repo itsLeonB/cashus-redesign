@@ -104,6 +104,7 @@ export function ItemParticipantManager({
       <div className="flex flex-wrap gap-2">
         {availableParticipants.map((participant) => {
           const isSelected = selectedIds.includes(participant.id);
+          if (isConfirmed && !isSelected) return null;
           return (
             <button
               key={participant.id}
