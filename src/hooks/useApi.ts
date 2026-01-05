@@ -4,7 +4,6 @@ import type {
   ExpenseParticipantsRequest,
   NewAnonymousFriendshipRequest,
   NewDebtTransactionRequest,
-  NewGroupExpenseRequest,
   SyncItemParticipantsRequest,
 } from "@/lib/api";
 
@@ -128,17 +127,6 @@ export function useUnblockFriendRequest() {
   });
 }
 
-export function useDeleteBill() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (billId: string) => groupExpensesApi.deleteBill(billId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["bills"] });
-    },
-  });
-}
-
 // Debts hooks
 export function useDebts() {
   return useQuery({
@@ -175,14 +163,21 @@ export function useGroupExpense(expenseId: string) {
   });
 }
 
-export function useCreateGroupExpense() {
+export function useCreateDraftExpense() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: NewGroupExpenseRequest) => groupExpensesApi.create(data),
+    mutationFn: groupExpensesApi.createDraft,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["group-expenses"] });
     },
+  });
+}
+
+export function useUploadExpenseBill() {
+  return useMutation({
+    mutationFn: ({ expenseId, file }: { expenseId: string; file: File }) =>
+      groupExpensesApi.uploadBill(expenseId, file),
   });
 }
 
@@ -233,31 +228,6 @@ export function useSyncItemParticipants(expenseId: string, itemId: string) {
       queryClient.invalidateQueries({
         queryKey: ["group-expenses", expenseId],
       });
-    },
-  });
-}
-
-// Bills hooks
-export function useBills() {
-  return useQuery({
-    queryKey: ["bills"],
-    queryFn: groupExpensesApi.getBills,
-  });
-}
-
-export function useUploadBill() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      payerProfileId,
-      file,
-    }: {
-      payerProfileId: string;
-      file: File;
-    }) => groupExpensesApi.uploadBill(payerProfileId, file),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["bills"] });
     },
   });
 }

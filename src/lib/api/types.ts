@@ -136,18 +136,13 @@ export interface SimpleProfile {
 // Group Expense Types
 export interface GroupExpenseResponse {
   id: string;
+  createdAt: string;
+  updatedAt: string;
   totalAmount: string;
   itemsTotalAmount: string;
   feesTotalAmount: string;
   description?: string;
-  // Deprecated: refer to status instead
-  confirmed: boolean;
-  // Deprecated: refer to status instead
-  participantsConfirmed: boolean;
   status: "DRAFT" | "READY" | "CONFIRMED";
-  createdAt: string;
-  updatedAt: string;
-  deletedAt?: string;
 
   // Relationships
   payer: SimpleProfile;
@@ -158,6 +153,12 @@ export interface GroupExpenseResponse {
   bill: ExpenseBillResponse;
   billExists: boolean;
 }
+
+export const statusDisplay = {
+  DRAFT: "Draft",
+  READY: "Ready to Confirm",
+  CONFIRMED: "Confirmed",
+};
 
 export interface ExpenseItemResponse {
   id: string;
@@ -210,15 +211,6 @@ export interface OtherFee {
   name: string;
   amount: string;
   calculationMethod: string;
-}
-
-export interface NewGroupExpenseRequest {
-  payerProfileId?: string;
-  totalAmount: string;
-  subtotal: string;
-  description?: string;
-  items: NewExpenseItemRequest[];
-  otherFees?: NewOtherFeeRequest[];
 }
 
 export interface NewExpenseItemRequest {
@@ -306,7 +298,6 @@ export interface ExpenseBillResponse {
 // API Response wrapper
 export interface ApiResponse<T> {
   data: T;
-  message?: string;
 }
 
 export interface ApiError {

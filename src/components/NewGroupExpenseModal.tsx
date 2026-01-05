@@ -8,8 +8,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useCreateDraftExpense, useUploadExpenseBill } from "@/hooks/useApiV2";
-import { useFriendships, useSyncParticipants } from "@/hooks/useApi";
+import {
+  useFriendships,
+  useSyncParticipants,
+  useCreateDraftExpense,
+  useUploadExpenseBill,
+} from "@/hooks/useApi";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Loader2,
@@ -39,7 +43,7 @@ interface NewGroupExpenseModalProps {
 export function NewGroupExpenseModal({
   open,
   onOpenChange,
-}: NewGroupExpenseModalProps) {
+}: Readonly<NewGroupExpenseModalProps>) {
   const [description, setDescription] = useState("");
   const [inputType, setInputType] = useState<InputType>("upload");
   const [step, setStep] = useState<Step>("details");
@@ -317,6 +321,84 @@ export function NewGroupExpenseModal({
     }
   };
 
+  const participantsStepForm = () => {
+    if (friendshipsLoading)
+      return (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      );
+
+    if (selectableProfiles.length === 0)
+      return (
+        <div className="text-center py-8 text-muted-foreground">
+          <Users className="h-10 w-10 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">No friends found</p>
+          <p className="text-xs">Add friends to include them in expenses</p>
+        </div>
+      );
+
+    return (
+      <div className="space-y-2 max-h-64 overflow-y-auto">
+        {selectableProfiles.map((profile) => {
+          const isSelected = selectedParticipants.includes(profile.profileId);
+          const isPayer = payerProfileId === profile.profileId;
+
+          return (
+            <div
+              key={profile.profileId}
+              className={cn(
+                "flex items-center justify-between p-3 rounded-lg border transition-all",
+                isSelected
+                  ? "border-primary bg-primary/5"
+                  : "border-border hover:border-primary/50"
+              )}
+            >
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => toggleParticipant(profile.profileId)}
+                  className={cn(
+                    "h-5 w-5 rounded border flex items-center justify-center transition-colors",
+                    isSelected
+                      ? "bg-primary border-primary text-primary-foreground"
+                      : "border-muted-foreground hover:border-primary"
+                  )}
+                >
+                  {isSelected && <Check className="h-3 w-3" />}
+                </button>
+                <AvatarCircle
+                  name={profile.profileName}
+                  imageUrl={profile.profileAvatar}
+                  size="sm"
+                />
+                <div>
+                  <p className="text-sm font-medium">
+                    {profile.profileName}
+                    {profile.isUser && (
+                      <span className="text-muted-foreground ml-1">(You)</span>
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                variant={isPayer ? "default" : "outline"}
+                size="sm"
+                onClick={() => selectPayer(profile.profileId)}
+                className="gap-1"
+              >
+                <CreditCard className="h-3 w-3" />
+                {isPayer ? "Payer" : "Set as Payer"}
+              </Button>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -390,7 +472,9 @@ export function NewGroupExpenseModal({
               {createDraft.isPending && (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               )}
-              {inputType === "upload" ? "Next: Upload Bill" : "Next: Add Participants"}
+              {inputType === "upload"
+                ? "Next: Upload Bill"
+                : "Next: Add Participants"}
             </Button>
           </form>
         )}
@@ -474,79 +558,7 @@ export function NewGroupExpenseModal({
           <form onSubmit={handleParticipantsSubmit} className="space-y-4">
             <div className="space-y-3">
               <Label>Select Participants</Label>
-              {friendshipsLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : selectableProfiles.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Users className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">No friends found</p>
-                  <p className="text-xs">Add friends to include them in expenses</p>
-                </div>
-              ) : (
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {selectableProfiles.map((profile) => {
-                    const isSelected = selectedParticipants.includes(
-                      profile.profileId
-                    );
-                    const isPayer = payerProfileId === profile.profileId;
-
-                    return (
-                      <div
-                        key={profile.profileId}
-                        className={cn(
-                          "flex items-center justify-between p-3 rounded-lg border transition-all",
-                          isSelected
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
-                        )}
-                      >
-                        <div className="flex items-center gap-3">
-                          <button
-                            type="button"
-                            onClick={() => toggleParticipant(profile.profileId)}
-                            className={cn(
-                              "h-5 w-5 rounded border flex items-center justify-center transition-colors",
-                              isSelected
-                                ? "bg-primary border-primary text-primary-foreground"
-                                : "border-muted-foreground hover:border-primary"
-                            )}
-                          >
-                            {isSelected && <Check className="h-3 w-3" />}
-                          </button>
-                          <AvatarCircle
-                            name={profile.profileName}
-                            imageUrl={profile.profileAvatar}
-                            size="sm"
-                          />
-                          <div>
-                            <p className="text-sm font-medium">
-                              {profile.profileName}
-                              {profile.isUser && (
-                                <span className="text-muted-foreground ml-1">
-                                  (You)
-                                </span>
-                              )}
-                            </p>
-                          </div>
-                        </div>
-
-                        <Button
-                          type="button"
-                          variant={isPayer ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => selectPayer(profile.profileId)}
-                          className="gap-1"
-                        >
-                          <CreditCard className="h-3 w-3" />
-                          {isPayer ? "Payer" : "Set as Payer"}
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              {participantsStepForm()}
             </div>
 
             {selectedParticipants.length > 0 && (
@@ -557,8 +569,9 @@ export function NewGroupExpenseModal({
                   <>
                     {" • "}
                     Payer:{" "}
-                    {selectableProfiles.find((p) => p.profileId === payerProfileId)
-                      ?.profileName || "Unknown"}
+                    {selectableProfiles.find(
+                      (p) => p.profileId === payerProfileId
+                    )?.profileName || "Unknown"}
                   </>
                 )}
               </div>

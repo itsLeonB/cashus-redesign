@@ -4,8 +4,8 @@ import {
   useGroupExpense,
   useConfirmGroupExpense,
   useDeleteGroupExpense,
+  useUploadExpenseBill,
 } from "@/hooks/useApi";
-import { useRetryBillParsing, useUploadExpenseBill } from "@/hooks/useApiV2";
 import { useCalculationMethods } from "@/hooks/useMasterData";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { ExpenseItemModal } from "@/components/ExpenseItemModal";
@@ -51,10 +51,13 @@ import {
   Upload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { groupExpensesApi, NewExpenseItemRequest } from "@/lib/api";
+import {
+  groupExpensesApi,
+  NewExpenseItemRequest,
+  statusDisplay,
+} from "@/lib/api";
 import { useQueryClient } from "@tanstack/react-query";
 import type { ExpenseItemResponse, OtherFeeResponse } from "@/lib/api/types";
-import { statusDisplay } from "@/lib/api/v2/group-expenses";
 
 export default function ExpenseDetailPage() {
   const { expenseId } = useParams<{ expenseId: string }>();
@@ -62,7 +65,7 @@ export default function ExpenseDetailPage() {
   const { data: expense, isLoading } = useGroupExpense(expenseId || "");
   const confirmExpense = useConfirmGroupExpense(expenseId);
   const deleteExpense = useDeleteGroupExpense();
-  const retryBillParsing = useRetryBillParsing();
+  // const retryBillParsing = useRetryBillParsing();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: calculationMethods } = useCalculationMethods();
@@ -226,28 +229,28 @@ export default function ExpenseDetailPage() {
     setFeeModalOpen(true);
   };
 
-  const handleRetryBillParsing = async () => {
-    if (!expenseId || !expense?.bill?.id) return;
+  // const handleRetryBillParsing = async () => {
+  //   if (!expenseId || !expense?.bill?.id) return;
 
-    try {
-      await retryBillParsing.mutateAsync({
-        expenseId,
-        billId: expense.bill.id,
-      });
-      setRetryBillModalOpen(false);
-      toast({
-        title: "Retry initiated",
-        description: "Bill processing has been restarted.",
-      });
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast({
-        variant: "destructive",
-        title: "Failed to retry",
-        description: err.message || "Something went wrong",
-      });
-    }
-  };
+  //   try {
+  //     await retryBillParsing.mutateAsync({
+  //       expenseId,
+  //       billId: expense.bill.id,
+  //     });
+  //     setRetryBillModalOpen(false);
+  //     toast({
+  //       title: "Retry initiated",
+  //       description: "Bill processing has been restarted.",
+  //     });
+  //   } catch (error: unknown) {
+  //     const err = error as { message?: string };
+  //     toast({
+  //       variant: "destructive",
+  //       title: "Failed to retry",
+  //       description: err.message || "Something went wrong",
+  //     });
+  //   }
+  // };
 
   const billStatusDisplay: Record<
     string,
@@ -336,7 +339,7 @@ export default function ExpenseDetailPage() {
     );
   }
 
-  const isConfirmed = expense.confirmed || expense.status === "CONFIRMED";
+  const isConfirmed = expense.status === "CONFIRMED";
 
   const billInformationSection = () => {
     if (isConfirmed && !expense.billExists) return null;
@@ -803,12 +806,12 @@ export default function ExpenseDetailPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleRetryBillParsing}
-              disabled={retryBillParsing.isPending}
+            // onClick={handleRetryBillParsing}
+            // disabled={retryBillParsing.isPending}
             >
-              {retryBillParsing.isPending && (
+              {/* {retryBillParsing.isPending && (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              )}
+              )} */}
               Retry Processing
             </AlertDialogAction>
           </AlertDialogFooter>

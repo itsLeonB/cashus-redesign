@@ -2,7 +2,6 @@ import { sortByCreatedAtAsc } from "../utils";
 import { apiClient } from "./client";
 import {
   GroupExpenseResponse,
-  NewGroupExpenseRequest,
   NewExpenseItemRequest,
   NewOtherFeeRequest,
   ExpenseItem,
@@ -28,8 +27,20 @@ export const groupExpensesApi = {
     };
   },
 
-  create: (data: NewGroupExpenseRequest) =>
-    apiClient.post<GroupExpenseResponse>("/group-expenses", data),
+  createDraft(description: string) {
+    return apiClient.post<GroupExpenseResponse>("/group-expenses", {
+      description,
+    });
+  },
+
+  uploadBill: (expenseId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("bill", file);
+    return apiClient.uploadFile<ExpenseBillResponse>(
+      `/group-expenses/${expenseId}/bills`,
+      formData
+    );
+  },
 
   delete: (expenseId: string) =>
     apiClient.delete(`/group-expenses/${expenseId}`),
@@ -89,23 +100,4 @@ export const groupExpensesApi = {
 
   syncParticipants: (expenseId: string, data: ExpenseParticipantsRequest) =>
     apiClient.put(`/group-expenses/${expenseId}/participants`, data),
-
-  // Bills
-  uploadBill: (payerProfileId: string, file: File) => {
-    const formData = new FormData();
-    formData.append("payerProfileId", payerProfileId);
-    formData.append("bill", file);
-    return apiClient.uploadFile<ExpenseBillResponse>(
-      "/group-expenses/bills",
-      formData
-    );
-  },
-
-  getBills: () => apiClient.get<ExpenseBillResponse[]>("/group-expenses/bills"),
-
-  getBillById: (billId: string) =>
-    apiClient.get<ExpenseBillResponse>(`/group-expenses/bills/${billId}`),
-
-  deleteBill: (billId: string) =>
-    apiClient.delete(`/group-expenses/bills/${billId}`),
 };

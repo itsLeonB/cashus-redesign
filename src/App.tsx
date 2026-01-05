@@ -21,7 +21,6 @@ import FriendsPage from "@/pages/FriendsPage";
 import FriendDetailPage from "@/pages/FriendDetailPage";
 import ExpensesPage from "@/pages/ExpensesPage";
 import ExpenseDetailPage from "@/pages/ExpenseDetailPage";
-import BillsPage from "@/pages/BillsPage";
 import ProfilePage from "@/pages/ProfilePage";
 import NotFound from "@/pages/NotFound";
 import { useUserJotTracker } from "@/hooks/useUserJotTracker";
@@ -82,7 +81,6 @@ const App = () => {
                   path="/expenses/:expenseId"
                   element={<ExpenseDetailPage />}
                 />
-                <Route path="/bills" element={<BillsPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
               </Route>
               <Route path="/" element={<Navigate to="/login" replace />} />
