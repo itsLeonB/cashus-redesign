@@ -138,7 +138,11 @@ export function AppLayout() {
               <Menu className="h-5 w-5" />
             </Button>
             <Logo />
-            <AvatarCircle name={user?.name || "User"} size="sm" />
+            <AvatarCircle
+              name={user?.name || "User"}
+              imageUrl={user?.avatar}
+              size="sm"
+            />
           </div>
         </header>
 

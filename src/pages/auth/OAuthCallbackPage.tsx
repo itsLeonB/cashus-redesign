@@ -48,7 +48,7 @@ export default function OAuthCallbackPage() {
         );
 
         // Store the token
-        apiClient.setToken(response.accessToken);
+        apiClient.setToken(response.token);
 
         // Refresh user data
         await refreshUser();

@@ -40,7 +40,7 @@ export const authApi = {
     }/v1/auth/${provider}`,
 
   handleOAuthCallback: (provider: string, code: string, state: string | null) =>
-    apiClient.get<{ accessToken: string }>(`/auth/${provider}/callback`, {
+    apiClient.get<LoginResponse>(`/auth/${provider}/callback`, {
       code,
       state,
     }),
