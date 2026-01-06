@@ -12,6 +12,7 @@ import {
   UpdateExpenseItemRequest,
   UpdateOtherFeeRequest,
   SyncItemParticipantsRequest,
+  ExpenseConfirmationResponse,
 } from "./types";
 
 export const groupExpensesApi = {
@@ -90,7 +91,7 @@ export const groupExpensesApi = {
     apiClient.delete(`/group-expenses/${groupExpenseId}/fees/${feeId}`),
 
   confirm: (groupExpenseId: string, dryRun: boolean) =>
-    apiClient.patch<GroupExpenseResponse>(
+    apiClient.patch<ExpenseConfirmationResponse>(
       `/group-expenses/${groupExpenseId}/confirmed${
         dryRun ? "?dry-run=true" : ""
       }`

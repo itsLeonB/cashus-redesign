@@ -60,9 +60,9 @@ import {
   statusDisplay,
 } from "@/lib/api";
 import type {
-  GroupExpenseResponse,
   ExpenseItemResponse,
   OtherFeeResponse,
+  ExpenseConfirmationResponse,
 } from "@/lib/api/types";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -111,9 +111,8 @@ export default function ExpenseDetailPage() {
 
   // Confirm dry-run modal state
   const [confirmPreviewModalOpen, setConfirmPreviewModalOpen] = useState(false);
-  const [dryRunResult, setDryRunResult] = useState<GroupExpenseResponse | null>(
-    null
-  );
+  const [dryRunResult, setDryRunResult] =
+    useState<ExpenseConfirmationResponse | null>(null);
   const [isDryRunLoading, setIsDryRunLoading] = useState(false);
 
   const uploadBill = useUploadExpenseBill();

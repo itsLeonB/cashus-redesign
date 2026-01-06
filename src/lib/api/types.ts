@@ -259,6 +259,31 @@ export interface ItemParticipantRequest {
   share: string;
 }
 
+export interface ExpenseConfirmationResponse {
+  id: string;
+  description: string;
+  totalAmount: string;
+  payer: SimpleProfile;
+  participants: ConfirmedExpenseParticipant[];
+}
+
+export interface ConfirmedExpenseParticipant {
+  profile: SimpleProfile;
+  items: ConfirmedItemShare[];
+  itemsTotal: string;
+  fees: ConfirmedItemShare[];
+  feesTotal: string;
+  total: string;
+}
+
+export interface ConfirmedItemShare {
+  id: string;
+  name: string;
+  baseAmount: string;
+  shareRate: string;
+  shareAmount: string;
+}
+
 // Friend Request Types
 export interface FriendRequest {
   id: string;
