@@ -5,6 +5,7 @@ import {
   useConfirmGroupExpense,
   useDeleteGroupExpense,
   useUploadExpenseBill,
+  useTriggerBillParsing,
 } from "@/hooks/useApi";
 import { useCalculationMethods } from "@/hooks/useMasterData";
 import { AvatarCircle } from "@/components/AvatarCircle";
@@ -65,7 +66,7 @@ export default function ExpenseDetailPage() {
   const { data: expense, isLoading } = useGroupExpense(expenseId || "");
   const confirmExpense = useConfirmGroupExpense(expenseId);
   const deleteExpense = useDeleteGroupExpense();
-  // const retryBillParsing = useRetryBillParsing();
+  const triggerBillParsing = useTriggerBillParsing(expenseId || "");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: calculationMethods } = useCalculationMethods();
@@ -229,28 +230,25 @@ export default function ExpenseDetailPage() {
     setFeeModalOpen(true);
   };
 
-  // const handleRetryBillParsing = async () => {
-  //   if (!expenseId || !expense?.bill?.id) return;
+  const handleRetryBillParsing = async () => {
+    if (!expenseId || !expense?.bill?.id) return;
 
-  //   try {
-  //     await retryBillParsing.mutateAsync({
-  //       expenseId,
-  //       billId: expense.bill.id,
-  //     });
-  //     setRetryBillModalOpen(false);
-  //     toast({
-  //       title: "Retry initiated",
-  //       description: "Bill processing has been restarted.",
-  //     });
-  //   } catch (error: unknown) {
-  //     const err = error as { message?: string };
-  //     toast({
-  //       variant: "destructive",
-  //       title: "Failed to retry",
-  //       description: err.message || "Something went wrong",
-  //     });
-  //   }
-  // };
+    try {
+      await triggerBillParsing.mutateAsync(expense.bill.id);
+      setRetryBillModalOpen(false);
+      toast({
+        title: "Retry initiated",
+        description: "Bill processing has been restarted.",
+      });
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast({
+        variant: "destructive",
+        title: "Failed to retry",
+        description: err.message || "Something went wrong",
+      });
+    }
+  };
 
   const billStatusDisplay: Record<
     string,
@@ -806,12 +804,12 @@ export default function ExpenseDetailPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-            // onClick={handleRetryBillParsing}
-            // disabled={retryBillParsing.isPending}
+              onClick={handleRetryBillParsing}
+              disabled={triggerBillParsing.isPending}
             >
-              {/* {retryBillParsing.isPending && (
+              {triggerBillParsing.isPending && (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              )} */}
+              )}
               Retry Processing
             </AlertDialogAction>
           </AlertDialogFooter>

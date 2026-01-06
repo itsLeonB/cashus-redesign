@@ -42,6 +42,9 @@ export const groupExpensesApi = {
     );
   },
 
+  triggerBillParsing: (expenseId: string, billId: string) =>
+    apiClient.put(`/group-expenses/${expenseId}/bills/${billId}`, null),
+
   delete: (expenseId: string) =>
     apiClient.delete(`/group-expenses/${expenseId}`),
 

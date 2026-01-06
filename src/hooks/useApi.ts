@@ -181,6 +181,20 @@ export function useUploadExpenseBill() {
   });
 }
 
+export function useTriggerBillParsing(expenseId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (billId: string) =>
+      groupExpensesApi.triggerBillParsing(expenseId, billId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["group-expenses", expenseId],
+      });
+    },
+  });
+}
+
 export function useConfirmGroupExpense(expenseId: string) {
   const queryClient = useQueryClient();
 
