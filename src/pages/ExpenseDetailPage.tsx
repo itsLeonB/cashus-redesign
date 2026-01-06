@@ -338,6 +338,7 @@ export default function ExpenseDetailPage() {
   }
 
   const isConfirmed = expense.status === "CONFIRMED";
+  const isReady = expense.status === "READY";
 
   const billInformationSection = () => {
     if (isConfirmed && !expense.billExists) return null;
@@ -676,75 +677,82 @@ export default function ExpenseDetailPage() {
 
           {/* Action Buttons */}
           <div className="flex flex-col gap-3 mt-6">
-            {expense.status === "READY" && (
-              <Button
-                className="w-full"
-                size="lg"
-                onClick={handleConfirm}
-                disabled={confirmExpense.isPending || deleteExpense.isPending}
-              >
-                {confirmExpense.isPending && (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                )}
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                Confirm & Record Debts
-              </Button>
-            )}
             {!isConfirmed && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
-                    size="lg"
-                    disabled={
-                      deleteExpense.isPending || confirmExpense.isPending
-                    }
-                  >
-                    {deleteExpense.isPending && (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    )}
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Expense
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Expense</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete this expense? This action
-                      cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      onClick={async () => {
-                        if (!expenseId) return;
-                        try {
-                          await deleteExpense.mutateAsync(expenseId);
-                          toast({
-                            title: "Expense deleted",
-                            description:
-                              "The expense has been deleted successfully.",
-                          });
-                          navigate("/expenses");
-                        } catch (error: unknown) {
-                          const err = error as { message?: string };
-                          toast({
-                            variant: "destructive",
-                            title: "Failed to delete",
-                            description: err.message || "Something went wrong",
-                          });
-                        }
-                      }}
+              <>
+                <Button
+                  className="w-full"
+                  size={isReady ? "lg" : "default"}
+                  onClick={handleConfirm}
+                  disabled={
+                    !isReady ||
+                    confirmExpense.isPending ||
+                    deleteExpense.isPending
+                  }
+                >
+                  {confirmExpense.isPending && (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  )}
+                  {isReady && <CheckCircle2 className="h-4 w-4 mr-2" />}
+                  {isReady
+                    ? "Confirm & Record Debts"
+                    : "Please assign participants to all items before confirming"}
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+                      size="lg"
+                      disabled={
+                        deleteExpense.isPending || confirmExpense.isPending
+                      }
                     >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                      {deleteExpense.isPending && (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      )}
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Expense
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Expense</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete this expense? This
+                        action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        onClick={async () => {
+                          if (!expenseId) return;
+                          try {
+                            await deleteExpense.mutateAsync(expenseId);
+                            toast({
+                              title: "Expense deleted",
+                              description:
+                                "The expense has been deleted successfully.",
+                            });
+                            navigate("/expenses");
+                          } catch (error: unknown) {
+                            const err = error as { message?: string };
+                            toast({
+                              variant: "destructive",
+                              title: "Failed to delete",
+                              description:
+                                err.message || "Something went wrong",
+                            });
+                          }
+                        }}
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
             )}
           </div>
         </CardContent>
