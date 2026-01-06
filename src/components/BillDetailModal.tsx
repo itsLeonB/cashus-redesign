@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { groupExpensesApi } from "@/lib/api";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,8 +10,18 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, User, CreditCard, Trash2, Loader2 } from "lucide-react";
 
+interface BillData {
+  id: string;
+  imageUrl?: string;
+  creatorProfileName: string;
+  isCreatedByUser: boolean;
+  payerProfileName: string;
+  isPaidByUser: boolean;
+  createdAt: string;
+}
+
 interface BillDetailModalProps {
-  billId: string | null;
+  bill: BillData | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDelete?: (billId: string) => Promise<void>;
@@ -21,19 +29,13 @@ interface BillDetailModalProps {
 }
 
 export function BillDetailModal({
-  billId,
+  bill,
   open,
   onOpenChange,
   onDelete,
   isDeleting = false,
 }: BillDetailModalProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
-
-  const { data: bill, isLoading } = useQuery({
-    queryKey: ["bills", billId],
-    queryFn: () => groupExpensesApi.getBillById(billId!),
-    enabled: !!billId && open,
-  });
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString("en-US", {
@@ -73,16 +75,7 @@ export function BillDetailModal({
           <DialogTitle>Bill Details</DialogTitle>
         </DialogHeader>
 
-        {isLoading ? (
-          <div className="space-y-4">
-            <Skeleton className="aspect-[4/3] w-full rounded-lg" />
-            <div className="space-y-3">
-              <Skeleton className="h-16 w-full rounded-lg" />
-              <Skeleton className="h-16 w-full rounded-lg" />
-              <Skeleton className="h-20 w-full rounded-lg" />
-            </div>
-          </div>
-        ) : bill ? (
+        {bill ? (
           <div className="space-y-4">
             {/* Bill Image */}
             {bill.imageUrl && (

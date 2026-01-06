@@ -12,6 +12,7 @@ import { AvatarCircle } from "@/components/AvatarCircle";
 import { ExpenseItemModal } from "@/components/ExpenseItemModal";
 import { ExpenseFeeModal } from "@/components/ExpenseFeeModal";
 import { ItemParticipantManager } from "@/components/ItemParticipantManager";
+import { ParticipantSelectorModal } from "@/components/ParticipantSelectorModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -50,6 +51,7 @@ import {
   RefreshCw,
   AlertTriangle,
   Upload,
+  UserPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -99,6 +101,9 @@ export default function ExpenseDetailPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  
+  // Participant modal state
+  const [participantModalOpen, setParticipantModalOpen] = useState(false);
   const uploadBill = useUploadExpenseBill();
 
   const participantProfiles = (expense?.participants || []).map(
@@ -552,6 +557,17 @@ export default function ExpenseDetailPage() {
                 ) : (
                   <span>No payer yet</span>
                 )}
+                {!isConfirmed && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setParticipantModalOpen(true)}
+                  >
+                    <UserPlus className="h-3.5 w-3.5 mr-1" />
+                    Edit
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -914,6 +930,24 @@ export default function ExpenseDetailPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Participant Selector Modal */}
+      <ParticipantSelectorModal
+        open={participantModalOpen}
+        onOpenChange={setParticipantModalOpen}
+        expenseId={expense.id}
+        currentParticipants={expense.participants?.map((p) => ({
+          profileId: p.profile.id,
+          name: p.profile.name,
+          avatar: p.profile.avatar,
+        }))}
+        currentPayerId={expense.payer?.id}
+        onSuccess={() => {
+          queryClient.invalidateQueries({
+            queryKey: ["group-expenses", expenseId],
+          });
+        }}
+      />
     </div>
   );
 }
