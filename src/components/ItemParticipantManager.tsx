@@ -36,6 +36,18 @@ export function ItemParticipantManager({
   // Track if this is the initial render to avoid syncing on mount
   const isFirstRender = useRef(true);
 
+  // Track the last known state on the server to avoid redundant updates
+  const serverIdsRef = useRef<string[]>(
+    item.participants?.map((p) => p.profile.id) || []
+  );
+
+  // Helper to compare two ID arrays
+  const areIdsDifferent = (idsA: string[], idsB: string[]) => {
+    if (idsA.length !== idsB.length) return true;
+    const setA = new Set(idsA);
+    return idsB.some((id) => !setA.has(id));
+  };
+
   // Toggle handler
   const handleToggle = (profileId: string) => {
     if (isConfirmed) return;
@@ -55,13 +67,15 @@ export function ItemParticipantManager({
       return;
     }
 
+    // Ignore if the debounced state matches what we know is on the server
+    if (!areIdsDifferent(debouncedSelectedIds, serverIdsRef.current)) {
+      return;
+    }
+
     const sync = async () => {
       setIsSyncing(true);
       try {
         const count = debouncedSelectedIds.length;
-        // If count is 0, we send empty list.
-        // If count > 0, share is 1/count.
-
         const participantsRequest = debouncedSelectedIds.map((id) => ({
           profileId: id,
           share: count > 0 ? (1 / count).toFixed(4) : "0",
@@ -70,6 +84,9 @@ export function ItemParticipantManager({
         await syncParticipants.mutateAsync({
           participants: participantsRequest,
         });
+
+        // Update serverIdsRef after successful mutation to prevent immediate re-sync
+        serverIdsRef.current = [...debouncedSelectedIds];
       } catch (error) {
         console.error("Failed to sync participants", error);
         toast({
@@ -77,7 +94,6 @@ export function ItemParticipantManager({
           title: "Failed to update participants",
           description: "Could not save changes. Please try again.",
         });
-        // Revert state? complicate UI. Let's just notify.
       } finally {
         setIsSyncing(false);
       }
@@ -87,10 +103,37 @@ export function ItemParticipantManager({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSelectedIds]);
 
-  // Update local state if props change (e.g. from websocket or other updates),
-  // but ONLY if we are not currently debouncing a local change.
-  // This is tricky. Simplified: Just update if item.participants changes significantly?
-  // For now, let's keep it simple and trust local state dominates user interaction.
+  // Track the most recent version of props we have processed
+  const lastPropIdsRef = useRef<string[]>(
+    item.participants?.map((p) => p.profile.id) || []
+  );
+
+  // Update local state if props change (e.g. from websocket or other updates)
+  useEffect(() => {
+    const propIds = item.participants?.map((p) => p.profile.id) || [];
+    const propsChanged = areIdsDifferent(propIds, lastPropIdsRef.current);
+
+    // Update references to current server truth
+    lastPropIdsRef.current = propIds;
+    serverIdsRef.current = propIds;
+
+    // Only update local selectedIds if props actually changed from what we last processed
+    // AND if we are not currently syncing/debouncing (user is idle)
+    if (propsChanged && !isSyncing && selectedIds === debouncedSelectedIds) {
+      setSelectedIds(propIds);
+    }
+  }, [item.participants, isSyncing, selectedIds, debouncedSelectedIds]);
+
+  // Filter selectedIds against availableParticipants
+  // This ensures if someone is removed from the expense, they are also removed from local item state
+  useEffect(() => {
+    const availableIds = new Set(availableParticipants.map((p) => p.id));
+    const filtered = selectedIds.filter((id) => availableIds.has(id));
+
+    if (filtered.length !== selectedIds.length) {
+      setSelectedIds(filtered);
+    }
+  }, [availableParticipants, selectedIds]);
 
   return (
     <div className="space-y-3">

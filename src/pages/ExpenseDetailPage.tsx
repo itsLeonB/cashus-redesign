@@ -59,9 +59,12 @@ import {
   NewExpenseItemRequest,
   statusDisplay,
 } from "@/lib/api";
-import type { GroupExpenseResponse } from "@/lib/api/types";
+import type {
+  GroupExpenseResponse,
+  ExpenseItemResponse,
+  OtherFeeResponse,
+} from "@/lib/api/types";
 import { useQueryClient } from "@tanstack/react-query";
-import type { ExpenseItemResponse, OtherFeeResponse } from "@/lib/api/types";
 
 export default function ExpenseDetailPage() {
   const { expenseId } = useParams<{ expenseId: string }>();
@@ -102,15 +105,17 @@ export default function ExpenseDetailPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  
+
   // Participant modal state
   const [participantModalOpen, setParticipantModalOpen] = useState(false);
-  
+
   // Confirm dry-run modal state
   const [confirmPreviewModalOpen, setConfirmPreviewModalOpen] = useState(false);
-  const [dryRunResult, setDryRunResult] = useState<GroupExpenseResponse | null>(null);
+  const [dryRunResult, setDryRunResult] = useState<GroupExpenseResponse | null>(
+    null
+  );
   const [isDryRunLoading, setIsDryRunLoading] = useState(false);
-  
+
   const uploadBill = useUploadExpenseBill();
 
   const participantProfiles = (expense?.participants || []).map(
@@ -738,7 +743,9 @@ export default function ExpenseDetailPage() {
                   {isDryRunLoading && (
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   )}
-                  {isReady && !isDryRunLoading && <CheckCircle2 className="h-4 w-4 mr-2" />}
+                  {isReady && !isDryRunLoading && (
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                  )}
                   {isReady
                     ? "Confirm & Record Debts"
                     : "Please assign participants to all items before confirming"}
@@ -980,12 +987,15 @@ export default function ExpenseDetailPage() {
       />
 
       {/* Confirm Preview Modal */}
-      <Dialog open={confirmPreviewModalOpen} onOpenChange={(open) => {
-        if (!confirmExpense.isPending) {
-          setConfirmPreviewModalOpen(open);
-          if (!open) setDryRunResult(null);
-        }
-      }}>
+      <Dialog
+        open={confirmPreviewModalOpen}
+        onOpenChange={(open) => {
+          if (!confirmExpense.isPending) {
+            setConfirmPreviewModalOpen(open);
+            if (!open) setDryRunResult(null);
+          }
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -993,13 +1003,14 @@ export default function ExpenseDetailPage() {
               Confirm Expense
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Clicking continue will record the following debts:
             </p>
-            
-            {dryRunResult?.participants && dryRunResult.participants.length > 0 ? (
+
+            {dryRunResult?.participants &&
+            dryRunResult.participants.length > 0 ? (
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {dryRunResult.participants
                   .filter((p) => p.profile.id !== dryRunResult.payer.id)
@@ -1014,7 +1025,9 @@ export default function ExpenseDetailPage() {
                           imageUrl={participant.profile.avatar}
                           size="sm"
                         />
-                        <span className="font-medium">{participant.profile.name}</span>
+                        <span className="font-medium">
+                          {participant.profile.name}
+                        </span>
                       </div>
                       <span className="font-semibold tabular-nums">
                         {formatCurrency(participant.shareAmount)}
@@ -1027,13 +1040,15 @@ export default function ExpenseDetailPage() {
                 No debts to record
               </p>
             )}
-            
+
             <div className="flex justify-between pt-2 border-t border-border/50 font-semibold">
               <span>Total</span>
-              <span className="tabular-nums">{formatCurrency(dryRunResult?.totalAmount || 0)}</span>
+              <span className="tabular-nums">
+                {formatCurrency(dryRunResult?.totalAmount || 0)}
+              </span>
             </div>
           </div>
-          
+
           <div className="flex gap-3 mt-4">
             <Button
               variant="outline"
