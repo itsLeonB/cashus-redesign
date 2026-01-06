@@ -97,7 +97,11 @@ export function AppLayout() {
           {/* User section */}
           <div className="p-4 border-t border-sidebar-border">
             <div className="flex items-center gap-3 mb-3">
-              <AvatarCircle name={user?.name || "User"} size="md" />
+              <AvatarCircle
+                name={user?.name || "User"}
+                imageUrl={user?.avatar}
+                size="md"
+              />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{user?.name}</p>
                 <p className="text-xs text-muted-foreground truncate">
