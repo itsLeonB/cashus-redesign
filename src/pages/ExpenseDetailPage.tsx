@@ -1057,35 +1057,51 @@ export default function ExpenseDetailPage() {
 
                     {/* Items Breakdown */}
                     {participant.items && participant.items.length > 0 && (
-                      <div className="space-y-1.5 text-sm">
-                        {participant.items.map((item) => {
-                          const isNegative =
-                            parseFloat(item.shareAmount) < 0;
-                          return (
-                            <div
-                              key={item.id}
-                              className="flex justify-between items-start"
-                            >
-                              <span className="text-muted-foreground">
-                                {item.name}
-                              </span>
-                              <span
-                                className={`tabular-nums text-right ${
-                                  isNegative
-                                    ? "text-green-600 dark:text-green-400"
-                                    : ""
-                                }`}
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                          Items
+                        </p>
+                        <div className="space-y-1 text-sm">
+                          {participant.items.map((item) => {
+                            const isNegative =
+                              parseFloat(item.shareAmount) < 0;
+                            const isFullShare =
+                              item.shareRate === "1" ||
+                              item.shareRate === "100%" ||
+                              item.baseAmount === item.shareAmount;
+
+                            return (
+                              <div
+                                key={item.id}
+                                className="flex justify-between items-start"
                               >
-                                {formatCurrency(item.baseAmount)} →{" "}
-                                {formatCurrency(item.shareAmount)}{" "}
-                                <span className="text-xs text-muted-foreground">
-                                  ({item.shareRate})
+                                <span className="text-muted-foreground">
+                                  {item.name}
                                 </span>
-                              </span>
-                            </div>
-                          );
-                        })}
-                        <div className="flex justify-between pt-1 border-t border-border/30">
+                                <span
+                                  className={`tabular-nums text-right ${
+                                    isNegative
+                                      ? "text-green-600 dark:text-green-400"
+                                      : ""
+                                  }`}
+                                >
+                                  {isFullShare ? (
+                                    formatCurrency(item.shareAmount)
+                                  ) : (
+                                    <>
+                                      <span className="text-xs text-muted-foreground">
+                                        {formatCurrency(item.baseAmount)} ×{" "}
+                                        {item.shareRate} ={" "}
+                                      </span>
+                                      {formatCurrency(item.shareAmount)}
+                                    </>
+                                  )}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="flex justify-between pt-1 border-t border-border/30 text-sm">
                           <span className="text-muted-foreground">
                             Items subtotal
                           </span>
@@ -1098,35 +1114,51 @@ export default function ExpenseDetailPage() {
 
                     {/* Fees Breakdown */}
                     {participant.fees && participant.fees.length > 0 && (
-                      <div className="space-y-1.5 text-sm">
-                        {participant.fees.map((fee) => {
-                          const isNegative =
-                            parseFloat(fee.shareAmount) < 0;
-                          return (
-                            <div
-                              key={fee.id}
-                              className="flex justify-between items-start"
-                            >
-                              <span className="text-muted-foreground">
-                                {fee.name}
-                              </span>
-                              <span
-                                className={`tabular-nums text-right ${
-                                  isNegative
-                                    ? "text-green-600 dark:text-green-400"
-                                    : ""
-                                }`}
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                          Fees
+                        </p>
+                        <div className="space-y-1 text-sm">
+                          {participant.fees.map((fee) => {
+                            const isNegative =
+                              parseFloat(fee.shareAmount) < 0;
+                            const isFullShare =
+                              fee.shareRate === "1" ||
+                              fee.shareRate === "100%" ||
+                              fee.baseAmount === fee.shareAmount;
+
+                            return (
+                              <div
+                                key={fee.id}
+                                className="flex justify-between items-start"
                               >
-                                {formatCurrency(fee.baseAmount)} →{" "}
-                                {formatCurrency(fee.shareAmount)}{" "}
-                                <span className="text-xs text-muted-foreground">
-                                  ({fee.shareRate})
+                                <span className="text-muted-foreground">
+                                  {fee.name}
                                 </span>
-                              </span>
-                            </div>
-                          );
-                        })}
-                        <div className="flex justify-between pt-1 border-t border-border/30">
+                                <span
+                                  className={`tabular-nums text-right ${
+                                    isNegative
+                                      ? "text-green-600 dark:text-green-400"
+                                      : ""
+                                  }`}
+                                >
+                                  {isFullShare ? (
+                                    formatCurrency(fee.shareAmount)
+                                  ) : (
+                                    <>
+                                      <span className="text-xs text-muted-foreground">
+                                        {formatCurrency(fee.baseAmount)} ×{" "}
+                                        {fee.shareRate} ={" "}
+                                      </span>
+                                      {formatCurrency(fee.shareAmount)}
+                                    </>
+                                  )}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="flex justify-between pt-1 border-t border-border/30 text-sm">
                           <span className="text-muted-foreground">
                             Fees subtotal
                           </span>
