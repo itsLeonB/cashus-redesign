@@ -11,13 +11,15 @@ export function ExpenseConfirmationPreview({
   data,
   formatCurrency,
   showHeader = false,
-}: ExpenseConfirmationPreviewProps) {
+}: Readonly<ExpenseConfirmationPreviewProps>) {
   return (
     <div className="space-y-4">
       {/* Header Summary */}
       {showHeader && (
         <div className="space-y-1 pb-3 border-b border-border/50">
-          <p className="font-semibold text-lg">{data.description || "Expense"}</p>
+          <p className="font-semibold text-lg">
+            {data.description || "Expense"}
+          </p>
           <p className="text-sm text-muted-foreground">
             Total: {formatCurrency(data.totalAmount || 0)}
           </p>
@@ -68,7 +70,8 @@ export function ExpenseConfirmationPreview({
                     </p>
                     <div className="space-y-1 text-sm">
                       {participant.items.map((item) => {
-                        const isNegative = parseFloat(item.shareAmount) < 0;
+                        const isNegative =
+                          Number.parseFloat(item.shareAmount) < 0;
                         const isFullShare =
                           item.shareRate === "1" ||
                           item.shareRate === "100%" ||
@@ -124,7 +127,8 @@ export function ExpenseConfirmationPreview({
                     </p>
                     <div className="space-y-1 text-sm">
                       {participant.fees.map((fee) => {
-                        const isNegative = parseFloat(fee.shareAmount) < 0;
+                        const isNegative =
+                          Number.parseFloat(fee.shareAmount) < 0;
                         const isFullShare =
                           fee.shareRate === "1" ||
                           fee.shareRate === "100%" ||

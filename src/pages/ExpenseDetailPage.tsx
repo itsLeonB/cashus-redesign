@@ -614,7 +614,7 @@ export default function ExpenseDetailPage() {
       {expense.isPreviewable && expense.confirmationPreview && (
         <Card className="border-border/50">
           <CardHeader>
-            <CardTitle className="font-display">Split Preview</CardTitle>
+            <CardTitle className="font-display">Confirmed Splits</CardTitle>
           </CardHeader>
           <CardContent>
             <ExpenseConfirmationPreview
@@ -1032,7 +1032,6 @@ export default function ExpenseDetailPage() {
               />
             </div>
           )}
-
 
           <div className="flex gap-3 mt-4">
             <Button
