@@ -143,6 +143,7 @@ export interface GroupExpenseResponse {
   feesTotalAmount: string;
   description?: string;
   status: "DRAFT" | "READY" | "CONFIRMED";
+  isPreviewable: boolean;
 
   // Relationships
   payer: SimpleProfile;
@@ -152,6 +153,8 @@ export interface GroupExpenseResponse {
   participants?: ExpenseParticipantResponse[];
   bill: ExpenseBillResponse;
   billExists: boolean;
+
+  confirmationPreview: ExpenseConfirmationResponse;
 }
 
 export const statusDisplay = {
