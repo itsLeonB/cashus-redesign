@@ -148,10 +148,14 @@ export function useCreateDebt() {
 }
 
 // Group Expenses hooks
-export function useGroupExpenses() {
+export function useGroupExpenses(
+  status?: string,
+  options?: { enabled?: boolean }
+) {
   return useQuery({
-    queryKey: ["group-expenses"],
-    queryFn: groupExpensesApi.getAll,
+    queryKey: ["group-expenses", status],
+    queryFn: () => groupExpensesApi.getAll(status),
+    enabled: options?.enabled ?? true,
   });
 }
 
