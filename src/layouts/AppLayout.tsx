@@ -111,7 +111,7 @@ export function AppLayout() {
             </div>
             <div className="flex gap-2">
               <Button variant="ghost" size="sm" className="flex-1" asChild>
-                <NavLink to="/profile">
+                <NavLink to="/profile" onClick={() => setSidebarOpen(false)}>
                   <User className="h-4 w-4 mr-1" />
                   Profile
                 </NavLink>
