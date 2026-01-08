@@ -4,13 +4,11 @@ import { AvatarCircle } from "@/components/AvatarCircle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Plus, Receipt, Calendar, Users, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { NewGroupExpenseModal } from "@/components/NewGroupExpenseModal";
-import { statusDisplay } from "@/lib/api";
 import type { GroupExpenseResponse } from "@/lib/api/types";
 
 export default function ExpensesPage() {
@@ -48,27 +46,23 @@ export default function ExpensesPage() {
               <Receipt className="h-6 w-6 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <p className="font-medium truncate">
-                  {expense.description || "Untitled Expense"}
-                </p>
-                <Badge
-                  variant={
-                    expense.status === "CONFIRMED" ? "default" : "secondary"
-                  }
-                  className="text-xs"
-                >
-                  {statusDisplay[expense.status]}
-                </Badge>
-              </div>
+              <p className="font-medium truncate mb-1">
+                {expense.description || "Untitled Expense"}
+              </p>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Calendar className="h-3.5 w-3.5" />
-                  {formatDate(expense.createdAt)}
+                  {expense.status === "CONFIRMED"
+                    ? `Confirmed ${formatDate(expense.updatedAt)}`
+                    : formatDate(expense.createdAt)}
                 </span>
                 <span className="flex items-center gap-1">
                   <Users className="h-3.5 w-3.5" />
-                  {expense.participants?.length || 0} participants
+                  {expense.participants?.length || 0}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Receipt className="h-3.5 w-3.5" />
+                  {expense.items?.length || 0} items
                 </span>
               </div>
             </div>
