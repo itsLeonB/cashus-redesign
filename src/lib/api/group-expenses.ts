@@ -16,7 +16,10 @@ import {
 } from "./types";
 
 export const groupExpensesApi = {
-  getAll: () => apiClient.get<GroupExpenseResponse[]>("/group-expenses"),
+  getAll: (status?: string) =>
+    apiClient.get<GroupExpenseResponse[]>(
+      `/group-expenses${status ? `?status=${status}` : ""}`
+    ),
 
   getById: async (expenseId: string) => {
     const data = await apiClient.get<GroupExpenseResponse>(
