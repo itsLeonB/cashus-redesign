@@ -161,13 +161,14 @@ export default function DashboardPage() {
         {recentActivity.map((activity) => (
           <div
             key={activity.id}
-            className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+            className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors min-w-0"
           >
             {activity.profileName && (
               <AvatarCircle
                 name={activity.profileName}
                 imageUrl={activity.avatarUrl}
                 size="sm"
+                className="flex-shrink-0"
               />
             )}
             <div className="flex-1 min-w-0">
@@ -175,12 +176,12 @@ export default function DashboardPage() {
                 {activity.description}
               </p>
               {activity.profileName && (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground truncate">
                   with {activity.profileName}
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-shrink-0">
               {arrowDisplay(activity)}
               <AmountDisplay
                 amount={activity.amount}
@@ -222,12 +223,13 @@ export default function DashboardPage() {
           <Link
             key={friendship.id}
             to={`/friends/${friendship.id}`} // Use friendship ID for link, but querying details might need profileId correction later
-            className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+            className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors min-w-0"
           >
             <AvatarCircle
               name={friendship.profileName}
               imageUrl={friendship.profileAvatar}
               size="sm"
+              className="flex-shrink-0"
             />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
@@ -237,7 +239,9 @@ export default function DashboardPage() {
                 {friendship.type === "ANON" ? "Anonymous" : "Connected"}
               </p>
             </div>
-            <AmountDisplay amount={friendship.balance} size="sm" />
+            <div className="flex-shrink-0">
+              <AmountDisplay amount={friendship.balance} size="sm" />
+            </div>
           </Link>
         ))}
       </div>
@@ -321,7 +325,7 @@ export default function DashboardPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Recent Activity */}
-        <Card className="border-border/50">
+        <Card className="border-border/50 min-w-0 overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-lg font-display">
               Recent Activity
@@ -333,11 +337,11 @@ export default function DashboardPage() {
               </Link>
             </Button>
           </CardHeader>
-          <CardContent>{activityCardContent()}</CardContent>
+          <CardContent className="min-w-0">{activityCardContent()}</CardContent>
         </Card>
 
         {/* Friends with Balances */}
-        <Card className="border-border/50">
+        <Card className="border-border/50 min-w-0 overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-lg font-display">
               Outstanding Balances
@@ -349,7 +353,7 @@ export default function DashboardPage() {
               </Link>
             </Button>
           </CardHeader>
-          <CardContent>{friendsCardContent()}</CardContent>
+          <CardContent className="min-w-0">{friendsCardContent()}</CardContent>
         </Card>
       </div>
 
