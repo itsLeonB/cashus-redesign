@@ -6,6 +6,15 @@ import type {
   NewDebtTransactionRequest,
   SyncItemParticipantsRequest,
 } from "@/lib/api";
+import { profileApi } from "@/lib/api/profile";
+
+// Profile hooks
+export function useTransferMethods() {
+  return useQuery({
+    queryKey: ["transfer-methods"],
+    queryFn: profileApi.getTransferMethods,
+  });
+}
 
 // Friendships hooks
 export function useFriendships() {
