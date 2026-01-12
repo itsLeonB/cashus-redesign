@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useFriendships, useCreateDebt } from "@/hooks/useApi";
 import { useTransferMethods } from "@/hooks/useMasterData";
 import { DebtAction } from "@/lib/api/types";
@@ -19,15 +19,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import {
   ArrowUpRight,
   ArrowDownLeft,
   Loader2,
-  Wallet,
-  CreditCard,
-  Banknote,
+  Check,
+  ChevronsUpDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -84,11 +96,17 @@ export function TransactionModal({
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [transferMethodId, setTransferMethodId] = useState("");
+  const [transferMethodOpen, setTransferMethodOpen] = useState(false);
 
   const { data: friendships } = useFriendships();
-  const { data: transferMethods } = useTransferMethods("for-transaction");
+  const { data: transferMethods, isLoading: isLoadingMethods } =
+    useTransferMethods("for-transaction");
   const createDebt = useCreateDebt();
   const { toast } = useToast();
+
+  const selectedMethod = useMemo(() => {
+    return transferMethods?.find((m) => m.id === transferMethodId);
+  }, [transferMethods, transferMethodId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,12 +146,6 @@ export function TransactionModal({
     setTransferMethodId("");
   };
 
-  const getTransferIcon = (name: string) => {
-    const lower = name.toLowerCase();
-    if (lower.includes("cash")) return Banknote;
-    if (lower.includes("card") || lower.includes("credit")) return CreditCard;
-    return Wallet;
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -217,31 +229,75 @@ export function TransactionModal({
           {/* Transfer Method */}
           <div className="space-y-2">
             <Label>Transfer Method</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {transferMethods
-                ?.filter(
-                  (method) => !["GROUP_EXPENSE", "app"].includes(method.name)
-                )
-                ?.map((method) => {
-                  const Icon = getTransferIcon(method.name);
-                  return (
-                    <button
-                      key={method.id}
-                      type="button"
-                      onClick={() => setTransferMethodId(method.id)}
-                      className={cn(
-                        "flex flex-col items-center gap-1 p-3 rounded-lg border transition-all",
-                        transferMethodId === method.id
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border/50 hover:border-border text-muted-foreground"
-                      )}
-                    >
-                      <Icon className="h-5 w-5" />
-                      <span className="text-xs">{method.display}</span>
-                    </button>
-                  );
-                })}
-            </div>
+            <Popover
+              open={transferMethodOpen}
+              onOpenChange={setTransferMethodOpen}
+            >
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={transferMethodOpen}
+                  className="w-full justify-between"
+                  disabled={isLoadingMethods}
+                >
+                  {isLoadingMethods ? (
+                    <span className="text-muted-foreground">Loading...</span>
+                  ) : selectedMethod ? (
+                    <div className="flex items-center gap-2">
+                      <img
+                        src={selectedMethod.iconUrl}
+                        alt={selectedMethod.name}
+                        className="h-5 w-5 rounded object-contain"
+                      />
+                      <span>{selectedMethod.display}</span>
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      Select transfer method...
+                    </span>
+                  )}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0 z-50" align="start">
+                <Command>
+                  <CommandInput placeholder="Search transfer method..." />
+                  <CommandList>
+                    <CommandEmpty>No transfer method found.</CommandEmpty>
+                    <CommandGroup>
+                      {transferMethods?.map((method) => (
+                        <CommandItem
+                          key={method.id}
+                          value={method.display}
+                          onSelect={() => {
+                            setTransferMethodId(method.id);
+                            setTransferMethodOpen(false);
+                          }}
+                        >
+                          <div className="flex items-center gap-2 flex-1">
+                            <img
+                              src={method.iconUrl}
+                              alt={method.name}
+                              className="h-5 w-5 rounded object-contain"
+                            />
+                            <span>{method.display}</span>
+                          </div>
+                          <Check
+                            className={cn(
+                              "h-4 w-4",
+                              transferMethodId === method.id
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Description */}
