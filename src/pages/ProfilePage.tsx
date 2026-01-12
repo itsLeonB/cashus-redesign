@@ -13,6 +13,9 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { authApi } from "@/lib/api";
+import { useTransferMethods } from "@/hooks/useApi";
+import { AddTransferMethodModal } from "@/components/AddTransferMethodModal";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   User,
   Mail,
@@ -22,6 +25,8 @@ import {
   Loader2,
   LogOut,
   KeyRound,
+  Plus,
+  CreditCard,
 } from "lucide-react";
 
 export default function ProfilePage() {
@@ -30,11 +35,17 @@ export default function ProfilePage() {
   const [name, setName] = useState(user?.name || "");
   const [isLoading, setIsLoading] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [addMethodModalOpen, setAddMethodModalOpen] = useState(false);
   const { toast } = useToast();
+
+  const {
+    data: transferMethods,
+    isLoading: isLoadingTransferMethods,
+  } = useTransferMethods();
 
   const handleResetPassword = async () => {
     if (!user?.email) return;
-    
+
     setIsResettingPassword(true);
     try {
       await authApi.forgotPassword(user.email);
@@ -184,6 +195,85 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
+      {/* Transfer Methods */}
+      <Card className="border-border/50">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="font-display flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Transfer Methods
+              </CardTitle>
+              <CardDescription>
+                Your saved payment methods for receiving money
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setAddMethodModalOpen(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Method
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoadingTransferMethods ? (
+            <div className="space-y-3">
+              {[1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 p-3 rounded-lg border border-border/50"
+                >
+                  <Skeleton className="h-10 w-10 rounded" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-32" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : transferMethods && transferMethods.length > 0 ? (
+            <div className="space-y-3">
+              {transferMethods.map((method) => (
+                <div
+                  key={method.id}
+                  className="flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-muted/20"
+                >
+                  <img
+                    src={method.method.iconUrl}
+                    alt={method.method.name}
+                    className="h-10 w-10 rounded object-contain bg-background p-1"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-sm truncate">
+                        {method.method.display}
+                      </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {method.accountName}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-mono text-sm">{method.accountNumber}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <CreditCard className="h-10 w-10 mx-auto mb-3 opacity-50" />
+              <p className="text-sm">No transfer methods added yet</p>
+              <p className="text-xs mt-1">
+                Add a payment method to receive money from friends
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Security */}
       <Card className="border-border/50">
         <CardHeader>
@@ -239,6 +329,12 @@ export default function ProfilePage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Add Transfer Method Modal */}
+      <AddTransferMethodModal
+        open={addMethodModalOpen}
+        onOpenChange={setAddMethodModalOpen}
+      />
     </div>
   );
 }
