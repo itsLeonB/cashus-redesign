@@ -46,7 +46,7 @@ export function AddTransferMethodModal({
   const [comboboxOpen, setComboboxOpen] = useState(false);
 
   const { data: transferMethods, isLoading: isLoadingMethods } =
-    useTransferMethods("children");
+    useTransferMethods("children", open);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
