@@ -86,7 +86,7 @@ export function TransactionModal({
   const [transferMethodId, setTransferMethodId] = useState("");
 
   const { data: friendships } = useFriendships();
-  const { data: transferMethods } = useTransferMethods();
+  const { data: transferMethods } = useTransferMethods("for-transaction");
   const createDebt = useCreateDebt();
   const { toast } = useToast();
 
