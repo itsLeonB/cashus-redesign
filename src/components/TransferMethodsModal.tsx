@@ -20,7 +20,7 @@ export function TransferMethodsModal({
   onOpenChange,
   profileId,
   profileName,
-}: TransferMethodsModalProps) {
+}: Readonly<TransferMethodsModalProps>) {
   const { data: methods, isLoading } = useProfileTransferMethods(
     profileId,
     open

@@ -10,7 +10,7 @@ import { profileApi } from "@/lib/api/profile";
 import { profilesApi } from "@/lib/api/profiles";
 
 // Profile hooks
-export function useTransferMethods() {
+export function useMyTransferMethods() {
   return useQuery({
     queryKey: ["transfer-methods"],
     queryFn: profileApi.getTransferMethods,

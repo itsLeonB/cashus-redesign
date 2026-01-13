@@ -5,7 +5,10 @@ import { TransferMethodFilter } from "@/lib/api/debts";
 const MASTER_DATA_STALE_TIME = Infinity;
 const MASTER_DATA_GC_TIME = Infinity;
 
-export function useTransferMethods(filter: TransferMethodFilter, enabled = true) {
+export function useFilteredTransferMethods(
+  filter: TransferMethodFilter,
+  enabled = true
+) {
   return useQuery({
     queryKey: ["transfer-methods", filter],
     queryFn: () => debtsApi.getTransferMethods(filter),

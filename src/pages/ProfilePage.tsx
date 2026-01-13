@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { authApi } from "@/lib/api";
-import { useTransferMethods } from "@/hooks/useApi";
+import { useMyTransferMethods } from "@/hooks/useApi";
 import { AddTransferMethodModal } from "@/components/AddTransferMethodModal";
 import { TransferMethodsList } from "@/components/TransferMethodsList";
 import {
@@ -38,10 +38,8 @@ export default function ProfilePage() {
   const [addMethodModalOpen, setAddMethodModalOpen] = useState(false);
   const { toast } = useToast();
 
-  const {
-    data: transferMethods,
-    isLoading: isLoadingTransferMethods,
-  } = useTransferMethods();
+  const { data: transferMethods, isLoading: isLoadingTransferMethods } =
+    useMyTransferMethods();
 
   const handleResetPassword = async () => {
     if (!user?.email) return;

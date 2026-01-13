@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useFriendships, useCreateDebt } from "@/hooks/useApi";
-import { useTransferMethods } from "@/hooks/useMasterData";
+import { useFilteredTransferMethods } from "@/hooks/useMasterData";
 import { DebtAction } from "@/lib/api/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,7 +100,7 @@ export function TransactionModal({
 
   const { data: friendships } = useFriendships();
   const { data: transferMethods, isLoading: isLoadingMethods } =
-    useTransferMethods("for-transaction");
+    useFilteredTransferMethods("for-transaction", open);
   const createDebt = useCreateDebt();
   const { toast } = useToast();
 
@@ -146,6 +146,26 @@ export function TransactionModal({
     setTransferMethodId("");
   };
 
+  const transferMethodInput = () => {
+    if (isLoadingMethods)
+      return <span className="text-muted-foreground">Loading...</span>;
+
+    if (selectedMethod)
+      return (
+        <div className="flex items-center gap-2">
+          <img
+            src={selectedMethod.iconUrl}
+            alt={selectedMethod.name}
+            className="h-5 w-5 rounded object-contain"
+          />
+          <span>{selectedMethod.display}</span>
+        </div>
+      );
+
+    return (
+      <span className="text-muted-foreground">Select transfer method...</span>
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -241,22 +261,7 @@ export function TransactionModal({
                   className="w-full justify-between"
                   disabled={isLoadingMethods}
                 >
-                  {isLoadingMethods ? (
-                    <span className="text-muted-foreground">Loading...</span>
-                  ) : selectedMethod ? (
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={selectedMethod.iconUrl}
-                        alt={selectedMethod.name}
-                        className="h-5 w-5 rounded object-contain"
-                      />
-                      <span>{selectedMethod.display}</span>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">
-                      Select transfer method...
-                    </span>
-                  )}
+                  {transferMethodInput()}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>

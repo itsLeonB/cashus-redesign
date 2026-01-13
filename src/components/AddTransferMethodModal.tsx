@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/popover";
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useTransferMethods } from "@/hooks/useMasterData";
+import { useFilteredTransferMethods } from "@/hooks/useMasterData";
 import { profileApi } from "@/lib/api/profile";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -38,7 +38,7 @@ interface AddTransferMethodModalProps {
 export function AddTransferMethodModal({
   open,
   onOpenChange,
-}: AddTransferMethodModalProps) {
+}: Readonly<AddTransferMethodModalProps>) {
   const [selectedMethodId, setSelectedMethodId] = useState("");
   const [accountName, setAccountName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
@@ -46,7 +46,7 @@ export function AddTransferMethodModal({
   const [comboboxOpen, setComboboxOpen] = useState(false);
 
   const { data: transferMethods, isLoading: isLoadingMethods } =
-    useTransferMethods("children", open);
+    useFilteredTransferMethods("children", open);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -108,6 +108,27 @@ export function AddTransferMethodModal({
     onOpenChange(newOpen);
   };
 
+  const transferMethodInput = () => {
+    if (isLoadingMethods)
+      return <span className="text-muted-foreground">Loading...</span>;
+
+    if (selectedMethod)
+      return (
+        <div className="flex items-center gap-2">
+          <img
+            src={selectedMethod.iconUrl}
+            alt={selectedMethod.name}
+            className="h-5 w-5 rounded object-contain"
+          />
+          <span>{selectedMethod.display}</span>
+        </div>
+      );
+
+    return (
+      <span className="text-muted-foreground">Select payment method...</span>
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -133,22 +154,7 @@ export function AddTransferMethodModal({
                   className="w-full justify-between"
                   disabled={isLoadingMethods}
                 >
-                  {isLoadingMethods ? (
-                    <span className="text-muted-foreground">Loading...</span>
-                  ) : selectedMethod ? (
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={selectedMethod.iconUrl}
-                        alt={selectedMethod.name}
-                        className="h-5 w-5 rounded object-contain"
-                      />
-                      <span>{selectedMethod.display}</span>
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">
-                      Select payment method...
-                    </span>
-                  )}
+                  {transferMethodInput()}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>

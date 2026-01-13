@@ -16,7 +16,7 @@ export function TransferMethodsList({
   isLoading,
   emptyMessage = "No transfer methods added yet",
   emptyDescription = "Add a payment method to receive money from friends",
-}: TransferMethodsListProps) {
+}: Readonly<TransferMethodsListProps>) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const { toast } = useToast();
 
