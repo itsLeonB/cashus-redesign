@@ -27,9 +27,9 @@ interface TransferMethodSelectProps {
   transferMethodOpen: boolean;
   setTransferMethodOpen: (open: boolean) => void;
   isLoadingMethods: boolean;
-  selectedMethod: TransferMethod;
+  selectedMethod?: TransferMethod;
   setSelectedMethod: (method: TransferMethod) => void;
-  transferMethods: TransferMethod[];
+  transferMethods?: TransferMethod[];
 }
 
 const TransferMethodSelect = ({

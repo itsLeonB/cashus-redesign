@@ -63,7 +63,6 @@ export function ExpenseItemModal({
     }
 
     const itemData = {
-      groupExpenseId: expenseId,
       name: name.trim(),
       amount,
       quantity,
