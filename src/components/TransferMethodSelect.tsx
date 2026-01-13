@@ -40,27 +40,6 @@ const TransferMethodSelect = ({
   setSelectedMethod,
   transferMethods,
 }: TransferMethodSelectProps) => {
-  const transferMethodInput = () => {
-    if (isLoadingMethods)
-      return <span className="text-muted-foreground">Loading...</span>;
-
-    if (selectedMethod)
-      return (
-        <div className="flex items-center gap-2">
-          <img
-            src={selectedMethod.iconUrl}
-            alt={selectedMethod.name}
-            className="h-5 w-5 rounded object-contain"
-          />
-          <span>{selectedMethod.display}</span>
-        </div>
-      );
-
-    return (
-      <span className="text-muted-foreground">Select transfer method...</span>
-    );
-  };
-
   const getTransferIcon = (method: TransferMethod) => {
     if (method.iconUrl)
       return (
@@ -76,6 +55,23 @@ const TransferMethodSelect = ({
     if (lower.includes("card") || lower.includes("credit"))
       return <CreditCard />;
     return <Wallet />;
+  };
+
+  const transferMethodInput = () => {
+    if (isLoadingMethods)
+      return <span className="text-muted-foreground">Loading...</span>;
+
+    if (selectedMethod)
+      return (
+        <div className="flex items-center gap-2">
+          {getTransferIcon(selectedMethod)}
+          <span>{selectedMethod.display}</span>
+        </div>
+      );
+
+    return (
+      <span className="text-muted-foreground">Select transfer method...</span>
+    );
   };
 
   return (
