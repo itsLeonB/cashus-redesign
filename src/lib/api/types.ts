@@ -53,7 +53,6 @@ export interface FriendProfile {
 export interface FriendDetailsResponse {
   friend: FriendDetails;
   balance: FriendBalance;
-  transactions: FriendTransaction[];
   redirectToRealFriendship?: string;
 }
 
@@ -71,22 +70,21 @@ export interface FriendDetails {
 }
 
 export interface FriendBalance {
-  totalOwedToYou: number; // Amount friend owes you
-  totalYouOwe: number; // Amount you owe friend
-  netBalance: number; // Positive = they owe you, Negative = you owe them
-  currency: string;
+  netBalance: string;
+  totalLentToFriend: string;
+  totalBorrowedFromFriend: string;
+  transactionHistory: FriendTransaction[];
+  currencyCode: string;
 }
 
 export interface FriendTransaction {
   id: string;
-  type: "LEND" | "REPAY";
-  action: "LEND" | "BORROW" | "RECEIVE" | "RETURN";
-  amount: number;
-  description: string;
+  type: "LENT" | "BORROWED";
+  amount: string;
   transferMethod: string;
+  description: string;
   createdAt: string;
   updatedAt: string;
-  status: "PENDING" | "COMPLETED" | "CANCELLED";
 }
 
 export interface NewAnonymousFriendshipRequest {
