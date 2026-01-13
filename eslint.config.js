@@ -10,6 +10,7 @@ export default tseslint.config(
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended, sonarjs.configs.recommended],
     files: ["**/*.{ts,tsx}"],
+    ignores: ['scripts/**'],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,

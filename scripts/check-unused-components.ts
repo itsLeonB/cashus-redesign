@@ -2,7 +2,9 @@
 import fs from "node:fs";
 import path from "node:path";
 
-fs.mkdirSync("tmp");
+if (!fs.existsSync("tmp")) {
+  fs.mkdirSync("tmp", { recursive: true });
+}
 
 const projectRoot = process.cwd();
 
@@ -10,11 +12,13 @@ const projectRoot = process.cwd();
 const directoriesToCheck = [
   "src/components/ui",
   "src/components",
-  "src/layouts",
   "src/contexts",
+  "src/layouts",
   "src/pages",
   "src/pages/auth",
-].filter((dir) => fs.existsSync(path.join(projectRoot, dir)));
+]
+  .toSorted()
+  .filter((dir) => fs.existsSync(path.join(projectRoot, dir)));
 
 const srcDir = path.join(projectRoot, "src");
 
@@ -63,10 +67,10 @@ console.log(`📊 Found ${allComponents.length} components total\n`);
 // Search for imports and usage of these components
 const usedComponents: Component[] = [];
 const unusedComponents: Component[] = [];
+const files = getAllFiles(srcDir);
 
 allComponents.forEach((component) => {
   try {
-    const files = getAllFiles(srcDir);
     let isUsed = false;
 
     for (const file of files) {
@@ -77,42 +81,17 @@ allComponents.forEach((component) => {
         file.endsWith(".jsx")
       ) {
         // Skip the component file itself
-        if (file.includes(component.fullPath)) {
+        const normalizedFile = path.normalize(file);
+        const normalizedComponentPath = path.normalize(
+          path.join(projectRoot, component.fullPath)
+        );
+        if (normalizedFile === normalizedComponentPath) {
           continue;
         }
 
         const content = fs.readFileSync(file, "utf8");
 
-        // Check 1: Import statements
-        const importPatterns = [
-          `from ['"]@/${component.dir}/${component.name}['"]`,
-          String.raw`from ['"]\./${component.name}['"]`,
-          String.raw`from ['"]\.\./${component.name}['"]`,
-          // For contexts
-          component.dir === "contexts" ? `${component.name}Context` : null,
-          component.dir === "contexts" ? `${component.name}Provider` : null,
-        ].filter(Boolean);
-
-        const hasImport = importPatterns.some((pattern) =>
-          new RegExp(pattern!, "i").test(content)
-        );
-
-        // Check 2: JSX usage (component tags)
-        // Look for <ComponentName or <ComponentName.
-        const jsxRegex = new RegExp(
-          String.raw`<${component.displayName}[\s>.]`,
-          "g"
-        );
-        const hasJsxUsage = jsxRegex.test(content);
-
-        // Check 3: Dynamic imports
-        const dynamicImportRegex = new RegExp(
-          String.raw`import\(['"]\.*[/]?${component.dir}/${component.name}['"]\)`,
-          "i"
-        );
-        const hasDynamicImport = dynamicImportRegex.test(content);
-
-        if (hasImport || hasJsxUsage || hasDynamicImport) {
+        if (checkUsage(component, content)) {
           isUsed = true;
           break;
         }
@@ -146,13 +125,44 @@ console.log(`📦 Total: ${allComponents.length} components`);
 // Generate reports
 generateReports(usedComponents, unusedComponents);
 
+function checkUsage(component: Component, content: string): boolean {
+  // Check 1: Import statements
+  const importPatterns = [
+    `from ['"]@/${component.dir}/${component.name}['"]`,
+    String.raw`from ['"]\./${component.name}['"]`,
+    String.raw`from ['"]\.\./${component.name}['"]`,
+    // For contexts
+    component.dir === "contexts" ? `${component.name}Context` : null,
+    component.dir === "contexts" ? `${component.name}Provider` : null,
+  ].filter(Boolean);
+
+  const hasImport = importPatterns.some((pattern) =>
+    new RegExp(pattern!, "i").test(content)
+  );
+
+  // Check 2: JSX usage (component tags)
+  // Look for <ComponentName or <ComponentName.
+  const jsxRegex = new RegExp(String.raw`<${component.displayName}[\s>.]`, "g");
+  const hasJsxUsage = jsxRegex.test(content);
+
+  // Check 3: Dynamic imports
+  const dynamicImportRegex = new RegExp(
+    String.raw`import\(['"]\.*[/]?${component.dir}/${component.name}['"]\)`,
+    "i"
+  );
+  const hasDynamicImport = dynamicImportRegex.test(content);
+
+  return hasImport || hasJsxUsage || hasDynamicImport;
+}
+
 function getAllFiles(dir: string): string[] {
   const files: string[] = [];
 
   function traverse(currentDir: string) {
     // Skip unwanted directories
     const skipDirs = ["node_modules", "dist", ".git", ".next", ".vscode"];
-    if (skipDirs.some((skip) => currentDir.includes(skip))) {
+    const pathSegments = currentDir.split(path.sep);
+    if (skipDirs.some((skip) => pathSegments.includes(skip))) {
       return;
     }
 
@@ -171,11 +181,11 @@ function getAllFiles(dir: string): string[] {
             files.push(fullPath);
           }
         } catch (err) {
-          // Skip files we can't access
+          console.warn(`⚠️  Skipping file ${fullPath}: ${err}`);
         }
       });
     } catch (err) {
-      // Skip directories we can't access
+      console.warn(`⚠️  Skipping directory ${currentDir}: ${err}`);
     }
   }
 
@@ -219,8 +229,10 @@ function generateReports(used: Component[], unused: Component[]) {
     });
 
     fs.writeFileSync("tmp/cleanup-unused.sh", cleanupScript);
-    console.log("\n🔧 Cleanup script created: cleanup-unused.sh");
-    console.log("   Run: chmod +x cleanup-unused.sh && ./cleanup-unused.sh");
+    console.log("\n🔧 Cleanup script created: tmp/cleanup-unused.sh");
+    console.log(
+      "   Run: chmod +x tmp/cleanup-unused.sh && ./tmp/cleanup-unused.sh"
+    );
   }
 
   // Save detailed JSON report
@@ -230,7 +242,10 @@ function generateReports(used: Component[], unused: Component[]) {
       total: allComponents.length,
       used: used.length,
       unused: unused.length,
-      usagePercentage: Math.round((used.length / allComponents.length) * 100),
+      usagePercentage:
+        allComponents.length > 0
+          ? Math.round((used.length / allComponents.length) * 100)
+          : 0,
     },
     directoriesChecked: directoriesToCheck,
     usedComponents: used.map((c) => ({
@@ -253,7 +268,7 @@ function generateReports(used: Component[], unused: Component[]) {
     JSON.stringify(report, null, 2)
   );
 
-  console.log("\n📄 Detailed report saved to: component-usage-report.json");
+  console.log("\n📄 Detailed report saved to: tmp/component-usage-report.json");
 
   // Calculate potential savings
   const totalUnusedSize = unused.reduce((sum, comp) => {
