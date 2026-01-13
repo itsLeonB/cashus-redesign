@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   useSearchParams,
   useNavigate,
@@ -20,6 +20,7 @@ export default function OAuthCallbackPage() {
   const { mutate: handleOAuth, isPending } = useOAuthCallback();
 
   const [error, setError] = useState<string | null>(null);
+  const submittedRef = useRef(false);
 
   useEffect(() => {
     if (!provider) return;
@@ -39,13 +40,10 @@ export default function OAuthCallbackPage() {
       return;
     }
 
+    if (submittedRef.current) return;
     if (isPending) return;
-    // Prevent double invocation in strict mode?
-    // Actually React Query mutation is safe to call, but useEffect runs twice.
-    // However, mutation state management might handle it.
-    // Or we should use a ref to prevent double submission.
 
-    // For now simple call:
+    submittedRef.current = true;
     handleOAuth(
       { provider, code, state },
       {
