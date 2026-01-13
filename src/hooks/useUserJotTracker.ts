@@ -4,11 +4,15 @@ import { useAuth } from "../contexts/AuthContext";
 declare global {
   var uj:
     | {
-        q: any[];
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        init: (projectId: string, options?: any) => void;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        identify: (user: any) => void;
+        q: unknown[];
+        init: (projectId: string, options?: Record<string, unknown>) => void;
+        identify: (user: {
+          id: string | number;
+          email: string;
+          firstName?: string;
+          lastName?: string;
+          avatar?: string;
+        }) => void;
       }
     | undefined;
 }

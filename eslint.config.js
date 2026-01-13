@@ -19,8 +19,14 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
-      "@typescript-eslint/no-unused-vars": "off",
+      "react-refresh/only-export-components": "off",
+      "no-restricted-syntax": [
+        "error",
+        {
+          "selector": "ImportDeclaration[source.value='react'] ImportNamespaceSpecifier",
+          "message": "Do not use 'import * as React from \"react\"'. Use named imports instead (e.g., import { useState } from \"react\").",
+        },
+      ],
     },
   },
 );
