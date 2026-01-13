@@ -2,99 +2,282 @@
 import fs from "node:fs";
 import path from "node:path";
 
+fs.mkdirSync("tmp");
+
 const projectRoot = process.cwd();
-const uiComponentsDir = path.join(projectRoot, "src/components/ui");
+
+// Directories to check for components
+const directoriesToCheck = [
+  "src/components/ui",
+  "src/components",
+  "src/layouts",
+  "src/contexts",
+  "src/pages",
+  "src/pages/auth",
+].filter((dir) => fs.existsSync(path.join(projectRoot, dir)));
+
 const srcDir = path.join(projectRoot, "src");
 
 interface Component {
   name: string;
+  displayName: string; // How it might appear in JSX (could be different from filename)
   ext: string;
+  dir: string;
+  fullPath: string;
 }
 
-// Get all UI components
-const uiComponents: Component[] = fs
-  .readdirSync(uiComponentsDir)
-  .filter((file) => file.endsWith(".tsx") || file.endsWith(".ts"))
-  .map((file) => ({
-    name: path.basename(file, path.extname(file)),
-    ext: path.extname(file),
-  }));
+console.log("🔍 Checking unused components in:");
+directoriesToCheck.forEach((dir) => console.log(`  📁 ${dir}`));
+console.log("");
 
-// Search for imports of these components
-console.log("Checking unused UI components...\n");
+// Get all components from specified directories
+const allComponents: Component[] = [];
 
+directoriesToCheck.forEach((directory) => {
+  const fullDirPath = path.join(projectRoot, directory);
+
+  if (!fs.existsSync(fullDirPath)) {
+    console.log(`⚠️  Directory ${directory} does not exist`);
+    return;
+  }
+
+  const componentsInDir = fs
+    .readdirSync(fullDirPath)
+    .filter((file) => file.endsWith(".tsx") || file.endsWith(".ts"))
+    .map((file) => {
+      const name = path.basename(file, path.extname(file));
+      return {
+        name,
+        displayName: convertFileNameToComponentName(name),
+        ext: path.extname(file),
+        dir: directory.replace("src/", ""),
+        fullPath: path.join(directory, file),
+      };
+    });
+
+  allComponents.push(...componentsInDir);
+});
+
+console.log(`📊 Found ${allComponents.length} components total\n`);
+
+// Search for imports and usage of these components
 const usedComponents: Component[] = [];
 const unusedComponents: Component[] = [];
 
-uiComponents.forEach((component) => {
+allComponents.forEach((component) => {
   try {
-    // Check both patterns
     const files = getAllFiles(srcDir);
-    const result = files.some((file) => {
+    let isUsed = false;
+
+    for (const file of files) {
       if (
         file.endsWith(".ts") ||
         file.endsWith(".tsx") ||
         file.endsWith(".js") ||
         file.endsWith(".jsx")
       ) {
-        const content = fs.readFileSync(file, "utf8");
-        return (
-          content.includes(`@/components/ui/${component.name}`) ||
-          content.includes(`../ui/${component.name}`) ||
-          content.includes(`./ui/${component.name}`)
-        );
-      }
-      return false;
-    });
+        // Skip the component file itself
+        if (file.includes(component.fullPath)) {
+          continue;
+        }
 
-    if (result) {
+        const content = fs.readFileSync(file, "utf8");
+
+        // Check 1: Import statements
+        const importPatterns = [
+          `from ['"]@/${component.dir}/${component.name}['"]`,
+          String.raw`from ['"]\./${component.name}['"]`,
+          String.raw`from ['"]\.\./${component.name}['"]`,
+          // For contexts
+          component.dir === "contexts" ? `${component.name}Context` : null,
+          component.dir === "contexts" ? `${component.name}Provider` : null,
+        ].filter(Boolean);
+
+        const hasImport = importPatterns.some((pattern) =>
+          new RegExp(pattern!, "i").test(content)
+        );
+
+        // Check 2: JSX usage (component tags)
+        // Look for <ComponentName or <ComponentName.
+        const jsxRegex = new RegExp(
+          String.raw`<${component.displayName}[\s>.]`,
+          "g"
+        );
+        const hasJsxUsage = jsxRegex.test(content);
+
+        // Check 3: Dynamic imports
+        const dynamicImportRegex = new RegExp(
+          String.raw`import\(['"]\.*[/]?${component.dir}/${component.name}['"]\)`,
+          "i"
+        );
+        const hasDynamicImport = dynamicImportRegex.test(content);
+
+        if (hasImport || hasJsxUsage || hasDynamicImport) {
+          isUsed = true;
+          break;
+        }
+      }
+    }
+
+    if (isUsed) {
       usedComponents.push(component);
-      console.log(`✓ ${component.name} - used`);
+      console.log(`✅ ${component.dir}/${component.name} - used`);
     } else {
       unusedComponents.push(component);
-      console.log(`✗ ${component.name} - unused`);
+      console.log(`❌ ${component.dir}/${component.name} - unused`);
     }
   } catch (error) {
-    console.log(`? ${component.name} - error checking: ${error}`);
+    console.log(`⚠️  ${component.dir}/${component.name} - error: ${error}`);
   }
 });
 
-console.log(`\nSummary:`);
-console.log(`Used: ${usedComponents.length} components`);
-console.log(`Unused: ${unusedComponents.length} components`);
+// Sort results
+const sortByDir = (a: Component, b: Component) =>
+  a.dir.localeCompare(b.dir) || a.name.localeCompare(b.name);
 
-if (unusedComponents.length > 0) {
-  console.log("\nUnused components:");
-  unusedComponents.forEach((comp) => console.log(`  - ${comp.name}`));
+usedComponents.sort(sortByDir);
+unusedComponents.sort(sortByDir);
 
-  // Optionally create a cleanup script
-  const cleanupScript = unusedComponents
-    .map((comp) => `rm src/components/ui/${comp.name}${comp.ext}`)
-    .join("\n");
+console.log(`\n📊 Summary:`);
+console.log(`✅ Used: ${usedComponents.length} components`);
+console.log(`❌ Unused: ${unusedComponents.length} components`);
+console.log(`📦 Total: ${allComponents.length} components`);
 
-  fs.writeFileSync("cleanup-unused-ui.sh", `#!/bin/bash\n${cleanupScript}\n`);
-  console.log("\nCleanup script created: cleanup-unused-ui.sh");
-  console.log("Run: chmod +x cleanup-unused-ui.sh && ./cleanup-unused-ui.sh");
-}
+// Generate reports
+generateReports(usedComponents, unusedComponents);
 
 function getAllFiles(dir: string): string[] {
   const files: string[] = [];
 
   function traverse(currentDir: string) {
-    const items = fs.readdirSync(currentDir);
+    // Skip unwanted directories
+    const skipDirs = ["node_modules", "dist", ".git", ".next", ".vscode"];
+    if (skipDirs.some((skip) => currentDir.includes(skip))) {
+      return;
+    }
 
-    items.forEach((item) => {
-      const fullPath = path.join(currentDir, item);
-      const stat = fs.statSync(fullPath);
+    try {
+      const items = fs.readdirSync(currentDir);
 
-      if (stat.isDirectory()) {
-        traverse(fullPath);
-      } else if (stat.isFile()) {
-        files.push(fullPath);
-      }
-    });
+      items.forEach((item) => {
+        const fullPath = path.join(currentDir, item);
+
+        try {
+          const stat = fs.statSync(fullPath);
+
+          if (stat.isDirectory()) {
+            traverse(fullPath);
+          } else if (stat.isFile()) {
+            files.push(fullPath);
+          }
+        } catch (err) {
+          // Skip files we can't access
+        }
+      });
+    } catch (err) {
+      // Skip directories we can't access
+    }
   }
 
   traverse(dir);
   return files;
+}
+
+function convertFileNameToComponentName(fileName: string): string {
+  // Convert kebab-case or snake_case to PascalCase
+  return fileName
+    .split(/[-_]/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join("");
+}
+
+function generateReports(used: Component[], unused: Component[]) {
+  // Create cleanup script
+  let cleanupScript = "#!/bin/bash\n\n";
+  cleanupScript += "# Remove unused components\n";
+  cleanupScript += "# Generated on: " + new Date().toISOString() + "\n\n";
+
+  if (unused.length > 0) {
+    console.log("\n❌ Unused components by directory:");
+
+    const groupedByDir: Record<string, Component[]> = {};
+    unused.forEach((comp) => {
+      if (!groupedByDir[comp.dir]) groupedByDir[comp.dir] = [];
+      groupedByDir[comp.dir].push(comp);
+    });
+
+    Object.entries(groupedByDir).forEach(([dir, comps]) => {
+      console.log(`\n  📁 ${dir}/`);
+      comps.forEach((comp) => console.log(`    - ${comp.name}${comp.ext}`));
+
+      // Add to cleanup script
+      cleanupScript += `# ${dir}\n`;
+      comps.forEach((comp) => {
+        cleanupScript += `rm "${comp.fullPath}"\n`;
+      });
+      cleanupScript += "\n";
+    });
+
+    fs.writeFileSync("tmp/cleanup-unused.sh", cleanupScript);
+    console.log("\n🔧 Cleanup script created: cleanup-unused.sh");
+    console.log("   Run: chmod +x cleanup-unused.sh && ./cleanup-unused.sh");
+  }
+
+  // Save detailed JSON report
+  const report = {
+    generated: new Date().toISOString(),
+    statistics: {
+      total: allComponents.length,
+      used: used.length,
+      unused: unused.length,
+      usagePercentage: Math.round((used.length / allComponents.length) * 100),
+    },
+    directoriesChecked: directoriesToCheck,
+    usedComponents: used.map((c) => ({
+      name: c.name,
+      displayName: c.displayName,
+      directory: c.dir,
+      path: c.fullPath,
+    })),
+    unusedComponents: unused.map((c) => ({
+      name: c.name,
+      displayName: c.displayName,
+      directory: c.dir,
+      path: c.fullPath,
+      size: getFileSize(c.fullPath),
+    })),
+  };
+
+  fs.writeFileSync(
+    "tmp/component-usage-report.json",
+    JSON.stringify(report, null, 2)
+  );
+
+  console.log("\n📄 Detailed report saved to: component-usage-report.json");
+
+  // Calculate potential savings
+  const totalUnusedSize = unused.reduce((sum, comp) => {
+    return sum + (getFileSize(comp.fullPath) || 0);
+  }, 0);
+
+  console.log(`\n💾 Potential savings: ${formatFileSize(totalUnusedSize)}`);
+}
+
+function getFileSize(filePath: string): number | null {
+  try {
+    const stats = fs.statSync(filePath);
+    return stats.size;
+  } catch {
+    return null;
+  }
+}
+
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return (
+    Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
+  );
 }
