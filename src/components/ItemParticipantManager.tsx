@@ -195,7 +195,7 @@ export function ItemParticipantManager({
 
   // Calculate total weight for split preview
   const totalWeight = Object.values(weights).reduce((sum, w) => sum + w, 0);
-  const itemAmount = Number.parseFloat(item.amount) || 0;
+  const itemAmount = (Number.parseFloat(item.amount) || 0) * item.quantity;
 
   // Check if any weight is different from 1 (show advanced indicator)
   const hasCustomWeights = Object.values(weights).some((w) => w !== 1);
