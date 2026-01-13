@@ -7,7 +7,7 @@ import { ComponentPropsWithoutRef, ComponentRef, forwardRef } from "react";
 
 const NavigationMenu = forwardRef<
   ComponentRef<typeof NavigationMenuPrimitive.Root>,
-  ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Root>
+  Readonly<ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Root>>
 >(({ className, children, ...props }, ref) => (
   <NavigationMenuPrimitive.Root
     ref={ref}
@@ -25,7 +25,7 @@ NavigationMenu.displayName = NavigationMenuPrimitive.Root.displayName;
 
 const NavigationMenuList = forwardRef<
   ComponentRef<typeof NavigationMenuPrimitive.List>,
-  ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.List>
+  Readonly<ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.List>>
 >(({ className, ...props }, ref) => (
   <NavigationMenuPrimitive.List
     ref={ref}
@@ -46,7 +46,7 @@ const navigationMenuTriggerStyle = cva(
 
 const NavigationMenuTrigger = forwardRef<
   ComponentRef<typeof NavigationMenuPrimitive.Trigger>,
-  ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Trigger>
+  Readonly<ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Trigger>>
 >(({ className, children, ...props }, ref) => (
   <NavigationMenuPrimitive.Trigger
     ref={ref}
@@ -64,7 +64,7 @@ NavigationMenuTrigger.displayName = NavigationMenuPrimitive.Trigger.displayName;
 
 const NavigationMenuContent = forwardRef<
   ComponentRef<typeof NavigationMenuPrimitive.Content>,
-  ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Content>
+  Readonly<ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Content>>
 >(({ className, ...props }, ref) => (
   <NavigationMenuPrimitive.Content
     ref={ref}
@@ -81,7 +81,7 @@ const NavigationMenuLink = NavigationMenuPrimitive.Link;
 
 const NavigationMenuViewport = forwardRef<
   ComponentRef<typeof NavigationMenuPrimitive.Viewport>,
-  ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Viewport>
+  Readonly<ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Viewport>>
 >(({ className, ...props }, ref) => (
   <div className={cn("absolute left-0 top-full flex justify-center")}>
     <NavigationMenuPrimitive.Viewport
@@ -99,7 +99,7 @@ NavigationMenuViewport.displayName =
 
 const NavigationMenuIndicator = forwardRef<
   ComponentRef<typeof NavigationMenuPrimitive.Indicator>,
-  ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Indicator>
+  Readonly<ComponentPropsWithoutRef<typeof NavigationMenuPrimitive.Indicator>>
 >(({ className, ...props }, ref) => (
   <NavigationMenuPrimitive.Indicator
     ref={ref}

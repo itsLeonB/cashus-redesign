@@ -39,11 +39,11 @@ const buttonVariants = cva(
   }
 );
 
-export interface ButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+export type ButtonProps = Readonly<
+  ButtonHTMLAttributes<HTMLButtonElement> & VariantProps<typeof buttonVariants>
+> & {
   asChild?: boolean;
-}
+};
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {

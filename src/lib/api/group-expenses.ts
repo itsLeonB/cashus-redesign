@@ -16,10 +16,10 @@ import {
 } from "./types";
 
 export const groupExpensesApi = {
-  getAll: (status?: string) =>
-    apiClient.get<GroupExpenseResponse[]>(
-      `/group-expenses${status ? `?status=${status}` : ""}`
-    ),
+  getAll: (status?: string) => {
+    const query = status ? `?status=${status}` : "";
+    return apiClient.get<GroupExpenseResponse[]>(`/group-expenses${query}`);
+  },
 
   getById: async (expenseId: string) => {
     const data = await apiClient.get<GroupExpenseResponse>(
@@ -93,12 +93,12 @@ export const groupExpensesApi = {
   removeFee: (groupExpenseId: string, feeId: string) =>
     apiClient.delete(`/group-expenses/${groupExpenseId}/fees/${feeId}`),
 
-  confirm: (groupExpenseId: string, dryRun: boolean) =>
-    apiClient.patch<ExpenseConfirmationResponse>(
-      `/group-expenses/${groupExpenseId}/confirmed${
-        dryRun ? "?dry-run=true" : ""
-      }`
-    ),
+  confirm: (groupExpenseId: string, dryRun: boolean) => {
+    const query = dryRun ? "?dry-run=true" : "";
+    return apiClient.patch<ExpenseConfirmationResponse>(
+      `/group-expenses/${groupExpenseId}/confirmed${query}`
+    );
+  },
 
   getCalculationMethods: () =>
     apiClient.get<FeeCalculationMethodInfo[]>(

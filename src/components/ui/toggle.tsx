@@ -28,8 +28,10 @@ const toggleVariants = cva(
 
 const Toggle = forwardRef<
   ComponentRef<typeof TogglePrimitive.Root>,
-  ComponentPropsWithoutRef<typeof TogglePrimitive.Root> &
-    VariantProps<typeof toggleVariants>
+  Readonly<
+    ComponentPropsWithoutRef<typeof TogglePrimitive.Root> &
+      VariantProps<typeof toggleVariants>
+  >
 >(({ className, variant, size, ...props }, ref) => (
   <TogglePrimitive.Root
     ref={ref}

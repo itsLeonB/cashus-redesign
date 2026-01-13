@@ -81,23 +81,24 @@ type FormItemContextValue = {
 
 const FormItemContext = createContext<FormItemContextValue | null>(null);
 
-const FormItem = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => {
-    const id = useId();
-    const value = useMemo(() => ({ id }), [id]);
+const FormItem = forwardRef<
+  HTMLDivElement,
+  Readonly<HTMLAttributes<HTMLDivElement>>
+>(({ className, ...props }, ref) => {
+  const id = useId();
+  const value = useMemo(() => ({ id }), [id]);
 
-    return (
-      <FormItemContext.Provider value={value}>
-        <div ref={ref} className={cn("space-y-2", className)} {...props} />
-      </FormItemContext.Provider>
-    );
-  }
-);
+  return (
+    <FormItemContext.Provider value={value}>
+      <div ref={ref} className={cn("space-y-2", className)} {...props} />
+    </FormItemContext.Provider>
+  );
+});
 FormItem.displayName = "FormItem";
 
 const FormLabel = forwardRef<
   ComponentRef<typeof LabelPrimitive.Root>,
-  ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
+  Readonly<ComponentPropsWithoutRef<typeof LabelPrimitive.Root>>
 >(({ className, ...props }, ref) => {
   const { error, formItemId } = useFormField();
 
@@ -114,7 +115,7 @@ FormLabel.displayName = "FormLabel";
 
 const FormControl = forwardRef<
   ComponentRef<typeof Slot>,
-  ComponentPropsWithoutRef<typeof Slot>
+  Readonly<ComponentPropsWithoutRef<typeof Slot>>
 >(({ ...props }, ref) => {
   const { error, formItemId, formDescriptionId, formMessageId } =
     useFormField();
@@ -135,7 +136,7 @@ FormControl.displayName = "FormControl";
 
 const FormDescription = forwardRef<
   HTMLParagraphElement,
-  HTMLAttributes<HTMLParagraphElement>
+  Readonly<HTMLAttributes<HTMLParagraphElement>>
 >(({ className, ...props }, ref) => {
   const { formDescriptionId } = useFormField();
 
@@ -152,7 +153,7 @@ FormDescription.displayName = "FormDescription";
 
 const FormMessage = forwardRef<
   HTMLParagraphElement,
-  HTMLAttributes<HTMLParagraphElement>
+  Readonly<HTMLAttributes<HTMLParagraphElement>>
 >(({ className, children, ...props }, ref) => {
   const { error, formMessageId } = useFormField();
   const body = error ? String(error?.message ?? "") : children;
