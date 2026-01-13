@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { authApi } from "@/lib/api";
 import { useTransferMethods } from "@/hooks/useApi";
 import { AddTransferMethodModal } from "@/components/AddTransferMethodModal";
-import { Skeleton } from "@/components/ui/skeleton";
+import { TransferMethodsList } from "@/components/TransferMethodsList";
 import {
   User,
   Mail,
@@ -219,58 +219,10 @@ export default function ProfilePage() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoadingTransferMethods ? (
-            <div className="space-y-3">
-              {[1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 p-3 rounded-lg border border-border/50"
-                >
-                  <Skeleton className="h-10 w-10 rounded" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-3 w-32" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : transferMethods && transferMethods.length > 0 ? (
-            <div className="space-y-3">
-              {transferMethods.map((method) => (
-                <div
-                  key={method.id}
-                  className="flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-muted/20"
-                >
-                  <img
-                    src={method.method.iconUrl}
-                    alt={method.method.name}
-                    className="h-10 w-10 rounded object-contain bg-background p-1"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-sm truncate">
-                        {method.method.display}
-                      </p>
-                    </div>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {method.accountName}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-mono text-sm">{method.accountNumber}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <CreditCard className="h-10 w-10 mx-auto mb-3 opacity-50" />
-              <p className="text-sm">No transfer methods added yet</p>
-              <p className="text-xs mt-1">
-                Add a payment method to receive money from friends
-              </p>
-            </div>
-          )}
+          <TransferMethodsList
+            methods={transferMethods}
+            isLoading={isLoadingTransferMethods}
+          />
         </CardContent>
       </Card>
 

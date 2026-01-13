@@ -17,11 +17,11 @@ export function useTransferMethods() {
   });
 }
 
-export function useProfileTransferMethods(profileId: string) {
+export function useProfileTransferMethods(profileId: string, enabled = true) {
   return useQuery({
     queryKey: ["profile-transfer-methods", profileId],
     queryFn: () => profilesApi.getTransferMethods(profileId),
-    enabled: !!profileId,
+    enabled: !!profileId && enabled,
   });
 }
 

@@ -5,6 +5,7 @@ import { AvatarCircle } from "@/components/AvatarCircle";
 import { AmountDisplay } from "@/components/AmountDisplay";
 import { TransactionModal } from "@/components/TransactionModal";
 import { AssociateProfileModal } from "@/components/AssociateProfileModal";
+import { TransferMethodsModal } from "@/components/TransferMethodsModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,6 +18,7 @@ import {
   Calendar,
   Wallet,
   Link2,
+  CreditCard,
 } from "lucide-react";
 
 export default function FriendDetailPage() {
@@ -25,6 +27,7 @@ export default function FriendDetailPage() {
   const { data: friendship, isLoading } = useFriendship(friendId || "");
   const [transactionOpen, setTransactionOpen] = useState(false);
   const [associateOpen, setAssociateOpen] = useState(false);
+  const [transferMethodsOpen, setTransferMethodsOpen] = useState(false);
 
   const friendDebts = friendship?.transactions || [];
   const balance = friendship?.balance.netBalance || 0;
@@ -113,10 +116,19 @@ export default function FriendDetailPage() {
             </div>
             <div className="flex flex-col items-end gap-2">
               <AmountDisplay amount={balance} size="lg" showLabel />
-              <Button onClick={() => setTransactionOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Record Transaction
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setTransferMethodsOpen(true)}
+                >
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Transfer Methods
+                </Button>
+                <Button onClick={() => setTransactionOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Record Transaction
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -250,6 +262,14 @@ export default function FriendDetailPage() {
         onSuccess={() => {
           navigate(`/friends`);
         }}
+      />
+
+      {/* Transfer Methods Modal */}
+      <TransferMethodsModal
+        open={transferMethodsOpen}
+        onOpenChange={setTransferMethodsOpen}
+        profileId={friendship.friend.profileId}
+        profileName={friendship.friend.name}
       />
     </div>
   );
