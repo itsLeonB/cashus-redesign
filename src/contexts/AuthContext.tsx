@@ -5,6 +5,7 @@ import {
   useEffect,
   useCallback,
   useMemo,
+  ReactNode,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { UserProfile, authApi, apiClient } from "@/lib/api";
@@ -25,9 +26,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const queryClient = useQueryClient();

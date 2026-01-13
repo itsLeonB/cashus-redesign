@@ -17,6 +17,8 @@ export default function VerifyRegistrationPage() {
   const { mutate: verifyRegistration } = useVerifyRegistration();
 
   useEffect(() => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
     if (!token) {
       setStatus("error");
       setMessage("Invalid or missing verification token");
@@ -29,7 +31,7 @@ export default function VerifyRegistrationPage() {
         setMessage(
           response.message || "Your email has been verified successfully!"
         );
-        setTimeout(() => navigate("/login"), 3000);
+        timeoutId = setTimeout(() => navigate("/login"), 3000);
       },
       onError: (error: unknown) => {
         const err = error as { message?: string };
@@ -39,6 +41,10 @@ export default function VerifyRegistrationPage() {
         );
       },
     });
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [token, navigate, verifyRegistration]);
 
   return (

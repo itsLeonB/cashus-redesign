@@ -1,4 +1,4 @@
-import { useRef, useEffect, type ComponentProps } from "react";
+import { useRef, useEffect, type ComponentProps, Ref } from "react";
 import {
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -140,7 +140,7 @@ function CalendarRoot({
   className,
   rootRef,
   ...props
-}: Readonly<ComponentProps<"div"> & { rootRef?: React.Ref<HTMLDivElement> }>) {
+}: Readonly<ComponentProps<"div"> & { rootRef?: Ref<HTMLDivElement> }>) {
   return (
     <div
       data-slot="calendar"
