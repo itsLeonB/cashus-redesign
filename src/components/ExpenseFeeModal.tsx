@@ -16,9 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { groupExpensesApi } from "@/lib/api";
 import { useCalculationMethods } from "@/hooks/useMasterData";
-import { useQueryClient } from "@tanstack/react-query";
+import { useAddExpenseFee, useUpdateExpenseFee } from "@/hooks/useApi";
 import { Loader2, Receipt } from "lucide-react";
 import type { OtherFeeResponse } from "@/lib/api/types";
 
@@ -36,9 +35,11 @@ export function ExpenseFeeModal({
   fee,
 }: Readonly<ExpenseFeeModalProps>) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const { data: calculationMethods } = useCalculationMethods();
-  const [isLoading, setIsLoading] = useState(false);
+  const { mutate: addFee, isPending: isAdding } = useAddExpenseFee(expenseId);
+  const { mutate: updateFee, isPending: isUpdating } =
+    useUpdateExpenseFee(expenseId);
+  const isLoading = isAdding || isUpdating;
 
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
@@ -58,7 +59,7 @@ export function ExpenseFeeModal({
     }
   }, [fee, open]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name.trim() || !amount) {
@@ -70,48 +71,52 @@ export function ExpenseFeeModal({
       return;
     }
 
-    setIsLoading(true);
-    try {
-      if (isEditing && fee) {
-        await groupExpensesApi.updateFee(expenseId, fee.id, {
-          id: fee.id,
-          groupExpenseId: expenseId,
-          name: name.trim(),
-          amount,
-          calculationMethod,
-        });
+    const feeData = {
+      groupExpenseId: expenseId,
+      name: name.trim(),
+      amount,
+      calculationMethod,
+    };
 
-        toast({
-          title: "Fee updated",
-          description: `"${name}" has been updated.`,
-        });
-      } else {
-        await groupExpensesApi.addFee(expenseId, {
-          groupExpenseId: expenseId,
-          name: name.trim(),
-          amount,
-          calculationMethod,
-        });
-
-        toast({
-          title: "Fee added",
-          description: `"${name}" has been added to the expense.`,
-        });
-      }
-
-      queryClient.invalidateQueries({
-        queryKey: ["group-expenses", expenseId],
+    if (isEditing && fee) {
+      updateFee(
+        { ...feeData, id: fee.id },
+        {
+          onSuccess: () => {
+            toast({
+              title: "Fee updated",
+              description: `"${name}" has been updated.`,
+            });
+            onOpenChange(false);
+          },
+          onError: (error: unknown) => {
+            const err = error as { message?: string };
+            toast({
+              variant: "destructive",
+              title: "Failed to update fee",
+              description: err.message || "Something went wrong",
+            });
+          },
+        }
+      );
+    } else {
+      addFee(feeData, {
+        onSuccess: () => {
+          toast({
+            title: "Fee added",
+            description: `"${name}" has been added to the expense.`,
+          });
+          onOpenChange(false);
+        },
+        onError: (error: unknown) => {
+          const err = error as { message?: string };
+          toast({
+            variant: "destructive",
+            title: "Failed to add fee",
+            description: err.message || "Something went wrong",
+          });
+        },
       });
-      onOpenChange(false);
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast({
-        variant: "destructive",
-        title: isEditing ? "Failed to update fee" : "Failed to add fee",
-        description: err.message || "Something went wrong",
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 

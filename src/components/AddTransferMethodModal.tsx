@@ -26,9 +26,8 @@ import {
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFilteredTransferMethods } from "@/hooks/useMasterData";
-import { profileApi } from "@/lib/api/profile";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
+import { useAddTransferMethod } from "@/hooks/useApi";
 
 interface AddTransferMethodModalProps {
   open: boolean;
@@ -42,19 +41,19 @@ export function AddTransferMethodModal({
   const [selectedMethodId, setSelectedMethodId] = useState("");
   const [accountName, setAccountName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [comboboxOpen, setComboboxOpen] = useState(false);
 
   const { data: transferMethods, isLoading: isLoadingMethods } =
     useFilteredTransferMethods("children", open);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const { mutate: addTransferMethod, isPending: isAdding } =
+    useAddTransferMethod();
 
   const selectedMethod = useMemo(() => {
     return transferMethods?.find((m) => m.id === selectedMethodId);
   }, [transferMethods, selectedMethodId]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!selectedMethodId || !accountName.trim() || !accountNumber.trim()) {
@@ -66,37 +65,35 @@ export function AddTransferMethodModal({
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      await profileApi.addTransferMethod({
+    addTransferMethod(
+      {
         transferMethodId: selectedMethodId,
         accountName: accountName.trim(),
         accountNumber: accountNumber.trim(),
-      });
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Transfer method added",
+            description: "Your transfer method has been saved successfully",
+          });
 
-      toast({
-        title: "Transfer method added",
-        description: "Your transfer method has been saved successfully",
-      });
-
-      // Reset form and close modal
-      setSelectedMethodId("");
-      setAccountName("");
-      setAccountNumber("");
-      onOpenChange(false);
-
-      // Invalidate the query to refetch the list
-      queryClient.invalidateQueries({ queryKey: ["transfer-methods"] });
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast({
-        variant: "destructive",
-        title: "Failed to add transfer method",
-        description: err.message || "Something went wrong",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+          // Reset form and close modal
+          setSelectedMethodId("");
+          setAccountName("");
+          setAccountNumber("");
+          onOpenChange(false);
+        },
+        onError: (error: unknown) => {
+          const err = error as { message?: string };
+          toast({
+            variant: "destructive",
+            title: "Failed to add transfer method",
+            description: err.message || "Something went wrong",
+          });
+        },
+      }
+    );
   };
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -225,12 +222,12 @@ export function AddTransferMethodModal({
               type="button"
               variant="outline"
               onClick={() => handleOpenChange(false)}
-              disabled={isSubmitting}
+              disabled={isAdding}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
+            <Button type="submit" disabled={isAdding}>
+              {isAdding ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   Adding...

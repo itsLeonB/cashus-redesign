@@ -3,34 +3,39 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Loader2, ArrowLeft, Check } from "lucide-react";
-import { authApi } from "@/lib/api";
+import { useForgotPassword } from "@/hooks/useApi";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
   const { toast } = useToast();
+  const {
+    mutate: forgotPassword,
+    isPending: isLoading,
+    isSuccess,
+  } = useForgotPassword();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
-    try {
-      await authApi.forgotPassword(email);
-      setIsSuccess(true);
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast({
-        variant: "destructive",
-        title: "Request failed",
-        description: err.message || "Something went wrong",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    forgotPassword(email, {
+      onError: (error: unknown) => {
+        const err = error as { message?: string };
+        toast({
+          variant: "destructive",
+          title: "Request failed",
+          description: err.message || "Something went wrong",
+        });
+      },
+    });
   };
 
   if (isSuccess) {
@@ -41,9 +46,12 @@ export default function ForgotPasswordPage() {
             <div className="mx-auto w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mb-4">
               <Check className="h-8 w-8 text-success" />
             </div>
-            <h2 className="text-xl font-display font-semibold mb-2">Check your email</h2>
+            <h2 className="text-xl font-display font-semibold mb-2">
+              Check your email
+            </h2>
             <p className="text-muted-foreground mb-6">
-              If an account exists for <strong>{email}</strong>, you'll receive a password reset link shortly.
+              If an account exists for <strong>{email}</strong>, you'll receive
+              a password reset link shortly.
             </p>
             <Link to="/login">
               <Button className="w-full">
@@ -61,7 +69,9 @@ export default function ForgotPasswordPage() {
     <div className="animate-fade-up">
       <Card className="border-border/50">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-display">Forgot password?</CardTitle>
+          <CardTitle className="text-2xl font-display">
+            Forgot password?
+          </CardTitle>
           <CardDescription>
             Enter your email and we'll send you a reset link
           </CardDescription>
@@ -83,7 +93,12 @@ export default function ForgotPasswordPage() {
                 />
               </div>
             </div>
-            <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full"
+              size="lg"
+              disabled={isLoading}
+            >
               {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
               Send reset link
             </Button>
@@ -91,7 +106,10 @@ export default function ForgotPasswordPage() {
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Remember your password?{" "}
-            <Link to="/login" className="text-primary hover:underline font-medium">
+            <Link
+              to="/login"
+              className="text-primary hover:underline font-medium"
+            >
               Sign in
             </Link>
           </p>

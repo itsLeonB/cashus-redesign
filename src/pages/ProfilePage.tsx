@@ -12,8 +12,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { authApi } from "@/lib/api";
-import { useMyTransferMethods } from "@/hooks/useApi";
+import {
+  useMyTransferMethods,
+  useUpdateProfile,
+  useForgotPassword,
+} from "@/hooks/useApi";
 import { AddTransferMethodModal } from "@/components/AddTransferMethodModal";
 import { TransferMethodsList } from "@/components/TransferMethodsList";
 import {
@@ -33,58 +36,59 @@ export default function ProfilePage() {
   const { user, logout, refreshUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || "");
-  const [isLoading, setIsLoading] = useState(false);
-  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [addMethodModalOpen, setAddMethodModalOpen] = useState(false);
   const { toast } = useToast();
 
   const { data: transferMethods, isLoading: isLoadingTransferMethods } =
     useMyTransferMethods();
+  const { mutate: updateProfile, isPending: isUpdating } = useUpdateProfile();
+  const { mutate: forgotPassword, isPending: isResetting } =
+    useForgotPassword();
 
-  const handleResetPassword = async () => {
+  const handleResetPassword = () => {
     if (!user?.email) return;
 
-    setIsResettingPassword(true);
-    try {
-      await authApi.forgotPassword(user.email);
-      toast({
-        title: "Password reset email sent",
-        description: "Check your email for instructions to reset your password",
-      });
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast({
-        variant: "destructive",
-        title: "Failed to send reset email",
-        description: err.message || "Something went wrong",
-      });
-    } finally {
-      setIsResettingPassword(false);
-    }
+    forgotPassword(user.email, {
+      onSuccess: () => {
+        toast({
+          title: "Password reset email sent",
+          description:
+            "Check your email for instructions to reset your password",
+        });
+      },
+      onError: (error: unknown) => {
+        const err = error as { message?: string };
+        toast({
+          variant: "destructive",
+          title: "Failed to send reset email",
+          description: err.message || "Something went wrong",
+        });
+      },
+    });
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!name.trim()) return;
 
-    setIsLoading(true);
-    try {
-      await authApi.updateProfile(name);
-      await refreshUser();
-      setIsEditing(false);
-      toast({
-        title: "Profile updated",
-        description: "Your name has been updated successfully",
-      });
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast({
-        variant: "destructive",
-        title: "Update failed",
-        description: err.message || "Something went wrong",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    updateProfile(name, {
+      onSuccess: () => {
+        refreshUser().then(() => {
+          setIsEditing(false);
+          toast({
+            title: "Profile updated",
+            description: "Your name has been updated successfully",
+          });
+        });
+      },
+      onError: (error: unknown) => {
+        const err = error as { message?: string };
+        toast({
+          variant: "destructive",
+          title: "Update failed",
+          description: err.message || "Something went wrong",
+        });
+      },
+    });
   };
 
   const formatDate = (date: string) => {
@@ -96,7 +100,7 @@ export default function ProfilePage() {
   };
 
   const cardButtonDisplay = () => {
-    if (isLoading) return <Loader2 className="h-4 w-4 animate-spin" />;
+    if (isUpdating) return <Loader2 className="h-4 w-4 animate-spin" />;
 
     if (isEditing)
       return (
@@ -140,7 +144,7 @@ export default function ProfilePage() {
             <Button
               variant={isEditing ? "default" : "outline"}
               onClick={() => (isEditing ? handleSave() : setIsEditing(true))}
-              disabled={isLoading}
+              disabled={isUpdating}
             >
               {cardButtonDisplay()}
             </Button>
@@ -241,9 +245,9 @@ export default function ProfilePage() {
             <Button
               variant="outline"
               onClick={handleResetPassword}
-              disabled={isResettingPassword}
+              disabled={isResetting}
             >
-              {isResettingPassword ? (
+              {isResetting ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
               ) : (
                 <KeyRound className="h-4 w-4 mr-2" />
