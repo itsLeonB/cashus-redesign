@@ -29,10 +29,14 @@ export default function FriendDetailPage() {
   const [associateOpen, setAssociateOpen] = useState(false);
   const [transferMethodsOpen, setTransferMethodsOpen] = useState(false);
 
-  const friendDebts = friendship?.transactions || [];
-  const balance = friendship?.balance.netBalance || 0;
-  const totalLent = friendship?.balance.totalOwedToYou || 0;
-  const totalBorrowed = friendship?.balance.totalYouOwe || 0;
+  const friendDebts = friendship?.balance.transactionHistory || [];
+  const balance = Number.parseFloat(friendship?.balance.netBalance || "0");
+  const totalLent = Number.parseFloat(
+    friendship?.balance.totalLentToFriend || "0"
+  );
+  const totalBorrowed = Number.parseFloat(
+    friendship?.balance.totalBorrowedFromFriend || "0"
+  );
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString("en-US", {
@@ -177,7 +181,7 @@ export default function FriendDetailPage() {
           {friendDebts.length > 0 ? (
             <div className="space-y-3">
               {friendDebts.map((debt) => {
-                const isCredit = debt.type === "REPAY";
+                const isCredit = debt.type === "LENT";
                 return (
                   <div
                     key={debt.id}
@@ -199,7 +203,7 @@ export default function FriendDetailPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="font-medium">
-                          {isCredit ? "Lent/Received" : "Borrowed/Returned"}
+                          {isCredit ? "Lent" : "Borrowed"}
                         </p>
                         {debt.transferMethod && (
                           <Badge variant="outline" className="text-xs">
@@ -224,7 +228,7 @@ export default function FriendDetailPage() {
                       }`}
                     >
                       {isCredit ? "+" : "-"}
-                      {formatCurrency(debt.amount)}
+                      {formatCurrency(Number.parseFloat(debt.amount || "0"))}
                     </p>
                   </div>
                 );
