@@ -9,10 +9,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AvatarCircle } from "@/components/AvatarCircle";
-import { useSearchProfiles } from "@/hooks/useApi";
-import { friendshipsApi } from "@/lib/api";
+import { useSearchProfiles, useAssociateProfile } from "@/hooks/useApi";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Search, Link2, UserCheck } from "lucide-react";
 
 interface AssociateProfileModalProps {
@@ -34,44 +32,41 @@ export function AssociateProfileModal({
   const { data: profiles, isLoading: isSearching } =
     useSearchProfiles(searchQuery);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [isAssociating, setIsAssociating] = useState(false);
+  const { mutate: associateProfile, isPending: isAssociating } =
+    useAssociateProfile();
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
     null
   );
 
-  const handleAssociate = async (realProfileId: string) => {
-    setIsAssociating(true);
+  const handleAssociate = (realProfileId: string) => {
     setSelectedProfileId(realProfileId);
 
-    try {
-      const response = await friendshipsApi.associateProfile(
-        realProfileId,
-        anonProfileId
-      );
-
-      toast({
-        title: "Profile linked",
-        description: `${anonProfileName} has been linked to the selected profile.`,
-      });
-
-      queryClient.invalidateQueries({ queryKey: ["friendships"] });
-      onOpenChange(false);
-
-      if (onSuccess) {
-        onSuccess();
+    associateProfile(
+      { realProfileId, anonProfileId },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Profile linked",
+            description: `${anonProfileName} has been linked to the selected profile.`,
+          });
+          onOpenChange(false);
+          if (onSuccess) {
+            onSuccess();
+          }
+        },
+        onError: (error: unknown) => {
+          const err = error as { message?: string };
+          toast({
+            variant: "destructive",
+            title: "Failed to link profile",
+            description: err.message || "Something went wrong",
+          });
+        },
+        onSettled: () => {
+          setSelectedProfileId(null);
+        },
       }
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast({
-        variant: "destructive",
-        title: "Failed to link profile",
-        description: err.message || "Something went wrong",
-      });
-    } finally {
-      setIsAssociating(false);
-      setSelectedProfileId(null);
-    }
+    );
   };
 
   return (

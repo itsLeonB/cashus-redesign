@@ -134,7 +134,70 @@ export default function ExpensesPage() {
   const hasUnconfirmedExpenses =
     (readyExpenses && readyExpenses.length > 0) ||
     (draftExpenses && draftExpenses.length > 0);
+
   const isUnconfirmedLoading = isDraftLoading || isReadyLoading;
+
+  const unconfirmedContent = () => {
+    if (isUnconfirmedLoading) return renderLoadingSkeletons();
+
+    if (hasUnconfirmedExpenses)
+      return (
+        <>
+          {/* Ready Expenses */}
+          {readyExpenses && readyExpenses.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                Ready to Confirm
+              </h2>
+              {renderExpenseList(readyExpenses, false)}
+            </div>
+          )}
+
+          {/* Divider */}
+          {readyExpenses &&
+            readyExpenses.length > 0 &&
+            draftExpenses &&
+            draftExpenses.length > 0 && <Separator className="my-6" />}
+
+          {/* Draft Expenses */}
+          {draftExpenses && draftExpenses.length > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                Drafts
+              </h2>
+              {renderExpenseList(draftExpenses, false)}
+            </div>
+          )}
+        </>
+      );
+
+    return renderEmptyState();
+  };
+
+  const confirmedContent = () => {
+    if (isConfirmedLoading) return renderLoadingSkeletons();
+
+    if (confirmedExpenses?.length > 0)
+      return (
+        <div className="space-y-4">
+          {confirmedExpenses.map((expense) => renderExpenseCard(expense))}
+        </div>
+      );
+
+    return (
+      <Card className="border-border/50">
+        <CardContent className="flex flex-col items-center justify-center py-16">
+          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+            <Receipt className="h-8 w-8 text-primary" />
+          </div>
+          <h3 className="text-lg font-medium mb-1">No confirmed expenses</h3>
+          <p className="text-muted-foreground text-sm text-center max-w-sm">
+            Confirmed expenses will appear here once you finalize them
+          </p>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="space-y-6 animate-fade-up">
@@ -161,63 +224,11 @@ export default function ExpensesPage() {
         </TabsList>
 
         <TabsContent value="unconfirmed" className="space-y-6 mt-6">
-          {isUnconfirmedLoading ? (
-            renderLoadingSkeletons()
-          ) : hasUnconfirmedExpenses ? (
-            <>
-              {/* Ready Expenses */}
-              {readyExpenses && readyExpenses.length > 0 && (
-                <div className="space-y-3">
-                  <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                    Ready to Confirm
-                  </h2>
-                  {renderExpenseList(readyExpenses, false)}
-                </div>
-              )}
-
-              {/* Divider */}
-              {readyExpenses &&
-                readyExpenses.length > 0 &&
-                draftExpenses &&
-                draftExpenses.length > 0 && <Separator className="my-6" />}
-
-              {/* Draft Expenses */}
-              {draftExpenses && draftExpenses.length > 0 && (
-                <div className="space-y-3">
-                  <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                    Drafts
-                  </h2>
-                  {renderExpenseList(draftExpenses, false)}
-                </div>
-              )}
-            </>
-          ) : (
-            renderEmptyState()
-          )}
+          {unconfirmedContent()}
         </TabsContent>
 
         <TabsContent value="confirmed" className="space-y-6 mt-6">
-          {isConfirmedLoading ? (
-            renderLoadingSkeletons()
-          ) : confirmedExpenses && confirmedExpenses.length > 0 ? (
-            <div className="space-y-4">
-              {confirmedExpenses.map((expense) => renderExpenseCard(expense))}
-            </div>
-          ) : (
-            <Card className="border-border/50">
-              <CardContent className="flex flex-col items-center justify-center py-16">
-                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                  <Receipt className="h-8 w-8 text-primary" />
-                </div>
-                <h3 className="text-lg font-medium mb-1">
-                  No confirmed expenses
-                </h3>
-                <p className="text-muted-foreground text-sm text-center max-w-sm">
-                  Confirmed expenses will appear here once you finalize them
-                </p>
-              </CardContent>
-            </Card>
-          )}
+          {confirmedContent()}
         </TabsContent>
       </Tabs>
 

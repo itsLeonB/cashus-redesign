@@ -1,10 +1,16 @@
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
-import { authApi } from "@/lib/api";
+import { useResetPassword } from "@/hooks/useApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, CheckCircle2, Lock, Eye, EyeOff } from "lucide-react";
 
@@ -13,16 +19,20 @@ export default function ResetPasswordPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const token = searchParams.get("token");
-  
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const {
+    mutate: resetPassword,
+    isPending: isLoading,
+    isSuccess,
+  } = useResetPassword();
+
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    
+
     if (!token) {
       toast({
         variant: "destructive",
@@ -50,26 +60,28 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    setIsLoading(true);
-    try {
-      await authApi.resetPassword({ token, password, passwordConfirmation: confirmPassword });
-      setIsSuccess(true);
-      toast({
-        title: "Password reset successful",
-        description: "You can now login with your new password.",
-      });
-      
-      setTimeout(() => navigate("/login"), 3000);
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast({
-        variant: "destructive",
-        title: "Reset failed",
-        description: err.message || "Something went wrong. Please try again.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    resetPassword(
+      { token, password, passwordConfirmation: confirmPassword },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Password reset successful",
+            description: "You can now login with your new password.",
+          });
+
+          setTimeout(() => navigate("/login"), 3000);
+        },
+        onError: (error: unknown) => {
+          const err = error as { message?: string };
+          toast({
+            variant: "destructive",
+            title: "Reset failed",
+            description:
+              err.message || "Something went wrong. Please try again.",
+          });
+        },
+      }
+    );
   };
 
   if (!token) {
@@ -122,9 +134,7 @@ export default function ResetPasswordPage() {
           <CardTitle className="font-display text-2xl">
             Reset Password
           </CardTitle>
-          <CardDescription>
-            Enter your new password below
-          </CardDescription>
+          <CardDescription>Enter your new password below</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, ChangeEvent, FormEvent, DragEvent } from "react";
 import {
   Dialog,
   DialogContent,
@@ -99,14 +99,14 @@ export function NewGroupExpenseModal({
     setPreviewUrl(url);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
     if (file) handleFileSelect(file);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
   };
@@ -115,7 +115,7 @@ export function NewGroupExpenseModal({
     setIsDragging(false);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) handleFileSelect(file);
   };
@@ -131,7 +131,7 @@ export function NewGroupExpenseModal({
     }
   };
 
-  const handleDetailsSubmit = async (e: React.FormEvent) => {
+  const handleDetailsSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     try {
@@ -154,7 +154,7 @@ export function NewGroupExpenseModal({
     }
   };
 
-  const handleUploadSubmit = async (e: React.FormEvent) => {
+  const handleUploadSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     if (!selectedFile || !expenseId) {
@@ -210,7 +210,7 @@ export function NewGroupExpenseModal({
     }
   };
 
-  const handleParticipantsSubmit = async (e: React.FormEvent) => {
+  const handleParticipantsSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     if (!expenseId) {

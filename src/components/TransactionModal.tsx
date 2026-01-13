@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { useFriendships, useCreateDebt } from "@/hooks/useApi";
-import { useTransferMethods } from "@/hooks/useMasterData";
-import { DebtAction } from "@/lib/api/types";
+import { useFilteredTransferMethods } from "@/hooks/useMasterData";
+import { DebtAction, TransferMethod } from "@/lib/api/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,15 +21,9 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { AvatarCircle } from "@/components/AvatarCircle";
-import {
-  ArrowUpRight,
-  ArrowDownLeft,
-  Loader2,
-  Wallet,
-  CreditCard,
-  Banknote,
-} from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import TransferMethodSelect from "./TransferMethodSelect";
 
 interface TransactionModalProps {
   open: boolean;
@@ -83,23 +77,25 @@ export function TransactionModal({
   const [action, setAction] = useState<DebtAction>(defaultAction);
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
-  const [transferMethodId, setTransferMethodId] = useState("");
+  const [selectedMethod, setSelectedMethod] = useState<TransferMethod>(null);
+  const [transferMethodOpen, setTransferMethodOpen] = useState(false);
 
   const { data: friendships } = useFriendships();
-  const { data: transferMethods } = useTransferMethods();
+  const { data: transferMethods, isLoading: isLoadingMethods } =
+    useFilteredTransferMethods("for-transaction", open);
   const createDebt = useCreateDebt();
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!friendId || !amount || !transferMethodId) return;
+    if (!friendId || !amount || !selectedMethod?.id) return;
 
     try {
       await createDebt.mutateAsync({
         friendProfileId: friendId,
         action,
         amount: Number.parseFloat(amount),
-        transferMethodId,
+        transferMethodId: selectedMethod.id,
         description: description || undefined,
       });
       toast({
@@ -125,14 +121,7 @@ export function TransactionModal({
     setAction(defaultAction);
     setAmount("");
     setDescription("");
-    setTransferMethodId("");
-  };
-
-  const getTransferIcon = (name: string) => {
-    const lower = name.toLowerCase();
-    if (lower.includes("cash")) return Banknote;
-    if (lower.includes("card") || lower.includes("credit")) return CreditCard;
-    return Wallet;
+    setSelectedMethod(null);
   };
 
   return (
@@ -215,34 +204,14 @@ export function TransactionModal({
           </div>
 
           {/* Transfer Method */}
-          <div className="space-y-2">
-            <Label>Transfer Method</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {transferMethods
-                ?.filter(
-                  (method) => !["GROUP_EXPENSE", "app"].includes(method.name)
-                )
-                ?.map((method) => {
-                  const Icon = getTransferIcon(method.name);
-                  return (
-                    <button
-                      key={method.id}
-                      type="button"
-                      onClick={() => setTransferMethodId(method.id)}
-                      className={cn(
-                        "flex flex-col items-center gap-1 p-3 rounded-lg border transition-all",
-                        transferMethodId === method.id
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border/50 hover:border-border text-muted-foreground"
-                      )}
-                    >
-                      <Icon className="h-5 w-5" />
-                      <span className="text-xs">{method.display}</span>
-                    </button>
-                  );
-                })}
-            </div>
-          </div>
+          <TransferMethodSelect
+            transferMethodOpen={transferMethodOpen}
+            setTransferMethodOpen={setTransferMethodOpen}
+            isLoadingMethods={isLoadingMethods}
+            selectedMethod={selectedMethod}
+            setSelectedMethod={setSelectedMethod}
+            transferMethods={transferMethods}
+          />
 
           {/* Description */}
           <div className="space-y-2">
@@ -261,7 +230,10 @@ export function TransactionModal({
             type="submit"
             className="w-full"
             disabled={
-              !friendId || !amount || !transferMethodId || createDebt.isPending
+              !friendId ||
+              !amount ||
+              !selectedMethod?.id ||
+              createDebt.isPending
             }
           >
             {createDebt.isPending && (

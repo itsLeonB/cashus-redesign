@@ -124,6 +124,21 @@ export interface TransferMethod {
   id: string;
   name: string;
   display: string;
+  iconUrl: string;
+  parentId: string;
+}
+
+export interface ProfileTransferMethod {
+  id: string;
+  method: TransferMethod;
+  accountName: string;
+  accountNumber: string;
+}
+
+export interface NewProfileTransferMethod {
+  transferMethodId: string;
+  accountName: string;
+  accountNumber: string;
 }
 
 export interface SimpleProfile {

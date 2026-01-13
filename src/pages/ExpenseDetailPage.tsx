@@ -6,6 +6,8 @@ import {
   useDeleteGroupExpense,
   useUploadExpenseBill,
   useTriggerBillParsing,
+  useDeleteExpenseItem,
+  useDeleteExpenseFee,
 } from "@/hooks/useApi";
 import { useCalculationMethods } from "@/hooks/useMasterData";
 import { AvatarCircle } from "@/components/AvatarCircle";
@@ -55,16 +57,13 @@ import {
   UserPlus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  groupExpensesApi,
-  NewExpenseItemRequest,
-  statusDisplay,
-} from "@/lib/api";
+import { NewExpenseItemRequest, statusDisplay } from "@/lib/api";
 import type {
   ExpenseItemResponse,
   OtherFeeResponse,
   ExpenseConfirmationResponse,
 } from "@/lib/api/types";
+
 import { useQueryClient } from "@tanstack/react-query";
 
 export default function ExpenseDetailPage() {
@@ -76,6 +75,8 @@ export default function ExpenseDetailPage() {
   const triggerBillParsing = useTriggerBillParsing(expenseId || "");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { mutate: deleteItem } = useDeleteExpenseItem();
+  const { mutate: deleteFee } = useDeleteExpenseFee();
   const { data: calculationMethods } = useCalculationMethods();
 
   const calculationMethodDisplayByName = useMemo(() => {
@@ -199,54 +200,60 @@ export default function ExpenseDetailPage() {
     }
   };
 
-  const handleDeleteItem = async (itemId: string) => {
+  const handleDeleteItem = (itemId: string) => {
     if (!expense) return;
 
     setDeletingItemId(itemId);
-    try {
-      await groupExpensesApi.removeItem(expense.id, itemId);
-      queryClient.invalidateQueries({
-        queryKey: ["group-expenses", expenseId],
-      });
-      toast({
-        title: "Item removed",
-        description: "The item has been removed from the expense.",
-      });
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast({
-        variant: "destructive",
-        title: "Failed to remove item",
-        description: err.message || "Something went wrong",
-      });
-    } finally {
-      setDeletingItemId(null);
-    }
+    deleteItem(
+      { expenseId: expense.id, itemId },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Item removed",
+            description: "The item has been removed from the expense.",
+          });
+        },
+        onError: (error: unknown) => {
+          const err = error as { message?: string };
+          toast({
+            variant: "destructive",
+            title: "Failed to remove item",
+            description: err.message || "Something went wrong",
+          });
+        },
+        onSettled: () => {
+          setDeletingItemId(null);
+        },
+      }
+    );
   };
 
-  const handleDeleteFee = async (feeId: string) => {
+  const handleDeleteFee = (feeId: string) => {
     if (!expense) return;
 
     setDeletingFeeId(feeId);
-    try {
-      await groupExpensesApi.removeFee(expense.id, feeId);
-      queryClient.invalidateQueries({
-        queryKey: ["group-expenses", expenseId],
-      });
-      toast({
-        title: "Fee removed",
-        description: "The fee has been removed from the expense.",
-      });
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast({
-        variant: "destructive",
-        title: "Failed to remove fee",
-        description: err.message || "Something went wrong",
-      });
-    } finally {
-      setDeletingFeeId(null);
-    }
+    deleteFee(
+      { expenseId: expense.id, feeId },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Fee removed",
+            description: "The fee has been removed from the expense.",
+          });
+        },
+        onError: (error: unknown) => {
+          const err = error as { message?: string };
+          toast({
+            variant: "destructive",
+            title: "Failed to remove fee",
+            description: err.message || "Something went wrong",
+          });
+        },
+        onSettled: () => {
+          setDeletingFeeId(null);
+        },
+      }
+    );
   };
 
   const openAddItemModal = () => {
@@ -321,30 +328,32 @@ export default function ExpenseDetailPage() {
     setPreviewUrl(URL.createObjectURL(file));
   };
 
-  const handleUploadBill = async () => {
+  const handleUploadBill = () => {
     if (!expenseId || !selectedFile) return;
 
-    try {
-      await uploadBill.mutateAsync({ expenseId, file: selectedFile });
-      setUploadBillModalOpen(false);
-      setSelectedFile(null);
-      setPreviewUrl(null);
-      queryClient.invalidateQueries({
-        queryKey: ["group-expenses", expenseId],
-      });
-      toast({
-        title: "Bill uploaded",
-        description:
-          "Your bill image has been uploaded and is being processed.",
-      });
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast({
-        variant: "destructive",
-        title: "Upload failed",
-        description: err.message || "Something went wrong",
-      });
-    }
+    uploadBill.mutate(
+      { expenseId, file: selectedFile },
+      {
+        onSuccess: () => {
+          setUploadBillModalOpen(false);
+          setSelectedFile(null);
+          setPreviewUrl(null);
+          toast({
+            title: "Bill uploaded",
+            description:
+              "Your bill image has been uploaded and is being processed.",
+          });
+        },
+        onError: (error: unknown) => {
+          const err = error as { message?: string };
+          toast({
+            variant: "destructive",
+            title: "Upload failed",
+            description: err.message || "Something went wrong",
+          });
+        },
+      }
+    );
   };
 
   const clearFile = () => {

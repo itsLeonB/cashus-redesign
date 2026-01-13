@@ -1,15 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { debtsApi, groupExpensesApi } from "@/lib/api";
+import { TransferMethodFilter } from "@/lib/api/debts";
 
 const MASTER_DATA_STALE_TIME = Infinity;
 const MASTER_DATA_GC_TIME = Infinity;
 
-export function useTransferMethods() {
+export function useFilteredTransferMethods(
+  filter: TransferMethodFilter,
+  enabled = true
+) {
   return useQuery({
-    queryKey: ["transfer-methods"],
-    queryFn: debtsApi.getTransferMethods,
-    staleTime: MASTER_DATA_STALE_TIME,
-    gcTime: MASTER_DATA_GC_TIME,
+    queryKey: ["transfer-methods", filter],
+    queryFn: () => debtsApi.getTransferMethods(filter),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    enabled,
   });
 }
 

@@ -22,9 +22,6 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-// UI-only type for the modal
-type DebtAction = "LEND" | "BORROW" | "RECEIVE" | "RETURN";
-
 export default function DashboardPage() {
   const { user } = useAuth();
   const { data: friendships, isLoading: friendshipsLoading } = useFriendships();
@@ -98,11 +95,14 @@ export default function DashboardPage() {
       });
     });
 
-    const sortTime = (a: any, b: any) => {
+    const sortTime = (
+      a: (typeof activities)[number],
+      b: (typeof activities)[number]
+    ) => {
       return new Date(b.date).getTime() - new Date(a.date).getTime();
     };
 
-    return activities.sort(sortTime).slice(0, 6);
+    return activities.toSorted(sortTime).slice(0, 6);
   }, [debts, expenses, friendships]);
 
   // Friends with balances
@@ -115,7 +115,7 @@ export default function DashboardPage() {
         balance: balances.get(f.profileId) || 0,
       }))
       .filter((f) => f.balance !== 0)
-      .sort((a, b) => Math.abs(b.balance) - Math.abs(a.balance))
+      .toSorted((a, b) => Math.abs(b.balance) - Math.abs(a.balance))
       .slice(0, 5);
   }, [friendships, balances]);
 

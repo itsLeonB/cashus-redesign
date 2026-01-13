@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import {
   Dialog,
   DialogContent,
@@ -9,8 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { groupExpensesApi } from "@/lib/api";
-import { useQueryClient } from "@tanstack/react-query";
+import { useAddExpenseItem, useUpdateExpenseItem } from "@/hooks/useApi";
 import { Loader2, Package } from "lucide-react";
 import type { ExpenseItemResponse } from "@/lib/api/types";
 
@@ -28,8 +27,10 @@ export function ExpenseItemModal({
   item,
 }: Readonly<ExpenseItemModalProps>) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [isLoading, setIsLoading] = useState(false);
+  const { mutate: addItem, isPending: isAdding } = useAddExpenseItem(expenseId);
+  const { mutate: updateItem, isPending: isUpdating } =
+    useUpdateExpenseItem(expenseId);
+  const isLoading = isAdding || isUpdating;
 
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
@@ -49,7 +50,7 @@ export function ExpenseItemModal({
     }
   }, [item, open]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
 
     if (!name.trim() || !amount) {
@@ -61,48 +62,51 @@ export function ExpenseItemModal({
       return;
     }
 
-    setIsLoading(true);
-    try {
-      if (isEditing && item) {
-        await groupExpensesApi.updateItem(item.id, {
-          id: item.id,
-          groupExpenseId: expenseId,
-          name: name.trim(),
-          amount,
-          quantity,
-        });
+    const itemData = {
+      name: name.trim(),
+      amount,
+      quantity,
+    };
 
-        toast({
-          title: "Item updated",
-          description: `"${name}" has been updated.`,
-        });
-      } else {
-        await groupExpensesApi.addItem(expenseId, {
-          groupExpenseId: expenseId,
-          name: name.trim(),
-          amount,
-          quantity,
-        });
-
-        toast({
-          title: "Item added",
-          description: `"${name}" has been added to the expense.`,
-        });
-      }
-
-      queryClient.invalidateQueries({
-        queryKey: ["group-expenses", expenseId],
+    if (isEditing && item) {
+      updateItem(
+        { ...itemData, id: item.id },
+        {
+          onSuccess: () => {
+            toast({
+              title: "Item updated",
+              description: `"${name}" has been updated.`,
+            });
+            onOpenChange(false);
+          },
+          onError: (error: unknown) => {
+            const err = error as { message?: string };
+            toast({
+              variant: "destructive",
+              title: "Failed to update item",
+              description: err.message || "Something went wrong",
+            });
+          },
+        }
+      );
+    } else {
+      addItem(itemData, {
+        onSuccess: () => {
+          toast({
+            title: "Item added",
+            description: `"${name}" has been added to the expense.`,
+          });
+          onOpenChange(false);
+        },
+        onError: (error: unknown) => {
+          const err = error as { message?: string };
+          toast({
+            variant: "destructive",
+            title: "Failed to add item",
+            description: err.message || "Something went wrong",
+          });
+        },
       });
-      onOpenChange(false);
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast({
-        variant: "destructive",
-        title: isEditing ? "Failed to update item" : "Failed to add item",
-        description: err.message || "Something went wrong",
-      });
-    } finally {
-      setIsLoading(false);
     }
   };
 

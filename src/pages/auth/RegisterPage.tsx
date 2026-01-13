@@ -1,10 +1,16 @@
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, Loader2, Check } from "lucide-react";
 
@@ -18,9 +24,9 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    
+
     if (password !== passwordConfirmation) {
       toast({
         variant: "destructive",
@@ -55,10 +61,12 @@ export default function RegisterPage() {
             <div className="mx-auto w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mb-4">
               <Check className="h-8 w-8 text-success" />
             </div>
-            <h2 className="text-xl font-display font-semibold mb-2">Check your email</h2>
+            <h2 className="text-xl font-display font-semibold mb-2">
+              Check your email
+            </h2>
             <p className="text-muted-foreground mb-6">
-              We've sent a verification link to <strong>{email}</strong>. 
-              Please check your inbox and click the link to activate your account.
+              We've sent a verification link to <strong>{email}</strong>. Please
+              check your inbox and click the link to activate your account.
             </p>
             <Button onClick={() => navigate("/login")} className="w-full">
               Back to login
@@ -73,10 +81,10 @@ export default function RegisterPage() {
     <div className="animate-fade-up">
       <Card className="border-border/50">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-display">Create an account</CardTitle>
-          <CardDescription>
-            Get started with Cashus for free
-          </CardDescription>
+          <CardTitle className="text-2xl font-display">
+            Create an account
+          </CardTitle>
+          <CardDescription>Get started with Cashus for free</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -126,7 +134,12 @@ export default function RegisterPage() {
                 />
               </div>
             </div>
-            <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full"
+              size="lg"
+              disabled={isLoading}
+            >
               {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
               Create account
             </Button>
@@ -134,7 +147,10 @@ export default function RegisterPage() {
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Already have an account?{" "}
-            <Link to="/login" className="text-primary hover:underline font-medium">
+            <Link
+              to="/login"
+              className="text-primary hover:underline font-medium"
+            >
               Sign in
             </Link>
           </p>
