@@ -3,7 +3,7 @@ import { AvatarCircle } from "@/components/AvatarCircle";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Loader2, Minus, Plus, Settings2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useSyncItemParticipants } from "@/hooks/useApi";
 import type { ExpenseItemResponse, SimpleProfile } from "@/lib/api/types";
@@ -165,7 +165,11 @@ export function ItemParticipantManager({
     serverWeightsRef.current = propWeights;
 
     // Only update local weights if props actually changed AND user is idle
-    if (propsChanged && !isSyncing && getWeightsKey(weights) === getWeightsKey(debouncedWeights)) {
+    if (
+      propsChanged &&
+      !isSyncing &&
+      getWeightsKey(weights) === getWeightsKey(debouncedWeights)
+    ) {
       setWeights(propWeights);
     }
   }, [item.participants, isSyncing, weights, debouncedWeights]);
@@ -191,7 +195,7 @@ export function ItemParticipantManager({
 
   // Calculate total weight for split preview
   const totalWeight = Object.values(weights).reduce((sum, w) => sum + w, 0);
-  const itemAmount = parseFloat(item.amount) || 0;
+  const itemAmount = Number.parseFloat(item.amount) || 0;
 
   // Check if any weight is different from 1 (show advanced indicator)
   const hasCustomWeights = Object.values(weights).some((w) => w !== 1);
@@ -229,7 +233,10 @@ export function ItemParticipantManager({
           if (isConfirmed && !isSelected) return null;
 
           return (
-            <div key={participant.id} className="flex flex-col items-center gap-1">
+            <div
+              key={participant.id}
+              className="flex flex-col items-center gap-1"
+            >
               <button
                 type="button"
                 disabled={isConfirmed}
@@ -297,10 +304,7 @@ export function ItemParticipantManager({
               {/* Share amount preview */}
               {isSelected && totalWeight > 0 && (
                 <span className="text-xs text-muted-foreground">
-                  {shareAmount.toLocaleString(undefined, {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0,
-                  })}
+                  {formatCurrency(shareAmount)}
                 </span>
               )}
             </div>

@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 interface AmountDisplayProps {
   amount: number;
@@ -25,11 +25,7 @@ export function AmountDisplay({
     xl: "text-3xl font-display",
   };
 
-  const formattedAmount = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 2,
-  }).format(Math.abs(amount));
+  const formattedAmount = formatCurrency(Math.abs(amount));
 
   const getLabel = (isZero: boolean, isPositive: boolean): string => {
     if (isZero) return "Settled up";

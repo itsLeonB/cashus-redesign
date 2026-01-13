@@ -10,6 +10,7 @@ import { Plus, Receipt, Calendar, Users, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { NewGroupExpenseModal } from "@/components/NewGroupExpenseModal";
 import type { GroupExpenseResponse } from "@/lib/api/types";
+import { formatCurrency } from "@/lib/utils";
 
 export default function ExpensesPage() {
   const [newExpenseOpen, setNewExpenseOpen] = useState(false);
@@ -21,13 +22,6 @@ export default function ExpensesPage() {
     useGroupExpenses("READY");
   const { data: confirmedExpenses, isLoading: isConfirmedLoading } =
     useGroupExpenses("CONFIRMED", { enabled: activeTab === "confirmed" });
-
-  const formatCurrency = (amount: string) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "IDR",
-    }).format(Number.parseFloat(amount));
-  };
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString("en-US", {

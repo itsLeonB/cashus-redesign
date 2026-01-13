@@ -56,7 +56,7 @@ import {
   Upload,
   UserPlus,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { NewExpenseItemRequest, statusDisplay } from "@/lib/api";
 import type {
   ExpenseItemResponse,
@@ -148,14 +148,6 @@ export default function ExpenseDetailPage() {
       day: "numeric",
       year: "numeric",
     });
-  };
-
-  const formatCurrency = (amount: string | number) => {
-    const num = typeof amount === "string" ? Number.parseFloat(amount) : amount;
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "IDR",
-    }).format(num);
   };
 
   const handleConfirmDryRun = async () => {
@@ -626,10 +618,7 @@ export default function ExpenseDetailPage() {
             <CardTitle className="font-display">Confirmed Splits</CardTitle>
           </CardHeader>
           <CardContent>
-            <ExpenseConfirmationPreview
-              data={expense.confirmationPreview}
-              formatCurrency={formatCurrency}
-            />
+            <ExpenseConfirmationPreview data={expense.confirmationPreview} />
           </CardContent>
         </Card>
       )}
@@ -1034,11 +1023,7 @@ export default function ExpenseDetailPage() {
 
           {dryRunResult && (
             <div className="max-h-[400px] overflow-y-auto">
-              <ExpenseConfirmationPreview
-                data={dryRunResult}
-                formatCurrency={formatCurrency}
-                showHeader
-              />
+              <ExpenseConfirmationPreview data={dryRunResult} showHeader />
             </div>
           )}
 

@@ -1,15 +1,14 @@
 import { AvatarCircle } from "@/components/AvatarCircle";
 import type { ExpenseConfirmationResponse } from "@/lib/api/types";
+import { formatCurrency } from "@/lib/utils";
 
 interface ExpenseConfirmationPreviewProps {
   data: ExpenseConfirmationResponse;
-  formatCurrency: (amount: string | number) => string;
   showHeader?: boolean;
 }
 
 export function ExpenseConfirmationPreview({
   data,
-  formatCurrency,
   showHeader = false,
 }: Readonly<ExpenseConfirmationPreviewProps>) {
   return (
