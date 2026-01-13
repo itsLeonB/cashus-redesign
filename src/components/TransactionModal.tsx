@@ -1,7 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useFriendships, useCreateDebt } from "@/hooks/useApi";
 import { useFilteredTransferMethods } from "@/hooks/useMasterData";
-import { DebtAction } from "@/lib/api/types";
+import { DebtAction, TransferMethod } from "@/lib/api/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,29 +19,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { AvatarCircle } from "@/components/AvatarCircle";
-import {
-  ArrowUpRight,
-  ArrowDownLeft,
-  Loader2,
-  Check,
-  ChevronsUpDown,
-} from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import TransferMethodSelect from "./TransferMethodSelect";
 
 interface TransactionModalProps {
   open: boolean;
@@ -95,7 +77,7 @@ export function TransactionModal({
   const [action, setAction] = useState<DebtAction>(defaultAction);
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
-  const [transferMethodId, setTransferMethodId] = useState("");
+  const [selectedMethod, setSelectedMethod] = useState<TransferMethod>(null);
   const [transferMethodOpen, setTransferMethodOpen] = useState(false);
 
   const { data: friendships } = useFriendships();
@@ -104,20 +86,16 @@ export function TransactionModal({
   const createDebt = useCreateDebt();
   const { toast } = useToast();
 
-  const selectedMethod = useMemo(() => {
-    return transferMethods?.find((m) => m.id === transferMethodId);
-  }, [transferMethods, transferMethodId]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!friendId || !amount || !transferMethodId) return;
+    if (!friendId || !amount || !selectedMethod?.id) return;
 
     try {
       await createDebt.mutateAsync({
         friendProfileId: friendId,
         action,
         amount: Number.parseFloat(amount),
-        transferMethodId,
+        transferMethodId: selectedMethod.id,
         description: description || undefined,
       });
       toast({
@@ -143,28 +121,7 @@ export function TransactionModal({
     setAction(defaultAction);
     setAmount("");
     setDescription("");
-    setTransferMethodId("");
-  };
-
-  const transferMethodInput = () => {
-    if (isLoadingMethods)
-      return <span className="text-muted-foreground">Loading...</span>;
-
-    if (selectedMethod)
-      return (
-        <div className="flex items-center gap-2">
-          <img
-            src={selectedMethod.iconUrl}
-            alt={selectedMethod.name}
-            className="h-5 w-5 rounded object-contain"
-          />
-          <span>{selectedMethod.display}</span>
-        </div>
-      );
-
-    return (
-      <span className="text-muted-foreground">Select transfer method...</span>
-    );
+    setSelectedMethod(null);
   };
 
   return (
@@ -247,63 +204,14 @@ export function TransactionModal({
           </div>
 
           {/* Transfer Method */}
-          <div className="space-y-2">
-            <Label>Transfer Method</Label>
-            <Popover
-              open={transferMethodOpen}
-              onOpenChange={setTransferMethodOpen}
-            >
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={transferMethodOpen}
-                  className="w-full justify-between"
-                  disabled={isLoadingMethods}
-                >
-                  {transferMethodInput()}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0 z-50" align="start">
-                <Command>
-                  <CommandInput placeholder="Search transfer method..." />
-                  <CommandList>
-                    <CommandEmpty>No transfer method found.</CommandEmpty>
-                    <CommandGroup>
-                      {transferMethods?.map((method) => (
-                        <CommandItem
-                          key={method.id}
-                          value={method.display}
-                          onSelect={() => {
-                            setTransferMethodId(method.id);
-                            setTransferMethodOpen(false);
-                          }}
-                        >
-                          <div className="flex items-center gap-2 flex-1">
-                            <img
-                              src={method.iconUrl}
-                              alt={method.name}
-                              className="h-5 w-5 rounded object-contain"
-                            />
-                            <span>{method.display}</span>
-                          </div>
-                          <Check
-                            className={cn(
-                              "h-4 w-4",
-                              transferMethodId === method.id
-                                ? "opacity-100"
-                                : "opacity-0"
-                            )}
-                          />
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
+          <TransferMethodSelect
+            transferMethodOpen={transferMethodOpen}
+            setTransferMethodOpen={setTransferMethodOpen}
+            isLoadingMethods={isLoadingMethods}
+            selectedMethod={selectedMethod}
+            setSelectedMethod={setSelectedMethod}
+            transferMethods={transferMethods}
+          />
 
           {/* Description */}
           <div className="space-y-2">
@@ -322,7 +230,10 @@ export function TransactionModal({
             type="submit"
             className="w-full"
             disabled={
-              !friendId || !amount || !transferMethodId || createDebt.isPending
+              !friendId ||
+              !amount ||
+              !selectedMethod?.id ||
+              createDebt.isPending
             }
           >
             {createDebt.isPending && (

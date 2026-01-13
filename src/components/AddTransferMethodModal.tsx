@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,24 +10,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 import { useFilteredTransferMethods } from "@/hooks/useMasterData";
 import { useToast } from "@/hooks/use-toast";
 import { useAddTransferMethod } from "@/hooks/useApi";
+import TransferMethodSelect from "@/components/TransferMethodSelect";
+import { TransferMethod } from "@/lib/api";
 
 interface AddTransferMethodModalProps {
   open: boolean;
@@ -38,7 +26,7 @@ export function AddTransferMethodModal({
   open,
   onOpenChange,
 }: Readonly<AddTransferMethodModalProps>) {
-  const [selectedMethodId, setSelectedMethodId] = useState("");
+  const [selectedMethod, setSelectedMethod] = useState<TransferMethod>(null);
   const [accountName, setAccountName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [comboboxOpen, setComboboxOpen] = useState(false);
@@ -49,14 +37,10 @@ export function AddTransferMethodModal({
   const { mutate: addTransferMethod, isPending: isAdding } =
     useAddTransferMethod();
 
-  const selectedMethod = useMemo(() => {
-    return transferMethods?.find((m) => m.id === selectedMethodId);
-  }, [transferMethods, selectedMethodId]);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!selectedMethodId || !accountName.trim() || !accountNumber.trim()) {
+    if (!selectedMethod?.id || !accountName.trim() || !accountNumber.trim()) {
       toast({
         variant: "destructive",
         title: "Validation Error",
@@ -67,7 +51,7 @@ export function AddTransferMethodModal({
 
     addTransferMethod(
       {
-        transferMethodId: selectedMethodId,
+        transferMethodId: selectedMethod?.id,
         accountName: accountName.trim(),
         accountNumber: accountNumber.trim(),
       },
@@ -79,7 +63,7 @@ export function AddTransferMethodModal({
           });
 
           // Reset form and close modal
-          setSelectedMethodId("");
+          setSelectedMethod(null);
           setAccountName("");
           setAccountNumber("");
           onOpenChange(false);
@@ -98,32 +82,11 @@ export function AddTransferMethodModal({
 
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) {
-      setSelectedMethodId("");
+      setSelectedMethod(null);
       setAccountName("");
       setAccountNumber("");
     }
     onOpenChange(newOpen);
-  };
-
-  const transferMethodInput = () => {
-    if (isLoadingMethods)
-      return <span className="text-muted-foreground">Loading...</span>;
-
-    if (selectedMethod)
-      return (
-        <div className="flex items-center gap-2">
-          <img
-            src={selectedMethod.iconUrl}
-            alt={selectedMethod.name}
-            className="h-5 w-5 rounded object-contain"
-          />
-          <span>{selectedMethod.display}</span>
-        </div>
-      );
-
-    return (
-      <span className="text-muted-foreground">Select payment method...</span>
-    );
   };
 
   return (
@@ -140,60 +103,14 @@ export function AddTransferMethodModal({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Transfer Method Selector */}
-          <div className="space-y-2">
-            <Label>Payment Method</Label>
-            <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={comboboxOpen}
-                  className="w-full justify-between"
-                  disabled={isLoadingMethods}
-                >
-                  {transferMethodInput()}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-full p-0 z-50" align="start">
-                <Command>
-                  <CommandInput placeholder="Search payment method..." />
-                  <CommandList>
-                    <CommandEmpty>No payment method found.</CommandEmpty>
-                    <CommandGroup>
-                      {transferMethods?.map((method) => (
-                        <CommandItem
-                          key={method.id}
-                          value={method.display}
-                          onSelect={() => {
-                            setSelectedMethodId(method.id);
-                            setComboboxOpen(false);
-                          }}
-                        >
-                          <div className="flex items-center gap-2 flex-1">
-                            <img
-                              src={method.iconUrl}
-                              alt={method.name}
-                              className="h-5 w-5 rounded object-contain"
-                            />
-                            <span>{method.display}</span>
-                          </div>
-                          <Check
-                            className={cn(
-                              "h-4 w-4",
-                              selectedMethodId === method.id
-                                ? "opacity-100"
-                                : "opacity-0"
-                            )}
-                          />
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
+          <TransferMethodSelect
+            transferMethodOpen={comboboxOpen}
+            setTransferMethodOpen={setComboboxOpen}
+            isLoadingMethods={isLoadingMethods}
+            selectedMethod={selectedMethod}
+            setSelectedMethod={setSelectedMethod}
+            transferMethods={transferMethods}
+          />
 
           {/* Account Name */}
           <div className="space-y-2">
