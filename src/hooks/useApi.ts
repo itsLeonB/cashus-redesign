@@ -7,12 +7,21 @@ import type {
   SyncItemParticipantsRequest,
 } from "@/lib/api";
 import { profileApi } from "@/lib/api/profile";
+import { profilesApi } from "@/lib/api/profiles";
 
 // Profile hooks
 export function useTransferMethods() {
   return useQuery({
     queryKey: ["transfer-methods"],
     queryFn: profileApi.getTransferMethods,
+  });
+}
+
+export function useProfileTransferMethods(profileId: string) {
+  return useQuery({
+    queryKey: ["profile-transfer-methods", profileId],
+    queryFn: () => profilesApi.getTransferMethods(profileId),
+    enabled: !!profileId,
   });
 }
 
