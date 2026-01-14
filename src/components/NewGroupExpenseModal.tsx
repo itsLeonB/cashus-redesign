@@ -8,7 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useCreateDraftExpense, useUploadExpenseBill } from "@/hooks/useApi";
+import { useCreateDraftExpense } from "@/hooks/useApi";
 import {
   Loader2,
   Camera,
@@ -40,11 +40,8 @@ export function NewGroupExpenseModal({
   const [inputType, setInputType] = useState<InputType>("upload");
   const [step, setStep] = useState<Step>("details");
   const [expenseId, setExpenseId] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const createDraft = useCreateDraftExpense();
-  const uploadBill = useUploadExpenseBill();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -53,7 +50,6 @@ export function NewGroupExpenseModal({
     setInputType("upload");
     setStep("details");
     setExpenseId(null);
-    clearFile();
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -61,20 +57,6 @@ export function NewGroupExpenseModal({
       resetModal();
     }
     onOpenChange(open);
-  };
-
-  const handleFileSelect = (file: File) => {
-    setSelectedFile(file);
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
-  };
-
-  const clearFile = () => {
-    setSelectedFile(null);
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
-    }
   };
 
   const handleDetailsSubmit = async (e: FormEvent) => {
@@ -87,7 +69,6 @@ export function NewGroupExpenseModal({
       if (inputType === "upload") {
         setStep("upload");
       } else {
-        // Manual input - go to participants step
         setStep("participants");
       }
     } catch (error: unknown) {
@@ -100,31 +81,8 @@ export function NewGroupExpenseModal({
     }
   };
 
-  const handleUploadSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-
-    if (!selectedFile || !expenseId) {
-      toast({
-        variant: "destructive",
-        title: "Missing file",
-        description: "Please select an image file",
-      });
-      return;
-    }
-
-    try {
-      await uploadBill.mutateAsync({ expenseId, file: selectedFile });
-      toast({ title: "Bill uploaded successfully" });
-      // After successful upload, go to participants step
-      setStep("participants");
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast({
-        variant: "destructive",
-        title: "Upload failed",
-        description: err.message || "Something went wrong",
-      });
-    }
+  const handleUploadSuccess = () => {
+    setStep("participants");
   };
 
   const handleSkipUpload = () => {
@@ -258,38 +216,24 @@ export function NewGroupExpenseModal({
         )}
 
         {step === "upload" && (
-          <form onSubmit={handleUploadSubmit} className="space-y-4">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label>Bill Image</Label>
               <ImageUploadArea
-                selectedFile={selectedFile}
-                previewUrl={previewUrl}
-                onFileSelect={handleFileSelect}
-                onClear={clearFile}
+                expenseId={expenseId || undefined}
+                onUploadSuccess={handleUploadSuccess}
               />
             </div>
 
-            <div className="flex gap-2 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1"
-                onClick={handleSkipUpload}
-              >
-                Skip
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1"
-                disabled={!selectedFile || uploadBill.isPending}
-              >
-                {uploadBill.isPending && (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                )}
-                Upload Bill
-              </Button>
-            </div>
-          </form>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={handleSkipUpload}
+            >
+              Skip
+            </Button>
+          </div>
         )}
 
         {step === "participants" && (

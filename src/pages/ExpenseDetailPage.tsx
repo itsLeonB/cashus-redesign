@@ -4,7 +4,6 @@ import {
   useGroupExpense,
   useConfirmGroupExpense,
   useDeleteGroupExpense,
-  useUploadExpenseBill,
   useTriggerBillParsing,
   useDeleteExpenseItem,
   useDeleteExpenseFee,
@@ -56,7 +55,7 @@ import {
   Upload,
   UserPlus,
 } from "lucide-react";
-import { cn, formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { NewExpenseItemRequest, statusDisplay } from "@/lib/api";
 import type {
   ExpenseItemResponse,
@@ -136,8 +135,6 @@ export default function ExpenseDetailPage() {
   const [viewBillModalOpen, setViewBillModalOpen] = useState(false);
   const [retryBillModalOpen, setRetryBillModalOpen] = useState(false);
   const [uploadBillModalOpen, setUploadBillModalOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   // Participant modal state
   const [participantModalOpen, setParticipantModalOpen] = useState(false);
@@ -147,8 +144,6 @@ export default function ExpenseDetailPage() {
   const [dryRunResult, setDryRunResult] =
     useState<ExpenseConfirmationResponse | null>(null);
   const [isDryRunLoading, setIsDryRunLoading] = useState(false);
-
-  const uploadBill = useUploadExpenseBill();
 
   const participantProfiles = (expense?.participants || []).map(
     (p) => p.profile
@@ -306,53 +301,8 @@ export default function ExpenseDetailPage() {
     }
   };
 
-  const handleFileSelect = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast({
-        variant: "destructive",
-        title: "Invalid file type",
-        description: "Please select an image file.",
-      });
-      return;
-    }
-    setSelectedFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
-  };
-
-  const handleUploadBill = () => {
-    if (!expenseId || !selectedFile) return;
-
-    uploadBill.mutate(
-      { expenseId, file: selectedFile },
-      {
-        onSuccess: () => {
-          setUploadBillModalOpen(false);
-          setSelectedFile(null);
-          setPreviewUrl(null);
-          toast({
-            title: "Bill uploaded",
-            description:
-              "Your bill image has been uploaded and is being processed.",
-          });
-        },
-        onError: (error: unknown) => {
-          const err = error as { message?: string };
-          toast({
-            variant: "destructive",
-            title: "Upload failed",
-            description: err.message || "Something went wrong",
-          });
-        },
-      }
-    );
-  };
-
-  const clearFile = () => {
-    setSelectedFile(null);
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
-    }
+  const handleUploadSuccess = () => {
+    setUploadBillModalOpen(false);
   };
 
   if (isLoading) {
@@ -892,10 +842,7 @@ export default function ExpenseDetailPage() {
       {/* Upload Bill Modal */}
       <AlertDialog
         open={uploadBillModalOpen}
-        onOpenChange={(open) => {
-          setUploadBillModalOpen(open);
-          if (!open) clearFile();
-        }}
+        onOpenChange={setUploadBillModalOpen}
       >
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
@@ -911,29 +858,21 @@ export default function ExpenseDetailPage() {
           </AlertDialogHeader>
 
           <ImageUploadArea
-            selectedFile={selectedFile}
-            previewUrl={previewUrl}
-            onFileSelect={handleFileSelect}
-            onClear={clearFile}
+            expenseId={expenseId}
+            onUploadSuccess={handleUploadSuccess}
           />
 
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={clearFile}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleUploadBill}
-              disabled={!selectedFile || uploadBill.isPending}
-            >
-              {uploadBill.isPending && (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              )}
-              Upload Bill
-            </AlertDialogAction>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       {/* Participant Selector Modal */}
-      <Dialog open={participantModalOpen} onOpenChange={setParticipantModalOpen}>
+      <Dialog
+        open={participantModalOpen}
+        onOpenChange={setParticipantModalOpen}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="font-display flex items-center gap-2">

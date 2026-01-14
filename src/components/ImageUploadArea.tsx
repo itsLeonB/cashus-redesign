@@ -1,28 +1,34 @@
-import { useRef, useState, DragEvent, ChangeEvent } from "react";
+import { useRef, useState, DragEvent, ChangeEvent, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Camera, ImageIcon, X } from "lucide-react";
+import { Camera, ImageIcon, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useUploadExpenseBill } from "@/hooks/useApi";
 
 interface ImageUploadAreaProps {
-  selectedFile: File | null;
-  previewUrl: string | null;
-  onFileSelect: (file: File) => void;
-  onClear: () => void;
+  expenseId?: string;
+  onUploadSuccess?: () => void;
   className?: string;
 }
 
 export function ImageUploadArea({
-  selectedFile,
-  previewUrl,
-  onFileSelect,
-  onClear,
+  expenseId,
+  onUploadSuccess,
   className,
 }: Readonly<ImageUploadAreaProps>) {
   const [isDragging, setIsDragging] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const uploadBill = useUploadExpenseBill();
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   const handleFileSelect = (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -33,7 +39,29 @@ export function ImageUploadArea({
       });
       return;
     }
-    onFileSelect(file);
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+
+    if (expenseId) {
+      uploadBill.mutate(
+        { expenseId, file },
+        {
+          onSuccess: () => {
+            toast({ title: "Bill uploaded successfully" });
+            onUploadSuccess?.();
+          },
+          onError: (error: unknown) => {
+            const err = error as { message?: string };
+            toast({
+              variant: "destructive",
+              title: "Upload failed",
+              description: err.message || "Something went wrong",
+            });
+            clearInputs();
+          },
+        }
+      );
+    }
   };
 
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
@@ -58,29 +86,38 @@ export function ImageUploadArea({
   };
 
   const clearInputs = () => {
-    if (cameraInputRef.current) {
-      cameraInputRef.current.value = "";
-    }
-    if (galleryInputRef.current) {
-      galleryInputRef.current.value = "";
-    }
-    onClear();
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
+    if (galleryInputRef.current) galleryInputRef.current.value = "";
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setSelectedFile(null);
+    setPreviewUrl(null);
   };
 
   if (selectedFile && previewUrl) {
     return (
-      <div className={cn("relative rounded-lg border border-border overflow-hidden", className)}>
+      <div
+        className={cn(
+          "relative rounded-lg border border-border overflow-hidden",
+          className
+        )}
+      >
         <img
           src={previewUrl}
           alt="Preview"
           className="w-full max-h-64 object-contain bg-muted/30"
         />
+        {uploadBill.isPending && (
+          <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
         <Button
           type="button"
           size="icon"
           variant="destructive"
           className="absolute top-2 right-2 h-8 w-8"
           onClick={clearInputs}
+          disabled={uploadBill.isPending}
         >
           <X className="h-4 w-4" />
         </Button>
