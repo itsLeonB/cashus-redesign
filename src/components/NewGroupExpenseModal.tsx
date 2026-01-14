@@ -339,6 +339,7 @@ export function NewGroupExpenseModal({
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
+                capture="environment"
                 onChange={handleInputChange}
                 className="hidden"
               />
