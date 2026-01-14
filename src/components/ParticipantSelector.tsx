@@ -165,6 +165,24 @@ export function ParticipantSelector({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2 max-h-64 overflow-y-auto">
+        {showAddForm ? (
+          <InlineAnonymousFriendForm
+            onCreated={handleAnonymousFriendCreated}
+            onCancel={() => setShowAddForm(false)}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowAddForm(true)}
+            className="flex items-center gap-3 w-full p-3 rounded-lg border border-dashed border-muted-foreground/50 hover:border-primary/50 hover:bg-muted/30 transition-colors text-muted-foreground hover:text-foreground"
+          >
+            <div className="h-5 w-5 rounded border border-dashed border-current flex items-center justify-center">
+              <Plus className="h-3 w-3" />
+            </div>
+            <span className="text-sm">Create new friend</span>
+          </button>
+        )}
+
         {selectableProfiles.map((profile) => {
           const isSelected = selectedParticipants.includes(profile.profileId);
           const isPayer = payerProfileId === profile.profileId;
@@ -220,24 +238,6 @@ export function ParticipantSelector({
             </div>
           );
         })}
-
-        {showAddForm ? (
-          <InlineAnonymousFriendForm
-            onCreated={handleAnonymousFriendCreated}
-            onCancel={() => setShowAddForm(false)}
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => setShowAddForm(true)}
-            className="flex items-center gap-3 w-full p-3 rounded-lg border border-dashed border-muted-foreground/50 hover:border-primary/50 hover:bg-muted/30 transition-colors text-muted-foreground hover:text-foreground"
-          >
-            <div className="h-5 w-5 rounded border border-dashed border-current flex items-center justify-center">
-              <Plus className="h-3 w-3" />
-            </div>
-            <span className="text-sm">Add participant</span>
-          </button>
-        )}
       </div>
 
       {selectedParticipants.length > 0 && (
