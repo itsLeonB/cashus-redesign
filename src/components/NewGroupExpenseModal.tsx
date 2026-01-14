@@ -43,7 +43,8 @@ export function NewGroupExpenseModal({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const createDraft = useCreateDraftExpense();
   const uploadBill = useUploadExpenseBill();
@@ -107,8 +108,11 @@ export function NewGroupExpenseModal({
       URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
     }
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = "";
+    }
+    if (galleryInputRef.current) {
+      galleryInputRef.current.value = "";
     }
   };
 
@@ -314,32 +318,57 @@ export function NewGroupExpenseModal({
                   </Button>
                 </div>
               ) : (
-                <div
-                  onDrop={handleDrop}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={cn(
-                    "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
-                    isDragging
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  )}
-                >
-                  <ImageIcon className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-sm text-muted-foreground">
-                    Drag and drop an image here, or click to select
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Supports JPG, PNG, GIF
-                  </p>
+                <div className="space-y-3">
+                  <div
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    className={cn(
+                      "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
+                      isDragging
+                        ? "border-primary bg-primary/5"
+                        : "border-border"
+                    )}
+                  >
+                    <ImageIcon className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Drag and drop an image, or choose an option below
+                    </p>
+                    <div className="flex gap-3 justify-center">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => cameraInputRef.current?.click()}
+                        className="flex items-center gap-2"
+                      >
+                        <Camera className="h-4 w-4" />
+                        Take Photo
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => galleryInputRef.current?.click()}
+                        className="flex items-center gap-2"
+                      >
+                        <ImageIcon className="h-4 w-4" />
+                        Gallery
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
               <input
-                ref={fileInputRef}
+                ref={cameraInputRef}
                 type="file"
                 accept="image/*"
                 capture="environment"
+                onChange={handleInputChange}
+                className="hidden"
+              />
+              <input
+                ref={galleryInputRef}
+                type="file"
+                accept="image/*"
                 onChange={handleInputChange}
                 className="hidden"
               />
