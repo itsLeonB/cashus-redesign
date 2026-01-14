@@ -15,7 +15,7 @@ import { ExpenseItemModal } from "@/components/ExpenseItemModal";
 import { ExpenseFeeModal } from "@/components/ExpenseFeeModal";
 import { ItemParticipantManager } from "@/components/ItemParticipantManager";
 import { ExpenseConfirmationPreview } from "@/components/ExpenseConfirmationPreview";
-import { ParticipantSelectorModal } from "@/components/ParticipantSelectorModal";
+import { ParticipantSelector } from "@/components/ParticipantSelector";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -65,6 +65,38 @@ import type {
 } from "@/lib/api/types";
 
 import { useQueryClient } from "@tanstack/react-query";
+
+const formatDate = (date: string) => {
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const calculateItemAmount = (item: NewExpenseItemRequest): number => {
+  const amount = Number.parseFloat(item.amount) || 0;
+  return amount * item.quantity;
+};
+
+const billStatusDisplay: Record<
+  string,
+  {
+    label: string;
+    variant: "default" | "secondary" | "destructive" | "outline";
+  }
+> = {
+  PENDING: { label: "Processing...", variant: "secondary" },
+  EXTRACTED: { label: "Processing...", variant: "secondary" },
+  FAILED_EXTRACTING: { label: "Extraction Failed", variant: "destructive" },
+  PARSED: { label: "Parsed", variant: "default" },
+  FAILED_PARSING: { label: "Parsing Failed", variant: "destructive" },
+  NOT_DETECTED: { label: "Not Detected", variant: "outline" },
+};
+
+const isRetryableStatus = (status: string) => {
+  return status === "FAILED_EXTRACTING" || status === "FAILED_PARSING";
+};
 
 export default function ExpenseDetailPage() {
   const { expenseId } = useParams<{ expenseId: string }>();
@@ -135,19 +167,6 @@ export default function ExpenseDetailPage() {
     return expense.otherFees?.reduce((total, fee) => {
       return total + Number.parseFloat(fee.amount);
     }, 0);
-  };
-
-  const calculateItemAmount = (item: NewExpenseItemRequest): number => {
-    const amount = Number.parseFloat(item.amount) || 0;
-    return amount * item.quantity;
-  };
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
   };
 
   const handleConfirmDryRun = async () => {
@@ -286,25 +305,6 @@ export default function ExpenseDetailPage() {
         description: err.message || "Something went wrong",
       });
     }
-  };
-
-  const billStatusDisplay: Record<
-    string,
-    {
-      label: string;
-      variant: "default" | "secondary" | "destructive" | "outline";
-    }
-  > = {
-    PENDING: { label: "Processing...", variant: "secondary" },
-    EXTRACTED: { label: "Processing...", variant: "secondary" },
-    FAILED_EXTRACTING: { label: "Extraction Failed", variant: "destructive" },
-    PARSED: { label: "Parsed", variant: "default" },
-    FAILED_PARSING: { label: "Parsing Failed", variant: "destructive" },
-    NOT_DETECTED: { label: "Not Detected", variant: "outline" },
-  };
-
-  const isRetryableStatus = (status: string) => {
-    return status === "FAILED_EXTRACTING" || status === "FAILED_PARSING";
   };
 
   const handleFileSelect = (file: File) => {
@@ -982,22 +982,34 @@ export default function ExpenseDetailPage() {
       </AlertDialog>
 
       {/* Participant Selector Modal */}
-      <ParticipantSelectorModal
-        open={participantModalOpen}
-        onOpenChange={setParticipantModalOpen}
-        expenseId={expense.id}
-        currentParticipants={expense.participants?.map((p) => ({
-          profileId: p.profile.id,
-          name: p.profile.name,
-          avatar: p.profile.avatar,
-        }))}
-        currentPayerId={expense.payer?.id}
-        onSuccess={() => {
-          queryClient.invalidateQueries({
-            queryKey: ["group-expenses", expenseId],
-          });
-        }}
-      />
+      <Dialog open={participantModalOpen} onOpenChange={setParticipantModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Edit Participants
+            </DialogTitle>
+          </DialogHeader>
+
+          <ParticipantSelector
+            expenseId={expense.id}
+            currentParticipants={expense.participants?.map((p) => ({
+              profileId: p.profile.id,
+              name: p.profile.name,
+              avatar: p.profile.avatar,
+            }))}
+            currentPayerId={expense.payer?.id}
+            onSuccess={() => {
+              setParticipantModalOpen(false);
+              queryClient.invalidateQueries({
+                queryKey: ["group-expenses", expenseId],
+              });
+            }}
+            onCancel={() => setParticipantModalOpen(false)}
+            submitLabel="Save Participants"
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Confirm Preview Modal */}
       <Dialog

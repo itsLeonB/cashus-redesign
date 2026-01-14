@@ -1,17 +1,11 @@
 import { useState, useEffect, FormEvent } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { useFriendships, useSyncParticipants } from "@/hooks/useApi";
-import { useAuth } from "@/contexts/AuthContext";
 import { Loader2, Users, Check, CreditCard } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 import { AvatarCircle } from "./AvatarCircle";
+import { cn } from "@/lib/utils";
+import { useSyncParticipants, useFriendships } from "@/hooks/useApi";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ParticipantProfile {
   profileId: string;
@@ -19,40 +13,39 @@ interface ParticipantProfile {
   avatar?: string | null;
 }
 
-interface ParticipantSelectorModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  expenseId: string;
+interface ParticipantSelectorProps {
+  expenseId?: string;
   currentParticipants?: ParticipantProfile[];
   currentPayerId?: string | null;
   onSuccess?: () => void;
+  onCancel?: () => void;
+  submitLabel?: string;
+  showSkip?: boolean;
+  onSkip?: () => void;
 }
 
-export function ParticipantSelectorModal({
-  open,
-  onOpenChange,
+export function ParticipantSelector({
   expenseId,
   currentParticipants = [],
   currentPayerId = null,
   onSuccess,
-}: Readonly<ParticipantSelectorModalProps>) {
-  const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
-    []
-  );
+  onCancel,
+  submitLabel = "Continue",
+  showSkip = false,
+  onSkip,
+}: Readonly<ParticipantSelectorProps>) {
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const [payerProfileId, setPayerProfileId] = useState<string | null>(null);
-
-  const { data: friendships, isLoading: friendshipsLoading } = useFriendships();
-  const { user } = useAuth();
+  
   const { toast } = useToast();
-  const syncParticipants = useSyncParticipants(expenseId);
+  const { user } = useAuth();
+  const { data: friendships, isLoading } = useFriendships();
+  const syncParticipants = useSyncParticipants(expenseId || "");
 
-  // Initialize state when modal opens or current data changes
   useEffect(() => {
-    if (open) {
-      setSelectedParticipants(currentParticipants.map((p) => p.profileId));
-      setPayerProfileId(currentPayerId);
-    }
-  }, [open, currentParticipants, currentPayerId]);
+    setSelectedParticipants(currentParticipants.map((p) => p.profileId));
+    setPayerProfileId(currentPayerId);
+  }, [currentParticipants, currentPayerId]);
 
   const toggleParticipant = (profileId: string) => {
     setSelectedParticipants((prev) =>
@@ -61,22 +54,36 @@ export function ParticipantSelectorModal({
         : [...prev, profileId]
     );
 
-    // If removing participant who is the payer, reset payer
-    if (
-      payerProfileId === profileId &&
-      selectedParticipants.includes(profileId)
-    ) {
+    if (payerProfileId === profileId && selectedParticipants.includes(profileId)) {
       setPayerProfileId(null);
     }
   };
 
   const selectPayer = (profileId: string) => {
     setPayerProfileId(profileId);
-    // Ensure payer is also a participant
     if (!selectedParticipants.includes(profileId)) {
       setSelectedParticipants((prev) => [...prev, profileId]);
     }
   };
+
+  const selectableProfiles = [
+    ...(user
+      ? [
+          {
+            profileId: user.id,
+            profileName: user.name,
+            profileAvatar: user.avatar,
+            isUser: true,
+          },
+        ]
+      : []),
+    ...(friendships?.map((f) => ({
+      profileId: f.profileId,
+      profileName: f.profileName,
+      profileAvatar: f.profileAvatar,
+      isUser: false,
+    })) || []),
+  ];
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -99,13 +106,17 @@ export function ParticipantSelectorModal({
       return;
     }
 
+    if (!expenseId) {
+      onSuccess?.();
+      return;
+    }
+
     try {
       await syncParticipants.mutateAsync({
         participantProfileIds: selectedParticipants,
         payerProfileId,
       });
       toast({ title: "Participants updated successfully" });
-      onOpenChange(false);
       onSuccess?.();
     } catch (error: unknown) {
       const err = error as { message?: string };
@@ -117,46 +128,30 @@ export function ParticipantSelectorModal({
     }
   };
 
-  // Build the list of selectable profiles (user + friends)
-  const selectableProfiles = [
-    // Current user
-    ...(user
-      ? [
-          {
-            profileId: user.id,
-            profileName: user.name,
-            profileAvatar: user.avatar,
-            isUser: true,
-          },
-        ]
-      : []),
-    // Friends
-    ...(friendships?.map((f) => ({
-      profileId: f.profileId,
-      profileName: f.profileName,
-      profileAvatar: f.profileAvatar,
-      isUser: false,
-    })) || []),
-  ];
-
-  const formInputs = () => {
-    if (friendshipsLoading)
-      return (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      );
-
-    if (selectableProfiles.length === 0)
-      return (
-        <div className="text-center py-8 text-muted-foreground">
-          <Users className="h-10 w-10 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">No friends found</p>
-          <p className="text-xs">Add friends to include them in expenses</p>
-        </div>
-      );
-
+  if (isLoading) {
     return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (selectableProfiles.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <Users className="h-10 w-10 mx-auto mb-2 opacity-50" />
+        <p className="text-sm">No friends found</p>
+        <p className="text-xs">Add friends to include them in expenses</p>
+      </div>
+    );
+  }
+
+  const payerName = selectableProfiles.find(
+    (p) => p.profileId === payerProfileId
+  )?.profileName;
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2 max-h-64 overflow-y-auto">
         {selectableProfiles.map((profile) => {
           const isSelected = selectedParticipants.includes(profile.profileId);
@@ -214,47 +209,56 @@ export function ParticipantSelectorModal({
           );
         })}
       </div>
-    );
-  };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="font-display flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" />
-            Edit Participants
-          </DialogTitle>
-        </DialogHeader>
+      {selectedParticipants.length > 0 && (
+        <div className="text-sm text-muted-foreground">
+          {selectedParticipants.length} participant
+          {selectedParticipants.length !== 1 && "s"} selected
+          {payerName && (
+            <>
+              {" • "}
+              Payer: {payerName}
+            </>
+          )}
+        </div>
+      )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {formInputs()}
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1"
-              disabled={
-                syncParticipants.isPending ||
-                selectedParticipants.length === 0 ||
-                !payerProfileId
-              }
-            >
-              {syncParticipants.isPending && (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              )}
-              Save Participants
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+      <div className="flex gap-2">
+        {showSkip && (
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1"
+            onClick={onSkip}
+          >
+            Skip
+          </Button>
+        )}
+        {onCancel && (
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1"
+            onClick={onCancel}
+          >
+            Cancel
+          </Button>
+        )}
+        <Button
+          type="submit"
+          className="flex-1"
+          disabled={
+            syncParticipants.isPending ||
+            selectedParticipants.length === 0 ||
+            !payerProfileId
+          }
+        >
+          {syncParticipants.isPending && (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          )}
+          {submitLabel}
+        </Button>
+      </div>
+    </form>
   );
 }
