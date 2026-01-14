@@ -1,4 +1,4 @@
-import { useState, useRef, ChangeEvent, FormEvent, DragEvent } from "react";
+import { useState, FormEvent } from "react";
 import {
   Dialog,
   DialogContent,
@@ -15,7 +15,6 @@ import {
   PenLine,
   Receipt,
   ImageIcon,
-  X,
   ArrowLeft,
   Users,
 } from "lucide-react";
@@ -23,6 +22,7 @@ import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { ParticipantSelector } from "./ParticipantSelector";
+import { ImageUploadArea } from "./ImageUploadArea";
 
 type InputType = "upload" | "manual";
 type Step = "details" | "upload" | "participants";
@@ -42,9 +42,6 @@ export function NewGroupExpenseModal({
   const [expenseId, setExpenseId] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
-  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   const createDraft = useCreateDraftExpense();
   const uploadBill = useUploadExpenseBill();
@@ -67,39 +64,9 @@ export function NewGroupExpenseModal({
   };
 
   const handleFileSelect = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast({
-        variant: "destructive",
-        title: "Invalid file",
-        description: "Please select an image file",
-      });
-      return;
-    }
-
     setSelectedFile(file);
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
-  };
-
-  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFileSelect(file);
-  };
-
-  const handleDragOver = (e: DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleFileSelect(file);
   };
 
   const clearFile = () => {
@@ -107,12 +74,6 @@ export function NewGroupExpenseModal({
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
-    }
-    if (cameraInputRef.current) {
-      cameraInputRef.current.value = "";
-    }
-    if (galleryInputRef.current) {
-      galleryInputRef.current.value = "";
     }
   };
 
@@ -300,77 +261,11 @@ export function NewGroupExpenseModal({
           <form onSubmit={handleUploadSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label>Bill Image</Label>
-              {selectedFile && previewUrl ? (
-                <div className="relative rounded-lg border border-border overflow-hidden">
-                  <img
-                    src={previewUrl}
-                    alt="Bill preview"
-                    className="w-full max-h-64 object-contain bg-muted/30"
-                  />
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="destructive"
-                    className="absolute top-2 right-2 h-8 w-8"
-                    onClick={clearFile}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div
-                    onDrop={handleDrop}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    className={cn(
-                      "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
-                      isDragging
-                        ? "border-primary bg-primary/5"
-                        : "border-border"
-                    )}
-                  >
-                    <ImageIcon className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Drag and drop an image, or choose an option below
-                    </p>
-                    <div className="flex gap-3 justify-center">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => cameraInputRef.current?.click()}
-                        className="flex items-center gap-2"
-                      >
-                        <Camera className="h-4 w-4" />
-                        Take Photo
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => galleryInputRef.current?.click()}
-                        className="flex items-center gap-2"
-                      >
-                        <ImageIcon className="h-4 w-4" />
-                        Gallery
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-              <input
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handleInputChange}
-                className="hidden"
-              />
-              <input
-                ref={galleryInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleInputChange}
-                className="hidden"
+              <ImageUploadArea
+                selectedFile={selectedFile}
+                previewUrl={previewUrl}
+                onFileSelect={handleFileSelect}
+                onClear={clearFile}
               />
             </div>
 
