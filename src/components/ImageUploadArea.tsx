@@ -39,7 +39,13 @@ export function ImageUploadArea({
       });
       return;
     }
+
     setSelectedFile(file);
+
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+
     setPreviewUrl(URL.createObjectURL(file));
 
     if (expenseId) {
