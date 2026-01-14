@@ -191,6 +191,7 @@ export interface ExpenseItemResponse {
 export interface ItemParticipantResponse {
   profile: SimpleProfile;
   shareRatio: string;
+  weight: number;
 }
 
 export interface OtherFeeResponse {
@@ -272,7 +273,7 @@ export interface SyncItemParticipantsRequest {
 
 export interface ItemParticipantRequest {
   profileId: string;
-  share: string;
+  weight: number;
 }
 
 export interface ExpenseConfirmationResponse {

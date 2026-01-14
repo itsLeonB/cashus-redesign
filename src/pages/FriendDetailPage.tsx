@@ -20,6 +20,7 @@ import {
   Link2,
   CreditCard,
 } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 export default function FriendDetailPage() {
   const { friendId } = useParams<{ friendId: string }>();
@@ -44,13 +45,6 @@ export default function FriendDetailPage() {
       day: "numeric",
       year: "numeric",
     });
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "IDR",
-    }).format(amount);
   };
 
   if (isLoading) {
@@ -228,7 +222,7 @@ export default function FriendDetailPage() {
                       }`}
                     >
                       {isCredit ? "+" : "-"}
-                      {formatCurrency(Number.parseFloat(debt.amount || "0"))}
+                      {formatCurrency(debt.amount || 0)}
                     </p>
                   </div>
                 );
