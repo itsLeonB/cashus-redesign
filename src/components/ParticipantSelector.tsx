@@ -1,12 +1,12 @@
 import { useState, useEffect, FormEvent } from "react";
-import { Loader2, Users, Check, CreditCard } from "lucide-react";
+import { Loader2, Users, Check, CreditCard, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AvatarCircle } from "./AvatarCircle";
+import { InlineAnonymousFriendForm } from "./InlineAnonymousFriendForm";
 import { cn } from "@/lib/utils";
 import { useSyncParticipants, useFriendships } from "@/hooks/useApi";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-
 interface ParticipantProfile {
   profileId: string;
   name: string;
@@ -38,11 +38,18 @@ export function ParticipantSelector({
     []
   );
   const [payerProfileId, setPayerProfileId] = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
 
   const { toast } = useToast();
   const { user } = useAuth();
-  const { data: friendships, isLoading } = useFriendships();
+  const { data: friendships, isLoading, refetch } = useFriendships();
   const syncParticipants = useSyncParticipants(expenseId || "");
+
+  const handleAnonymousFriendCreated = async (profileId: string) => {
+    await refetch();
+    setSelectedParticipants((prev) => [...prev, profileId]);
+    setShowAddForm(false);
+  };
 
   useEffect(() => {
     setSelectedParticipants(currentParticipants.map((p) => p.profileId));
@@ -213,6 +220,24 @@ export function ParticipantSelector({
             </div>
           );
         })}
+
+        {showAddForm ? (
+          <InlineAnonymousFriendForm
+            onCreated={handleAnonymousFriendCreated}
+            onCancel={() => setShowAddForm(false)}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowAddForm(true)}
+            className="flex items-center gap-3 w-full p-3 rounded-lg border border-dashed border-muted-foreground/50 hover:border-primary/50 hover:bg-muted/30 transition-colors text-muted-foreground hover:text-foreground"
+          >
+            <div className="h-5 w-5 rounded border border-dashed border-current flex items-center justify-center">
+              <Plus className="h-3 w-3" />
+            </div>
+            <span className="text-sm">Add participant</span>
+          </button>
+        )}
       </div>
 
       {selectedParticipants.length > 0 && (

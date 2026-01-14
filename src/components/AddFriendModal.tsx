@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   useSearchProfiles,
-  useCreateAnonymousFriend,
   useSendFriendRequest,
 } from "@/hooks/useApi";
 import { AvatarCircle } from "@/components/AvatarCircle";
@@ -12,12 +11,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Search, UserPlus, Loader2 } from "lucide-react";
+import { InlineAnonymousFriendForm } from "./InlineAnonymousFriendForm";
 
 interface AddFriendModalProps {
   readonly open: boolean;
@@ -25,7 +23,6 @@ interface AddFriendModalProps {
 }
 
 export function AddFriendModal({ open, onOpenChange }: AddFriendModalProps) {
-  const [anonymousName, setAnonymousName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [pendingRequestIds, setPendingRequestIds] = useState<Set<string>>(
     new Set()
@@ -33,29 +30,11 @@ export function AddFriendModal({ open, onOpenChange }: AddFriendModalProps) {
 
   const { data: searchResults, isLoading: searching } =
     useSearchProfiles(searchQuery);
-  const createAnonymousFriend = useCreateAnonymousFriend();
   const sendFriendRequest = useSendFriendRequest();
   const { toast } = useToast();
 
-  const handleCreateAnonymous = async () => {
-    if (!anonymousName.trim()) return;
-
-    try {
-      await createAnonymousFriend.mutateAsync({ name: anonymousName });
-      toast({
-        title: "Friend added",
-        description: `${anonymousName} has been added to your friends`,
-      });
-      setAnonymousName("");
-      onOpenChange(false);
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast({
-        variant: "destructive",
-        title: "Failed to add friend",
-        description: err.message || "Something went wrong",
-      });
-    }
+  const handleAnonymousCreated = () => {
+    onOpenChange(false);
   };
 
   const handleSendFriendRequest = async (profileId: string) => {
@@ -98,28 +77,7 @@ export function AddFriendModal({ open, onOpenChange }: AddFriendModalProps) {
             <p className="text-sm text-muted-foreground">
               Create a friend profile for someone who isn't on Cashus yet
             </p>
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                placeholder="Enter friend's name"
-                value={anonymousName}
-                onChange={(e) => setAnonymousName(e.target.value)}
-              />
-            </div>
-            <DialogFooter>
-              <Button
-                onClick={handleCreateAnonymous}
-                disabled={
-                  !anonymousName.trim() || createAnonymousFriend.isPending
-                }
-              >
-                {createAnonymousFriend.isPending && (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                )}
-                Add Friend
-              </Button>
-            </DialogFooter>
+            <InlineAnonymousFriendForm onCreated={handleAnonymousCreated} />
           </TabsContent>
           <TabsContent value="search" className="space-y-4 mt-4">
             <div className="relative">
