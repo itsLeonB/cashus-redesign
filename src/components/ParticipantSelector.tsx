@@ -34,9 +34,11 @@ export function ParticipantSelector({
   showSkip = false,
   onSkip,
 }: Readonly<ParticipantSelectorProps>) {
-  const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
+    []
+  );
   const [payerProfileId, setPayerProfileId] = useState<string | null>(null);
-  
+
   const { toast } = useToast();
   const { user } = useAuth();
   const { data: friendships, isLoading } = useFriendships();
@@ -48,15 +50,18 @@ export function ParticipantSelector({
   }, [currentParticipants, currentPayerId]);
 
   const toggleParticipant = (profileId: string) => {
-    setSelectedParticipants((prev) =>
-      prev.includes(profileId)
+    setSelectedParticipants((prev) => {
+      const next = prev.includes(profileId)
         ? prev.filter((id) => id !== profileId)
-        : [...prev, profileId]
-    );
+        : [...prev, profileId];
 
-    if (payerProfileId === profileId && selectedParticipants.includes(profileId)) {
-      setPayerProfileId(null);
-    }
+      // If we just removed the payer from participants, clear the payer.
+      if (payerProfileId === profileId && !next.includes(profileId)) {
+        setPayerProfileId(null);
+      }
+
+      return next;
+    });
   };
 
   const selectPayer = (profileId: string) => {
