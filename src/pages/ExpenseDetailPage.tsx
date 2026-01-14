@@ -303,6 +303,7 @@ export default function ExpenseDetailPage() {
 
   const handleUploadSuccess = () => {
     setUploadBillModalOpen(false);
+    queryClient.invalidateQueries({ queryKey: ["group-expenses", expenseId] });
   };
 
   if (isLoading) {
