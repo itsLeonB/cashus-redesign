@@ -31,6 +31,11 @@ function participantsToWeights(
   }, {});
 }
 
+// Helper to check if any weight > 1
+function hasCustomWeights(weights: ParticipantWeights): boolean {
+  return Object.values(weights).some((w) => w > 1);
+}
+
 // Helper to get sorted IDs for comparison
 function getWeightsKey(weights: ParticipantWeights): string {
   return Object.entries(weights)
@@ -48,12 +53,15 @@ export function ItemParticipantManager({
   const syncParticipants = useSyncItemParticipants(expenseId, item.id);
 
   // Weight-based state: presence in map = selected, value = weight
-  const [weights, setWeights] = useState<ParticipantWeights>(() =>
-    participantsToWeights(item.participants)
+  const initialWeights = participantsToWeights(item.participants);
+
+  // Show advanced mode if any weight > 1 on initial load
+  const [showAdvanced, setShowAdvanced] = useState(() =>
+    hasCustomWeights(initialWeights)
   );
 
+  const [weights, setWeights] = useState<ParticipantWeights>(initialWeights);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Debounce the weights for sync
   const debouncedWeights = useDebounce(weights, 500);
@@ -62,9 +70,7 @@ export function ItemParticipantManager({
   const isFirstRender = useRef(true);
 
   // Track the last known state on the server
-  const serverWeightsRef = useRef<ParticipantWeights>(
-    participantsToWeights(item.participants)
-  );
+  const serverWeightsRef = useRef<ParticipantWeights>(initialWeights);
 
   // Toggle handler - adds with weight 1 or removes entirely
   const handleToggle = useCallback(
@@ -148,9 +154,7 @@ export function ItemParticipantManager({
   }, [debouncedWeights]);
 
   // Track the most recent version of props we have processed
-  const lastPropWeightsRef = useRef<ParticipantWeights>(
-    participantsToWeights(item.participants)
-  );
+  const lastPropWeightsRef = useRef<ParticipantWeights>(initialWeights);
 
   // Update local state if props change (e.g. from websocket or other updates)
   useEffect(() => {
@@ -171,6 +175,10 @@ export function ItemParticipantManager({
       getWeightsKey(weights) === getWeightsKey(debouncedWeights)
     ) {
       setWeights(propWeights);
+      // Update showAdvanced based on new weights
+      if (hasCustomWeights(propWeights)) {
+        setShowAdvanced(true);
+      }
     }
   }, [item.participants, isSyncing, weights, debouncedWeights]);
 
@@ -198,7 +206,7 @@ export function ItemParticipantManager({
   const itemAmount = (Number.parseFloat(item.amount) || 0) * item.quantity;
 
   // Check if any weight is different from 1 (show advanced indicator)
-  const hasCustomWeights = Object.values(weights).some((w) => w !== 1);
+  const hasCustomWeightsFlag = hasCustomWeights(weights);
 
   return (
     <div className="space-y-3">
@@ -266,7 +274,7 @@ export function ItemParticipantManager({
                 <span className="text-sm">
                   {participant.isUser ? "You" : participant.name}
                 </span>
-                {isSelected && hasCustomWeights && !showAdvanced && (
+                {isSelected && hasCustomWeightsFlag && !showAdvanced && (
                   <span className="text-xs text-muted-foreground">
                     ×{weight}
                   </span>
