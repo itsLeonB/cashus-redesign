@@ -16,6 +16,7 @@ import { ExpenseFeeModal } from "@/components/ExpenseFeeModal";
 import { ItemParticipantManager } from "@/components/ItemParticipantManager";
 import { ExpenseConfirmationPreview } from "@/components/ExpenseConfirmationPreview";
 import { ParticipantSelector } from "@/components/ParticipantSelector";
+import { ImageUploadArea } from "@/components/ImageUploadArea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -49,7 +50,6 @@ import {
   Plus,
   Pencil,
   Trash2,
-  X,
   Image,
   RefreshCw,
   AlertTriangle,
@@ -138,7 +138,6 @@ export default function ExpenseDetailPage() {
   const [uploadBillModalOpen, setUploadBillModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
 
   // Participant modal state
   const [participantModalOpen, setParticipantModalOpen] = useState(false);
@@ -911,60 +910,12 @@ export default function ExpenseDetailPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          <div className="space-y-4">
-            {previewUrl ? (
-              <div className="relative">
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  className="w-full h-48 object-contain rounded-lg border border-border"
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-2 right-2 h-8 w-8 bg-background/80 hover:bg-background"
-                  onClick={clearFile}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <div
-                className={cn(
-                  "border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer",
-                  isDragging
-                    ? "border-primary bg-primary/5"
-                    : "border-muted-foreground/25 hover:border-primary/50"
-                )}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setIsDragging(true);
-                }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setIsDragging(false);
-                  const file = e.dataTransfer.files[0];
-                  if (file) handleFileSelect(file);
-                }}
-                onClick={() => {
-                  const input = document.createElement("input");
-                  input.type = "file";
-                  input.accept = "image/*";
-                  input.onchange = (e) => {
-                    const file = (e.target as HTMLInputElement).files?.[0];
-                    if (file) handleFileSelect(file);
-                  };
-                  input.click();
-                }}
-              >
-                <Upload className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">
-                  Drag and drop an image, or click to select
-                </p>
-              </div>
-            )}
-          </div>
+          <ImageUploadArea
+            selectedFile={selectedFile}
+            previewUrl={previewUrl}
+            onFileSelect={handleFileSelect}
+            onClear={clearFile}
+          />
 
           <AlertDialogFooter>
             <AlertDialogCancel onClick={clearFile}>Cancel</AlertDialogCancel>
