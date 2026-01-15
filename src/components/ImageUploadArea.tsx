@@ -22,7 +22,7 @@ export function ImageUploadArea({
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  const uploadBill = useUploadExpenseBill();
+  const uploadBill = useUploadExpenseBill(expenseId);
 
   useEffect(() => {
     return () => {
@@ -50,7 +50,7 @@ export function ImageUploadArea({
 
     if (expenseId) {
       uploadBill.mutate(
-        { expenseId, file },
+        { file },
         {
           onSuccess: () => {
             toast({ title: "Bill uploaded successfully" });

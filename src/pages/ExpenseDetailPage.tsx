@@ -63,8 +63,6 @@ import type {
   ExpenseConfirmationResponse,
 } from "@/lib/api/types";
 
-import { useQueryClient } from "@tanstack/react-query";
-
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString("en-US", {
     month: "long",
@@ -105,7 +103,6 @@ export default function ExpenseDetailPage() {
   const deleteExpense = useDeleteGroupExpense();
   const triggerBillParsing = useTriggerBillParsing(expenseId || "");
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const { mutate: deleteItem } = useDeleteExpenseItem();
   const { mutate: deleteFee } = useDeleteExpenseFee();
   const { data: calculationMethods } = useCalculationMethods();
@@ -303,7 +300,6 @@ export default function ExpenseDetailPage() {
 
   const handleUploadSuccess = () => {
     setUploadBillModalOpen(false);
-    queryClient.invalidateQueries({ queryKey: ["group-expenses", expenseId] });
   };
 
   if (isLoading) {
@@ -892,9 +888,6 @@ export default function ExpenseDetailPage() {
             currentPayerId={expense.payer?.id}
             onSuccess={() => {
               setParticipantModalOpen(false);
-              queryClient.invalidateQueries({
-                queryKey: ["group-expenses", expenseId],
-              });
             }}
             onCancel={() => setParticipantModalOpen(false)}
             submitLabel="Save Participants"

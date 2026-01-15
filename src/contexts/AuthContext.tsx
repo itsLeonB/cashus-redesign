@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { UserProfile, authApi, apiClient } from "@/lib/api";
+import { queryKeys } from "@/lib/queryKeys";
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -58,12 +59,13 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       setUser(profile);
 
       // Invalidate useApi.ts queries
-      queryClient.invalidateQueries({ queryKey: ["friendships"] });
-      queryClient.invalidateQueries({ queryKey: ["friend-requests"] });
-      queryClient.invalidateQueries({ queryKey: ["debts"] });
-      queryClient.invalidateQueries({ queryKey: ["group-expenses"] });
-      queryClient.invalidateQueries({ queryKey: ["bills"] });
-      queryClient.invalidateQueries({ queryKey: ["profiles"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.profiles.all });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.friendRequests.all,
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.debts.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.groupExpenses.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.profiles.all });
     },
     [queryClient]
   );
