@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 import { useSyncParticipants, useFriendships } from "@/hooks/useApi";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-interface ParticipantProfile {
+
+export interface ParticipantProfile {
   profileId: string;
   name: string;
   avatar?: string | null;
@@ -24,9 +25,11 @@ interface ParticipantSelectorProps {
   onSkip?: () => void;
 }
 
+const EMPTY_PARTICIPANTS: ParticipantProfile[] = [];
+
 export function ParticipantSelector({
   expenseId,
-  currentParticipants = [],
+  currentParticipants = EMPTY_PARTICIPANTS,
   currentPayerId = null,
   onSuccess,
   onCancel,
@@ -35,9 +38,11 @@ export function ParticipantSelector({
   onSkip,
 }: Readonly<ParticipantSelectorProps>) {
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
-    []
+    () => currentParticipants.map((p) => p.profileId),
   );
-  const [payerProfileId, setPayerProfileId] = useState<string | null>(null);
+  const [payerProfileId, setPayerProfileId] = useState<string | null>(
+    currentPayerId,
+  );
   const [showAddForm, setShowAddForm] = useState(false);
 
   const { toast } = useToast();
@@ -52,9 +57,15 @@ export function ParticipantSelector({
   };
 
   useEffect(() => {
-    setSelectedParticipants(currentParticipants.map((p) => p.profileId));
-    setPayerProfileId(currentPayerId);
-  }, [currentParticipants, currentPayerId]);
+    if (currentParticipants.length > 0 || currentPayerId) {
+      setSelectedParticipants(currentParticipants.map((p) => p.profileId));
+      setPayerProfileId(currentPayerId);
+    }
+    // We intentionally only want to re-initialize when the expenseId changes.
+    // currentParticipants and currentPayerId are omitted because they often
+    // change references in the parent on every render, which would reset user selection.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expenseId]);
 
   const toggleParticipant = (profileId: string) => {
     setSelectedParticipants((prev) => {
@@ -159,7 +170,7 @@ export function ParticipantSelector({
   }
 
   const payerName = selectableProfiles.find(
-    (p) => p.profileId === payerProfileId
+    (p) => p.profileId === payerProfileId,
   )?.profileName;
 
   return (
@@ -194,7 +205,7 @@ export function ParticipantSelector({
                 "flex items-center justify-between p-3 rounded-lg border transition-all",
                 isSelected
                   ? "border-primary bg-primary/5"
-                  : "border-border hover:border-primary/50"
+                  : "border-border hover:border-primary/50",
               )}
             >
               <div className="flex items-center gap-3">
@@ -205,7 +216,7 @@ export function ParticipantSelector({
                     "h-5 w-5 rounded border flex items-center justify-center transition-colors",
                     isSelected
                       ? "bg-primary border-primary text-primary-foreground"
-                      : "border-muted-foreground hover:border-primary"
+                      : "border-muted-foreground hover:border-primary",
                   )}
                 >
                   {isSelected && <Check className="h-3 w-3" />}
