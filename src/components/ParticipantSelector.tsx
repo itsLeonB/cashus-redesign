@@ -57,10 +57,8 @@ export function ParticipantSelector({
   };
 
   useEffect(() => {
-    if (currentParticipants.length > 0 || currentPayerId) {
-      setSelectedParticipants(currentParticipants.map((p) => p.profileId));
-      setPayerProfileId(currentPayerId);
-    }
+    setSelectedParticipants(currentParticipants.map((p) => p.profileId));
+    setPayerProfileId(currentPayerId);
     // We intentionally only want to re-initialize when the expenseId changes.
     // currentParticipants and currentPayerId are omitted because they often
     // change references in the parent on every render, which would reset user selection.
