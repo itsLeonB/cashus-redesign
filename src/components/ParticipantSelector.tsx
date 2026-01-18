@@ -151,155 +151,164 @@ export function ParticipantSelector({
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  const participantsList = () => {
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      );
+    }
 
-  if (selectableProfiles.length === 0) {
-    return (
-      <div className="text-center py-8 text-muted-foreground">
-        <Users className="h-10 w-10 mx-auto mb-2 opacity-50" />
-        <p className="text-sm">No friends found</p>
-        <p className="text-xs">Add friends to include them in expenses</p>
-      </div>
-    );
-  }
+    if (selectableProfiles.length === 0) {
+      return (
+        <div className="text-center py-8 text-muted-foreground">
+          <Users className="h-10 w-10 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">No friends found</p>
+          <p className="text-xs">Add friends to include them in expenses</p>
+        </div>
+      );
+    }
 
-  const payerName = selectableProfiles.find(
-    (p) => p.profileId === payerProfileId,
-  )?.profileName;
+    const payerName = selectableProfiles.find(
+      (p) => p.profileId === payerProfileId,
+    )?.profileName;
+
+    return (
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2 max-h-64 overflow-y-auto">
+          {selectableProfiles.map((profile) => {
+            const isSelected = selectedParticipants.includes(profile.profileId);
+            const isPayer = payerProfileId === profile.profileId;
+
+            return (
+              <div
+                key={profile.profileId}
+                className={cn(
+                  "flex items-center justify-between p-3 rounded-lg border transition-all",
+                  isSelected
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50",
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => toggleParticipant(profile.profileId)}
+                    className={cn(
+                      "h-5 w-5 rounded border flex items-center justify-center transition-colors",
+                      isSelected
+                        ? "bg-primary border-primary text-primary-foreground"
+                        : "border-muted-foreground hover:border-primary",
+                    )}
+                  >
+                    {isSelected && <Check className="h-3 w-3" />}
+                  </button>
+                  <AvatarCircle
+                    name={profile.profileName}
+                    imageUrl={profile.profileAvatar}
+                    size="sm"
+                  />
+                  <div>
+                    <p className="text-sm font-medium">
+                      {profile.profileName}
+                      {profile.isUser && (
+                        <span className="text-muted-foreground ml-1">
+                          (You)
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant={isPayer ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => selectPayer(profile.profileId)}
+                  className="gap-1"
+                >
+                  <CreditCard className="h-3 w-3" />
+                  {isPayer ? "Payer" : "Set as Payer"}
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+
+        {selectedParticipants.length > 0 && (
+          <div className="text-sm text-muted-foreground">
+            {selectedParticipants.length} participant
+            {selectedParticipants.length !== 1 && "s"} selected
+            {payerName && (
+              <>
+                {" • "}
+                Payer: {payerName}
+              </>
+            )}
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          {showSkip && (
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={onSkip}
+            >
+              Skip
+            </Button>
+          )}
+          {onCancel && (
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={onCancel}
+            >
+              Cancel
+            </Button>
+          )}
+          <Button
+            type="submit"
+            className="flex-1"
+            disabled={
+              syncParticipants.isPending ||
+              selectedParticipants.length === 0 ||
+              !payerProfileId
+            }
+          >
+            {syncParticipants.isPending && (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            )}
+            {submitLabel}
+          </Button>
+        </div>
+      </form>
+    );
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2 max-h-64 overflow-y-auto">
-        {showAddForm ? (
-          <InlineAnonymousFriendForm
-            onCreated={handleAnonymousFriendCreated}
-            onCancel={() => setShowAddForm(false)}
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => setShowAddForm(true)}
-            className="flex items-center gap-3 w-full p-3 rounded-lg border border-dashed border-muted-foreground/50 hover:border-primary/50 hover:bg-muted/30 transition-colors text-muted-foreground hover:text-foreground"
-          >
-            <div className="h-5 w-5 rounded border border-dashed border-current flex items-center justify-center">
-              <Plus className="h-3 w-3" />
-            </div>
-            <span className="text-sm">Create new friend</span>
-          </button>
-        )}
-
-        {selectableProfiles.map((profile) => {
-          const isSelected = selectedParticipants.includes(profile.profileId);
-          const isPayer = payerProfileId === profile.profileId;
-
-          return (
-            <div
-              key={profile.profileId}
-              className={cn(
-                "flex items-center justify-between p-3 rounded-lg border transition-all",
-                isSelected
-                  ? "border-primary bg-primary/5"
-                  : "border-border hover:border-primary/50",
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => toggleParticipant(profile.profileId)}
-                  className={cn(
-                    "h-5 w-5 rounded border flex items-center justify-center transition-colors",
-                    isSelected
-                      ? "bg-primary border-primary text-primary-foreground"
-                      : "border-muted-foreground hover:border-primary",
-                  )}
-                >
-                  {isSelected && <Check className="h-3 w-3" />}
-                </button>
-                <AvatarCircle
-                  name={profile.profileName}
-                  imageUrl={profile.profileAvatar}
-                  size="sm"
-                />
-                <div>
-                  <p className="text-sm font-medium">
-                    {profile.profileName}
-                    {profile.isUser && (
-                      <span className="text-muted-foreground ml-1">(You)</span>
-                    )}
-                  </p>
-                </div>
-              </div>
-
-              <Button
-                type="button"
-                variant={isPayer ? "default" : "outline"}
-                size="sm"
-                onClick={() => selectPayer(profile.profileId)}
-                className="gap-1"
-              >
-                <CreditCard className="h-3 w-3" />
-                {isPayer ? "Payer" : "Set as Payer"}
-              </Button>
-            </div>
-          );
-        })}
-      </div>
-
-      {selectedParticipants.length > 0 && (
-        <div className="text-sm text-muted-foreground">
-          {selectedParticipants.length} participant
-          {selectedParticipants.length !== 1 && "s"} selected
-          {payerName && (
-            <>
-              {" • "}
-              Payer: {payerName}
-            </>
-          )}
-        </div>
-      )}
-
-      <div className="flex gap-2">
-        {showSkip && (
-          <Button
-            type="button"
-            variant="outline"
-            className="flex-1"
-            onClick={onSkip}
-          >
-            Skip
-          </Button>
-        )}
-        {onCancel && (
-          <Button
-            type="button"
-            variant="outline"
-            className="flex-1"
-            onClick={onCancel}
-          >
-            Cancel
-          </Button>
-        )}
-        <Button
-          type="submit"
-          className="flex-1"
-          disabled={
-            syncParticipants.isPending ||
-            selectedParticipants.length === 0 ||
-            !payerProfileId
-          }
+    <>
+      {showAddForm ? (
+        <InlineAnonymousFriendForm
+          onCreated={handleAnonymousFriendCreated}
+          onCancel={() => setShowAddForm(false)}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setShowAddForm(true)}
+          className="flex items-center gap-3 w-full p-3 rounded-lg border border-dashed border-muted-foreground/50 hover:border-primary/50 hover:bg-muted/30 transition-colors text-muted-foreground hover:text-foreground"
         >
-          {syncParticipants.isPending && (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          )}
-          {submitLabel}
-        </Button>
-      </div>
-    </form>
+          <div className="h-5 w-5 rounded border border-dashed border-current flex items-center justify-center">
+            <Plus className="h-3 w-3" />
+          </div>
+          <span className="text-sm">Create new friend</span>
+        </button>
+      )}
+      {participantsList()}
+    </>
   );
 }
