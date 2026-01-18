@@ -32,6 +32,9 @@ export const queryKeys = {
   groupExpenses: {
     all: ["group-expenses"] as const,
     detail: (id: string) => ["group-expenses", id] as const,
-    status: (status: string) => ["group-expenses", status] as const,
+    status: (status?: string) =>
+      status
+        ? (["group-expenses", status] as const)
+        : (["group-expenses"] as const),
   },
 } as const;
