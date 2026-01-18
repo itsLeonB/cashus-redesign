@@ -59,7 +59,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       setUser(profile);
 
       // Invalidate useApi.ts queries
-      queryClient.invalidateQueries({ queryKey: queryKeys.profiles.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.current });
+      queryClient.invalidateQueries({ queryKey: queryKeys.friendships.all });
       queryClient.invalidateQueries({
         queryKey: queryKeys.friendRequests.all,
       });
