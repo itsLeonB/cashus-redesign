@@ -1,4 +1,4 @@
-import { useState, useRef, ChangeEvent, FormEvent, DragEvent } from "react";
+import { useState, FormEvent } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,29 +8,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  useFriendships,
-  useSyncParticipants,
-  useCreateDraftExpense,
-  useUploadExpenseBill,
-} from "@/hooks/useApi";
-import { useAuth } from "@/contexts/AuthContext";
+import { useCreateDraftExpense } from "@/hooks/useApi";
 import {
   Loader2,
   Camera,
   PenLine,
   Receipt,
   ImageIcon,
-  X,
   ArrowLeft,
   Users,
-  Check,
-  CreditCard,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { AvatarCircle } from "./AvatarCircle";
+import { ParticipantSelector } from "./ParticipantSelector";
+import { ImageUploadArea } from "./ImageUploadArea";
 
 type InputType = "upload" | "manual";
 type Step = "details" | "upload" | "participants";
@@ -48,33 +40,16 @@ export function NewGroupExpenseModal({
   const [inputType, setInputType] = useState<InputType>("upload");
   const [step, setStep] = useState<Step>("details");
   const [expenseId, setExpenseId] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
-    []
-  );
-  const [payerProfileId, setPayerProfileId] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const createDraft = useCreateDraftExpense();
-  const uploadBill = useUploadExpenseBill();
-  const { data: friendships, isLoading: friendshipsLoading } = useFriendships();
-  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  // Initialize sync participants with expenseId when available
-  const syncParticipants = useSyncParticipants(expenseId || "");
 
   const resetModal = () => {
     setDescription("");
     setInputType("upload");
     setStep("details");
     setExpenseId(null);
-    setSelectedParticipants([]);
-    setPayerProfileId(null);
-    clearFile();
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -82,53 +57,6 @@ export function NewGroupExpenseModal({
       resetModal();
     }
     onOpenChange(open);
-  };
-
-  const handleFileSelect = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast({
-        variant: "destructive",
-        title: "Invalid file",
-        description: "Please select an image file",
-      });
-      return;
-    }
-
-    setSelectedFile(file);
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
-  };
-
-  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFileSelect(file);
-  };
-
-  const handleDragOver = (e: DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleFileSelect(file);
-  };
-
-  const clearFile = () => {
-    setSelectedFile(null);
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
-    }
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
   };
 
   const handleDetailsSubmit = async (e: FormEvent) => {
@@ -141,7 +69,6 @@ export function NewGroupExpenseModal({
       if (inputType === "upload") {
         setStep("upload");
       } else {
-        // Manual input - go to participants step
         setStep("participants");
       }
     } catch (error: unknown) {
@@ -154,108 +81,17 @@ export function NewGroupExpenseModal({
     }
   };
 
-  const handleUploadSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-
-    if (!selectedFile || !expenseId) {
-      toast({
-        variant: "destructive",
-        title: "Missing file",
-        description: "Please select an image file",
-      });
-      return;
-    }
-
-    try {
-      await uploadBill.mutateAsync({ expenseId, file: selectedFile });
-      toast({ title: "Bill uploaded successfully" });
-      // After successful upload, go to participants step
-      setStep("participants");
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast({
-        variant: "destructive",
-        title: "Upload failed",
-        description: err.message || "Something went wrong",
-      });
-    }
-  };
-
-  const handleSkipUpload = () => {
-    // Skip bill upload, go to participants step
+  const handleUploadSuccess = () => {
     setStep("participants");
   };
 
-  const toggleParticipant = (profileId: string) => {
-    setSelectedParticipants((prev) =>
-      prev.includes(profileId)
-        ? prev.filter((id) => id !== profileId)
-        : [...prev, profileId]
-    );
-
-    // If removing participant who is the payer, reset payer
-    if (
-      payerProfileId === profileId &&
-      selectedParticipants.includes(profileId)
-    ) {
-      setPayerProfileId(null);
-    }
+  const handleSkipUpload = () => {
+    setStep("participants");
   };
 
-  const selectPayer = (profileId: string) => {
-    setPayerProfileId(profileId);
-    // Ensure payer is also a participant
-    if (!selectedParticipants.includes(profileId)) {
-      setSelectedParticipants((prev) => [...prev, profileId]);
-    }
-  };
-
-  const handleParticipantsSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-
-    if (!expenseId) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Expense ID is missing",
-      });
-      return;
-    }
-
-    if (!payerProfileId) {
-      toast({
-        variant: "destructive",
-        title: "Missing payer",
-        description: "Please select who paid for this expense",
-      });
-      return;
-    }
-
-    if (selectedParticipants.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "No participants",
-        description: "Please select at least one participant",
-      });
-      return;
-    }
-
-    try {
-      await syncParticipants.mutateAsync({
-        participantProfileIds: selectedParticipants,
-        payerProfileId,
-      });
-      toast({ title: "Participants added successfully" });
-      handleOpenChange(false);
-      navigate(`/expenses/${expenseId}`);
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      toast({
-        variant: "destructive",
-        title: "Failed to add participants",
-        description: err.message || "Something went wrong",
-      });
-    }
+  const handleParticipantsSuccess = () => {
+    handleOpenChange(false);
+    if (expenseId) navigate(`/expenses/${expenseId}`);
   };
 
   const handleSkipParticipants = () => {
@@ -264,28 +100,6 @@ export function NewGroupExpenseModal({
       navigate(`/expenses/${expenseId}`);
     }
   };
-
-  // Build the list of selectable profiles (user + friends)
-  const selectableProfiles = [
-    // Current user
-    ...(user
-      ? [
-          {
-            profileId: user.id,
-            profileName: user.name,
-            profileAvatar: user.avatar,
-            isUser: true,
-          },
-        ]
-      : []),
-    // Friends
-    ...(friendships?.map((f) => ({
-      profileId: f.profileId,
-      profileName: f.profileName,
-      profileAvatar: f.profileAvatar,
-      isUser: false,
-    })) || []),
-  ];
 
   const getStepTitle = () => {
     switch (step) {
@@ -319,84 +133,6 @@ export function NewGroupExpenseModal({
         setStep("details");
       }
     }
-  };
-
-  const participantsStepForm = () => {
-    if (friendshipsLoading)
-      return (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
-      );
-
-    if (selectableProfiles.length === 0)
-      return (
-        <div className="text-center py-8 text-muted-foreground">
-          <Users className="h-10 w-10 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">No friends found</p>
-          <p className="text-xs">Add friends to include them in expenses</p>
-        </div>
-      );
-
-    return (
-      <div className="space-y-2 max-h-64 overflow-y-auto">
-        {selectableProfiles.map((profile) => {
-          const isSelected = selectedParticipants.includes(profile.profileId);
-          const isPayer = payerProfileId === profile.profileId;
-
-          return (
-            <div
-              key={profile.profileId}
-              className={cn(
-                "flex items-center justify-between p-3 rounded-lg border transition-all",
-                isSelected
-                  ? "border-primary bg-primary/5"
-                  : "border-border hover:border-primary/50"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => toggleParticipant(profile.profileId)}
-                  className={cn(
-                    "h-5 w-5 rounded border flex items-center justify-center transition-colors",
-                    isSelected
-                      ? "bg-primary border-primary text-primary-foreground"
-                      : "border-muted-foreground hover:border-primary"
-                  )}
-                >
-                  {isSelected && <Check className="h-3 w-3" />}
-                </button>
-                <AvatarCircle
-                  name={profile.profileName}
-                  imageUrl={profile.profileAvatar}
-                  size="sm"
-                />
-                <div>
-                  <p className="text-sm font-medium">
-                    {profile.profileName}
-                    {profile.isUser && (
-                      <span className="text-muted-foreground ml-1">(You)</span>
-                    )}
-                  </p>
-                </div>
-              </div>
-
-              <Button
-                type="button"
-                variant={isPayer ? "default" : "outline"}
-                size="sm"
-                onClick={() => selectPayer(profile.profileId)}
-                className="gap-1"
-              >
-                <CreditCard className="h-3 w-3" />
-                {isPayer ? "Payer" : "Set as Payer"}
-              </Button>
-            </div>
-          );
-        })}
-      </div>
-    );
   };
 
   return (
@@ -480,124 +216,37 @@ export function NewGroupExpenseModal({
         )}
 
         {step === "upload" && (
-          <form onSubmit={handleUploadSubmit} className="space-y-4">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label>Bill Image</Label>
-              {selectedFile && previewUrl ? (
-                <div className="relative rounded-lg border border-border overflow-hidden">
-                  <img
-                    src={previewUrl}
-                    alt="Bill preview"
-                    className="w-full max-h-64 object-contain bg-muted/30"
-                  />
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="destructive"
-                    className="absolute top-2 right-2 h-8 w-8"
-                    onClick={clearFile}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div
-                  onDrop={handleDrop}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={cn(
-                    "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
-                    isDragging
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  )}
-                >
-                  <ImageIcon className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-sm text-muted-foreground">
-                    Drag and drop an image here, or click to select
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Supports JPG, PNG, GIF
-                  </p>
-                </div>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleInputChange}
-                className="hidden"
+              <ImageUploadArea
+                expenseId={expenseId || undefined}
+                onUploadSuccess={handleUploadSuccess}
               />
             </div>
 
-            <div className="flex gap-2 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1"
-                onClick={handleSkipUpload}
-              >
-                Skip
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1"
-                disabled={!selectedFile || uploadBill.isPending}
-              >
-                {uploadBill.isPending && (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                )}
-                Upload Bill
-              </Button>
-            </div>
-          </form>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={handleSkipUpload}
+            >
+              Skip
+            </Button>
+          </div>
         )}
 
         {step === "participants" && (
-          <form onSubmit={handleParticipantsSubmit} className="space-y-4">
-            <div className="space-y-3">
-              <Label>Select Participants</Label>
-              {participantsStepForm()}
-            </div>
-
-            {selectedParticipants.length > 0 && (
-              <div className="text-sm text-muted-foreground">
-                {selectedParticipants.length} participant
-                {selectedParticipants.length !== 1 && "s"} selected
-                {payerProfileId && (
-                  <>
-                    {" • "}
-                    Payer:{" "}
-                    {selectableProfiles.find(
-                      (p) => p.profileId === payerProfileId
-                    )?.profileName || "Unknown"}
-                  </>
-                )}
-              </div>
-            )}
-
-            <div className="flex gap-2 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1"
-                onClick={handleSkipParticipants}
-              >
-                Skip
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1"
-                disabled={syncParticipants.isPending}
-              >
-                {syncParticipants.isPending && (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                )}
-                Continue
-              </Button>
-            </div>
-          </form>
+          <div className="space-y-3">
+            <Label>Select Participants</Label>
+            <ParticipantSelector
+              expenseId={expenseId || undefined}
+              onSuccess={handleParticipantsSuccess}
+              showSkip
+              onSkip={handleSkipParticipants}
+              submitLabel="Continue"
+            />
+          </div>
         )}
       </DialogContent>
     </Dialog>

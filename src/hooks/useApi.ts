@@ -14,18 +14,19 @@ import {
 } from "@/lib/api";
 import { profileApi } from "@/lib/api/profile";
 import { profilesApi } from "@/lib/api/profiles";
+import { queryKeys } from "@/lib/queryKeys";
 
 // Profile hooks
 export function useMyTransferMethods() {
   return useQuery({
-    queryKey: ["transfer-methods"],
+    queryKey: queryKeys.transferMethods.all,
     queryFn: profileApi.getTransferMethods,
   });
 }
 
 export function useProfileTransferMethods(profileId: string, enabled = true) {
   return useQuery({
-    queryKey: ["profile-transfer-methods", profileId],
+    queryKey: queryKeys.transferMethods.profile(profileId),
     queryFn: () => profilesApi.getTransferMethods(profileId),
     enabled: !!profileId && enabled,
   });
@@ -34,14 +35,14 @@ export function useProfileTransferMethods(profileId: string, enabled = true) {
 // Friendships hooks
 export function useFriendships() {
   return useQuery({
-    queryKey: ["friendships"],
+    queryKey: queryKeys.friendships.all,
     queryFn: friendshipsApi.getAll,
   });
 }
 
 export function useFriendship(friendId: string) {
   return useQuery({
-    queryKey: ["friendships", friendId],
+    queryKey: queryKeys.friendships.detail(friendId),
     queryFn: () => friendshipsApi.getById(friendId),
     enabled: !!friendId,
   });
@@ -54,14 +55,14 @@ export function useCreateAnonymousFriend() {
     mutationFn: (data: NewAnonymousFriendshipRequest) =>
       friendshipsApi.createAnonymous(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["friendships"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.friendships.all });
     },
   });
 }
 
 export function useSearchProfiles(query: string) {
   return useQuery({
-    queryKey: ["profiles", "search", query],
+    queryKey: queryKeys.profiles.search(query),
     queryFn: () => friendshipsApi.searchProfiles(query),
     enabled: query.length >= 2,
   });
@@ -69,12 +70,12 @@ export function useSearchProfiles(query: string) {
 
 export function useFriendRequests() {
   const sent = useQuery({
-    queryKey: ["friend-requests", "sent"],
+    queryKey: queryKeys.friendRequests.sent,
     queryFn: friendshipsApi.getSentRequests,
   });
 
   const received = useQuery({
-    queryKey: ["friend-requests", "received"],
+    queryKey: queryKeys.friendRequests.received,
     queryFn: friendshipsApi.getReceivedRequests,
   });
 
@@ -88,7 +89,9 @@ export function useSendFriendRequest() {
     mutationFn: (profileId: string) =>
       friendshipsApi.sendFriendRequest(profileId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["friend-requests", "sent"] });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.friendRequests.sent,
+      });
     },
   });
 }
@@ -99,8 +102,10 @@ export function useAcceptFriendRequest() {
   return useMutation({
     mutationFn: (requestId: string) => friendshipsApi.acceptRequest(requestId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["friend-requests"] });
-      queryClient.invalidateQueries({ queryKey: ["friendships"] });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.friendRequests.received,
+      });
+      queryClient.invalidateQueries({ queryKey: queryKeys.friendships.all });
     },
   });
 }
@@ -112,7 +117,7 @@ export function useIgnoreFriendRequest() {
     mutationFn: (requestId: string) => friendshipsApi.ignoreRequest(requestId),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["friend-requests", "received"],
+        queryKey: queryKeys.friendRequests.received,
       });
     },
   });
@@ -124,7 +129,9 @@ export function useCancelFriendRequest() {
   return useMutation({
     mutationFn: (requestId: string) => friendshipsApi.cancelRequest(requestId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["friend-requests", "sent"] });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.friendRequests.sent,
+      });
     },
   });
 }
@@ -135,7 +142,9 @@ export function useBlockFriendRequest() {
   return useMutation({
     mutationFn: (requestId: string) => friendshipsApi.blockRequest(requestId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["friend-requests"] });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.friendRequests.received,
+      });
     },
   });
 }
@@ -146,7 +155,9 @@ export function useUnblockFriendRequest() {
   return useMutation({
     mutationFn: (requestId: string) => friendshipsApi.unblockRequest(requestId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["friend-requests"] });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.friendRequests.received,
+      });
     },
   });
 }
@@ -154,7 +165,7 @@ export function useUnblockFriendRequest() {
 // Debts hooks
 export function useDebts() {
   return useQuery({
-    queryKey: ["debts"],
+    queryKey: queryKeys.debts.all,
     queryFn: debtsApi.getAll,
   });
 }
@@ -165,8 +176,8 @@ export function useCreateDebt() {
   return useMutation({
     mutationFn: (data: NewDebtTransactionRequest) => debtsApi.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["debts"] });
-      queryClient.invalidateQueries({ queryKey: ["friendships"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.debts.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.friendships.all });
     },
   });
 }
@@ -177,7 +188,7 @@ export function useGroupExpenses(
   options?: { enabled?: boolean }
 ) {
   return useQuery({
-    queryKey: ["group-expenses", status],
+    queryKey: queryKeys.groupExpenses.status(status),
     queryFn: () => groupExpensesApi.getAll(status),
     enabled: options?.enabled ?? true,
   });
@@ -185,7 +196,7 @@ export function useGroupExpenses(
 
 export function useGroupExpense(expenseId: string) {
   return useQuery({
-    queryKey: ["group-expenses", expenseId],
+    queryKey: queryKeys.groupExpenses.detail(expenseId),
     queryFn: () => groupExpensesApi.getById(expenseId),
     enabled: !!expenseId,
   });
@@ -197,15 +208,23 @@ export function useCreateDraftExpense() {
   return useMutation({
     mutationFn: groupExpensesApi.createDraft,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["group-expenses"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.groupExpenses.all });
     },
   });
 }
 
-export function useUploadExpenseBill() {
+export function useUploadExpenseBill(expenseId: string) {
+  const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: ({ expenseId, file }: { expenseId: string; file: File }) =>
+    mutationFn: ({ file }: { file: File }) =>
       groupExpensesApi.uploadBill(expenseId, file),
+    onSuccess: () => {
+      // Invalidate only the specific group expense query
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.groupExpenses.detail(expenseId),
+      });
+    },
   });
 }
 
@@ -217,7 +236,7 @@ export function useTriggerBillParsing(expenseId: string) {
       groupExpensesApi.triggerBillParsing(expenseId, billId),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["group-expenses", expenseId],
+        queryKey: queryKeys.groupExpenses.detail(expenseId),
       });
     },
   });
@@ -230,7 +249,7 @@ export function useConfirmGroupExpense(expenseId: string) {
     mutationFn: (dryRun: boolean) =>
       groupExpensesApi.confirm(expenseId, dryRun),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["group-expenses"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.groupExpenses.all });
     },
   });
 }
@@ -241,7 +260,7 @@ export function useDeleteGroupExpense() {
   return useMutation({
     mutationFn: (expenseId: string) => groupExpensesApi.delete(expenseId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["group-expenses"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.groupExpenses.all });
     },
   });
 }
@@ -254,7 +273,7 @@ export function useSyncParticipants(expenseId: string) {
       groupExpensesApi.syncParticipants(expenseId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["group-expenses", expenseId],
+        queryKey: queryKeys.groupExpenses.detail(expenseId),
       });
     },
   });
@@ -268,7 +287,7 @@ export function useSyncItemParticipants(expenseId: string, itemId: string) {
       groupExpensesApi.syncItemParticipants(expenseId, itemId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["group-expenses", expenseId],
+        queryKey: queryKeys.groupExpenses.detail(expenseId),
       });
     },
   });
@@ -286,7 +305,7 @@ export function useAssociateProfile() {
       anonProfileId: string;
     }) => friendshipsApi.associateProfile(realProfileId, anonProfileId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["friendships"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.friendships.all });
     },
   });
 }
@@ -298,7 +317,7 @@ export function useUpdateProfile() {
   return useMutation({
     mutationFn: (name: string) => authApi.updateProfile(name),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile.current });
     },
   });
 }
@@ -345,7 +364,7 @@ export function useAddExpenseItem(expenseId: string) {
       groupExpensesApi.addItem(expenseId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["group-expenses", expenseId],
+        queryKey: queryKeys.groupExpenses.detail(expenseId),
       });
     },
   });
@@ -362,7 +381,7 @@ export function useUpdateExpenseItem(expenseId: string) {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["group-expenses", expenseId],
+        queryKey: queryKeys.groupExpenses.detail(expenseId),
       });
     },
   });
@@ -381,7 +400,7 @@ export function useDeleteExpenseItem() {
     }) => groupExpensesApi.removeItem(expenseId, itemId),
     onSuccess: (_, { expenseId }) => {
       queryClient.invalidateQueries({
-        queryKey: ["group-expenses", expenseId],
+        queryKey: queryKeys.groupExpenses.detail(expenseId),
       });
     },
   });
@@ -396,7 +415,7 @@ export function useAddExpenseFee(expenseId: string) {
       groupExpensesApi.addFee(expenseId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["group-expenses", expenseId],
+        queryKey: queryKeys.groupExpenses.detail(expenseId),
       });
     },
   });
@@ -410,7 +429,7 @@ export function useUpdateExpenseFee(expenseId: string) {
       groupExpensesApi.updateFee(expenseId, data.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["group-expenses", expenseId],
+        queryKey: queryKeys.groupExpenses.detail(expenseId),
       });
     },
   });
@@ -424,7 +443,7 @@ export function useDeleteExpenseFee() {
       groupExpensesApi.removeFee(expenseId, feeId),
     onSuccess: (_, { expenseId }) => {
       queryClient.invalidateQueries({
-        queryKey: ["group-expenses", expenseId],
+        queryKey: queryKeys.groupExpenses.detail(expenseId),
       });
     },
   });
@@ -438,7 +457,9 @@ export function useAddTransferMethod() {
     mutationFn: (data: NewProfileTransferMethod) =>
       profileApi.addTransferMethod(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transfer-methods"] });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.transferMethods.all,
+      });
     },
   });
 }

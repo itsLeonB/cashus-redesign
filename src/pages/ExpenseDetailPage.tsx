@@ -4,7 +4,6 @@ import {
   useGroupExpense,
   useConfirmGroupExpense,
   useDeleteGroupExpense,
-  useUploadExpenseBill,
   useTriggerBillParsing,
   useDeleteExpenseItem,
   useDeleteExpenseFee,
@@ -15,7 +14,8 @@ import { ExpenseItemModal } from "@/components/ExpenseItemModal";
 import { ExpenseFeeModal } from "@/components/ExpenseFeeModal";
 import { ItemParticipantManager } from "@/components/ItemParticipantManager";
 import { ExpenseConfirmationPreview } from "@/components/ExpenseConfirmationPreview";
-import { ParticipantSelectorModal } from "@/components/ParticipantSelectorModal";
+import { ParticipantSelector } from "@/components/ParticipantSelector";
+import { ImageUploadArea } from "@/components/ImageUploadArea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -49,14 +49,13 @@ import {
   Plus,
   Pencil,
   Trash2,
-  X,
   Image,
   RefreshCw,
   AlertTriangle,
   Upload,
   UserPlus,
 } from "lucide-react";
-import { cn, formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { NewExpenseItemRequest, statusDisplay } from "@/lib/api";
 import type {
   ExpenseItemResponse,
@@ -64,7 +63,37 @@ import type {
   ExpenseConfirmationResponse,
 } from "@/lib/api/types";
 
-import { useQueryClient } from "@tanstack/react-query";
+const formatDate = (date: string) => {
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const calculateItemAmount = (item: NewExpenseItemRequest): number => {
+  const amount = Number.parseFloat(item.amount) || 0;
+  return amount * item.quantity;
+};
+
+const billStatusDisplay: Record<
+  string,
+  {
+    label: string;
+    variant: "default" | "secondary" | "destructive" | "outline";
+  }
+> = {
+  PENDING: { label: "Processing...", variant: "secondary" },
+  EXTRACTED: { label: "Processing...", variant: "secondary" },
+  FAILED_EXTRACTING: { label: "Extraction Failed", variant: "destructive" },
+  PARSED: { label: "Parsed", variant: "default" },
+  FAILED_PARSING: { label: "Parsing Failed", variant: "destructive" },
+  NOT_DETECTED: { label: "Not Detected", variant: "outline" },
+};
+
+const isRetryableStatus = (status: string) => {
+  return status === "FAILED_EXTRACTING" || status === "FAILED_PARSING";
+};
 
 export default function ExpenseDetailPage() {
   const { expenseId } = useParams<{ expenseId: string }>();
@@ -74,7 +103,6 @@ export default function ExpenseDetailPage() {
   const deleteExpense = useDeleteGroupExpense();
   const triggerBillParsing = useTriggerBillParsing(expenseId || "");
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const { mutate: deleteItem } = useDeleteExpenseItem();
   const { mutate: deleteFee } = useDeleteExpenseFee();
   const { data: calculationMethods } = useCalculationMethods();
@@ -104,9 +132,6 @@ export default function ExpenseDetailPage() {
   const [viewBillModalOpen, setViewBillModalOpen] = useState(false);
   const [retryBillModalOpen, setRetryBillModalOpen] = useState(false);
   const [uploadBillModalOpen, setUploadBillModalOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
 
   // Participant modal state
   const [participantModalOpen, setParticipantModalOpen] = useState(false);
@@ -116,8 +141,6 @@ export default function ExpenseDetailPage() {
   const [dryRunResult, setDryRunResult] =
     useState<ExpenseConfirmationResponse | null>(null);
   const [isDryRunLoading, setIsDryRunLoading] = useState(false);
-
-  const uploadBill = useUploadExpenseBill();
 
   const participantProfiles = (expense?.participants || []).map(
     (p) => p.profile
@@ -135,19 +158,6 @@ export default function ExpenseDetailPage() {
     return expense.otherFees?.reduce((total, fee) => {
       return total + Number.parseFloat(fee.amount);
     }, 0);
-  };
-
-  const calculateItemAmount = (item: NewExpenseItemRequest): number => {
-    const amount = Number.parseFloat(item.amount) || 0;
-    return amount * item.quantity;
-  };
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
   };
 
   const handleConfirmDryRun = async () => {
@@ -288,72 +298,8 @@ export default function ExpenseDetailPage() {
     }
   };
 
-  const billStatusDisplay: Record<
-    string,
-    {
-      label: string;
-      variant: "default" | "secondary" | "destructive" | "outline";
-    }
-  > = {
-    PENDING: { label: "Processing...", variant: "secondary" },
-    EXTRACTED: { label: "Processing...", variant: "secondary" },
-    FAILED_EXTRACTING: { label: "Extraction Failed", variant: "destructive" },
-    PARSED: { label: "Parsed", variant: "default" },
-    FAILED_PARSING: { label: "Parsing Failed", variant: "destructive" },
-    NOT_DETECTED: { label: "Not Detected", variant: "outline" },
-  };
-
-  const isRetryableStatus = (status: string) => {
-    return status === "FAILED_EXTRACTING" || status === "FAILED_PARSING";
-  };
-
-  const handleFileSelect = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast({
-        variant: "destructive",
-        title: "Invalid file type",
-        description: "Please select an image file.",
-      });
-      return;
-    }
-    setSelectedFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
-  };
-
-  const handleUploadBill = () => {
-    if (!expenseId || !selectedFile) return;
-
-    uploadBill.mutate(
-      { expenseId, file: selectedFile },
-      {
-        onSuccess: () => {
-          setUploadBillModalOpen(false);
-          setSelectedFile(null);
-          setPreviewUrl(null);
-          toast({
-            title: "Bill uploaded",
-            description:
-              "Your bill image has been uploaded and is being processed.",
-          });
-        },
-        onError: (error: unknown) => {
-          const err = error as { message?: string };
-          toast({
-            variant: "destructive",
-            title: "Upload failed",
-            description: err.message || "Something went wrong",
-          });
-        },
-      }
-    );
-  };
-
-  const clearFile = () => {
-    setSelectedFile(null);
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
-    }
+  const handleUploadSuccess = () => {
+    setUploadBillModalOpen(false);
   };
 
   if (isLoading) {
@@ -893,10 +839,7 @@ export default function ExpenseDetailPage() {
       {/* Upload Bill Modal */}
       <AlertDialog
         open={uploadBillModalOpen}
-        onOpenChange={(open) => {
-          setUploadBillModalOpen(open);
-          if (!open) clearFile();
-        }}
+        onOpenChange={setUploadBillModalOpen}
       >
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
@@ -911,93 +854,46 @@ export default function ExpenseDetailPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          <div className="space-y-4">
-            {previewUrl ? (
-              <div className="relative">
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  className="w-full h-48 object-contain rounded-lg border border-border"
-                />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-2 right-2 h-8 w-8 bg-background/80 hover:bg-background"
-                  onClick={clearFile}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ) : (
-              <div
-                className={cn(
-                  "border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer",
-                  isDragging
-                    ? "border-primary bg-primary/5"
-                    : "border-muted-foreground/25 hover:border-primary/50"
-                )}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setIsDragging(true);
-                }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setIsDragging(false);
-                  const file = e.dataTransfer.files[0];
-                  if (file) handleFileSelect(file);
-                }}
-                onClick={() => {
-                  const input = document.createElement("input");
-                  input.type = "file";
-                  input.accept = "image/*";
-                  input.onchange = (e) => {
-                    const file = (e.target as HTMLInputElement).files?.[0];
-                    if (file) handleFileSelect(file);
-                  };
-                  input.click();
-                }}
-              >
-                <Upload className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">
-                  Drag and drop an image, or click to select
-                </p>
-              </div>
-            )}
-          </div>
+          <ImageUploadArea
+            expenseId={expenseId}
+            onUploadSuccess={handleUploadSuccess}
+          />
 
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={clearFile}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleUploadBill}
-              disabled={!selectedFile || uploadBill.isPending}
-            >
-              {uploadBill.isPending && (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              )}
-              Upload Bill
-            </AlertDialogAction>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       {/* Participant Selector Modal */}
-      <ParticipantSelectorModal
+      <Dialog
         open={participantModalOpen}
         onOpenChange={setParticipantModalOpen}
-        expenseId={expense.id}
-        currentParticipants={expense.participants?.map((p) => ({
-          profileId: p.profile.id,
-          name: p.profile.name,
-          avatar: p.profile.avatar,
-        }))}
-        currentPayerId={expense.payer?.id}
-        onSuccess={() => {
-          queryClient.invalidateQueries({
-            queryKey: ["group-expenses", expenseId],
-          });
-        }}
-      />
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Edit Participants
+            </DialogTitle>
+          </DialogHeader>
+
+          <ParticipantSelector
+            expenseId={expense.id}
+            currentParticipants={expense.participants?.map((p) => ({
+              profileId: p.profile.id,
+              name: p.profile.name,
+              avatar: p.profile.avatar,
+            }))}
+            currentPayerId={expense.payer?.id}
+            onSuccess={() => {
+              setParticipantModalOpen(false);
+            }}
+            onCancel={() => setParticipantModalOpen(false)}
+            submitLabel="Save Participants"
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Confirm Preview Modal */}
       <Dialog
