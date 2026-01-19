@@ -1,6 +1,7 @@
 import { apiClient } from "./client";
 import {
   DebtTransactionResponse,
+  FriendBalance,
   NewDebtTransactionRequest,
   TransferMethod,
 } from "./types";
@@ -17,4 +18,6 @@ export const debtsApi = {
     apiClient.get<TransferMethod[]>("/transfer-methods", {
       status: filter,
     }),
+
+  getSummary: () => apiClient.get<FriendBalance>("/debts/summary"),
 };

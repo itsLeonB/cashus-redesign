@@ -1,6 +1,11 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useFriendships, useDebts, useGroupExpenses } from "@/hooks/useApi";
+import {
+  useFriendships,
+  useDebts,
+  useGroupExpenses,
+  useDebtSummary,
+} from "@/hooks/useApi";
 import { StatCard } from "@/components/StatCard";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { AmountDisplay } from "@/components/AmountDisplay";
@@ -27,36 +32,11 @@ export default function DashboardPage() {
   const { data: friendships, isLoading: friendshipsLoading } = useFriendships();
   const { data: debts, isLoading: debtsLoading } = useDebts();
   const { data: expenses, isLoading: expensesLoading } = useGroupExpenses();
+  const { data: debtSummary, isLoading: debtSummaryLoading } = useDebtSummary();
 
   const [transactionOpen, setTransactionOpen] = useState(false);
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
   const [addFriendModalOpen, setAddFriendModalOpen] = useState(false);
-
-  const isLoading = friendshipsLoading || debtsLoading || expensesLoading;
-
-  // Calculate balances per friend profile ID
-  const balances = useMemo(() => {
-    const map = new Map<string, number>();
-    debts?.forEach((debt) => {
-      const amount = Number.parseFloat(debt.amount);
-      const current = map.get(debt.profileId) || 0;
-      // CREDIT = You are owed (positive), DEBT = You owe (negative)
-      const change = debt.type === "CREDIT" ? amount : -amount;
-      map.set(debt.profileId, current + change);
-    });
-    return map;
-  }, [debts]);
-
-  // Calculate totals
-  const { totalOwedToYou, totalYouOwe } = useMemo(() => {
-    let owedToYou = 0;
-    let youOwe = 0;
-    balances.forEach((balance) => {
-      if (balance > 0) owedToYou += balance;
-      else youOwe += Math.abs(balance);
-    });
-    return { totalOwedToYou: owedToYou, totalYouOwe: youOwe };
-  }, [balances]);
 
   // Recent activity
   const recentActivity = useMemo(() => {
@@ -97,27 +77,13 @@ export default function DashboardPage() {
 
     const sortTime = (
       a: (typeof activities)[number],
-      b: (typeof activities)[number]
+      b: (typeof activities)[number],
     ) => {
       return new Date(b.date).getTime() - new Date(a.date).getTime();
     };
 
     return activities.toSorted(sortTime).slice(0, 6);
   }, [debts, expenses, friendships]);
-
-  // Friends with balances
-  const friendsWithBalances = useMemo(() => {
-    if (!friendships) return [];
-
-    return friendships
-      .map((f) => ({
-        ...f,
-        balance: balances.get(f.profileId) || 0,
-      }))
-      .filter((f) => f.balance !== 0)
-      .toSorted((a, b) => Math.abs(b.balance) - Math.abs(a.balance))
-      .slice(0, 5);
-  }, [friendships, balances]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -136,12 +102,14 @@ export default function DashboardPage() {
     return <ArrowDownRight className="h-4 w-4 text-destructive" />;
   };
 
+  const skeletonKeys = ["skeleton-1", "skeleton-2", "skeleton-3", "skeleton-4"];
+
   const activityCardContent = () => {
-    if (isLoading)
+    if (debtsLoading || expensesLoading)
       return (
         <div className="space-y-3">
-          {new Array(4).map((_, i) => (
-            <Skeleton key={i} className="h-14" />
+          {skeletonKeys.map((key) => (
+            <Skeleton key={key} className="h-14" />
           ))}
         </div>
       );
@@ -196,15 +164,15 @@ export default function DashboardPage() {
   };
 
   const friendsCardContent = () => {
-    if (isLoading)
+    if (friendshipsLoading)
       return (
         <div className="space-y-3">
-          {new Array(4).map((_, i) => (
-            <Skeleton key={i} className="h-14" />
+          {skeletonKeys.map((key) => (
+            <Skeleton key={key} className="h-14" />
           ))}
         </div>
       );
-    if (friendsWithBalances.length === 0)
+    if ((friendships?.length || 0) === 0)
       return (
         <div className="text-center py-8 text-muted-foreground">
           <Users className="h-10 w-10 mx-auto mb-2 opacity-50" />
@@ -219,7 +187,7 @@ export default function DashboardPage() {
       );
     return (
       <div className="space-y-3">
-        {friendsWithBalances.map((friendship) => (
+        {friendships.map((friendship) => (
           <Link
             key={friendship.id}
             to={`/friends/${friendship.id}`} // Use friendship ID for link, but querying details might need profileId correction later
@@ -276,7 +244,7 @@ export default function DashboardPage() {
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {isLoading ? (
+        {debtSummaryLoading ? (
           <>
             <Skeleton className="h-28" />
             <Skeleton className="h-28" />
@@ -289,7 +257,9 @@ export default function DashboardPage() {
               label="Owed to you"
               value={
                 <AmountDisplay
-                  amount={totalOwedToYou}
+                  amount={Number.parseFloat(
+                    debtSummary?.totalLentToFriend || "0",
+                  )}
                   showSign={false}
                   size="lg"
                 />
@@ -301,7 +271,9 @@ export default function DashboardPage() {
               label="You owe"
               value={
                 <AmountDisplay
-                  amount={-totalYouOwe}
+                  amount={Number.parseFloat(
+                    debtSummary?.totalBorrowedFromFriend || "0",
+                  )}
                   showSign={false}
                   size="lg"
                 />
