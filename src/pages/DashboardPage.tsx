@@ -272,7 +272,7 @@ export default function DashboardPage() {
               value={
                 <AmountDisplay
                   amount={Number.parseFloat(
-                    debtSummary?.totalBorrowedFromFriend || "0",
+                    "-" + debtSummary?.totalBorrowedFromFriend || "0",
                   )}
                   showSign={false}
                   size="lg"
