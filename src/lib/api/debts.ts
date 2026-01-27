@@ -20,4 +20,6 @@ export const debtsApi = {
     }),
 
   getSummary: () => apiClient.get<FriendBalance>("/debts/summary"),
+
+  getRecent: () => apiClient.get<DebtTransactionResponse[]>("/debts/recent"),
 };

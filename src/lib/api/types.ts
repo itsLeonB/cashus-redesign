@@ -96,7 +96,7 @@ export type DebtDirection = "INCOMING" | "OUTGOING";
 
 export interface DebtTransactionResponse {
   id: string;
-  profileId: string; // The friend's profile ID
+  profile: SimpleProfile;
   type: "LENT" | "BORROWED";
   amount: string;
   transferMethod: string;

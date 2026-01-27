@@ -1,11 +1,6 @@
 import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import {
-  useFriendships,
-  useDebts,
-  useGroupExpenses,
-  useDebtSummary,
-} from "@/hooks/useApi";
+import { useFriendships, useDebtSummary } from "@/hooks/useApi";
 import { StatCard } from "@/components/StatCard";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { AmountDisplay } from "@/components/AmountDisplay";
@@ -17,73 +12,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   ArrowUpRight,
-  ArrowDownRight,
   Plus,
   Users,
-  Receipt,
   ArrowRight,
   TrendingUp,
   TrendingDown,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import RecentTransactions from "@/components/RecentTransactions";
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const { data: friendships, isLoading: friendshipsLoading } = useFriendships();
-  const { data: debts, isLoading: debtsLoading } = useDebts();
-  const { data: expenses, isLoading: expensesLoading } = useGroupExpenses();
   const { data: debtSummary, isLoading: debtSummaryLoading } = useDebtSummary();
 
   const [transactionOpen, setTransactionOpen] = useState(false);
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
   const [addFriendModalOpen, setAddFriendModalOpen] = useState(false);
-
-  // Recent activity
-  const recentActivity = useMemo(() => {
-    const activities: Array<{
-      id: string;
-      type: "debt" | "expense";
-      description: string;
-      amount: number;
-      date: string;
-      profileName: string;
-      avatarUrl?: string;
-    }> = [];
-
-    debts?.slice(0, 5).forEach((debt) => {
-      const friend = friendships?.find((f) => f.profileId === debt.profileId);
-      activities.push({
-        id: debt.id,
-        type: "debt",
-        description:
-          debt.description || `${debt.type.toLowerCase()} transaction`,
-        amount: Number.parseFloat(debt.amount),
-        date: debt.createdAt,
-        profileName: friend?.profileName || "Unknown",
-        avatarUrl: friend?.profileAvatar,
-      });
-    });
-
-    expenses?.slice(0, 5).forEach((expense) => {
-      activities.push({
-        id: expense.id,
-        type: "expense",
-        description: expense.description || "Group expense",
-        amount: Number.parseFloat(expense.totalAmount),
-        date: expense.createdAt,
-        profileName: expense.payer.name,
-      });
-    });
-
-    const sortTime = (
-      a: (typeof activities)[number],
-      b: (typeof activities)[number],
-    ) => {
-      return new Date(b.date).getTime() - new Date(a.date).getTime();
-    };
-
-    return activities.toSorted(sortTime).slice(0, 6);
-  }, [debts, expenses, friendships]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -92,76 +37,7 @@ export default function DashboardPage() {
     return "Good evening";
   }, []);
 
-  const arrowDisplay = (activity) => {
-    if (activity.type === "debt") {
-      if (debts?.find((d) => d.id === activity.id)?.type === "LENT")
-        return <ArrowUpRight className="h-4 w-4 text-success" />;
-      return <ArrowDownRight className="h-4 w-4 text-destructive" />;
-    }
-
-    return <ArrowDownRight className="h-4 w-4 text-destructive" />;
-  };
-
   const skeletonKeys = ["skeleton-1", "skeleton-2", "skeleton-3", "skeleton-4"];
-
-  const activityCardContent = () => {
-    if (debtsLoading || expensesLoading)
-      return (
-        <div className="space-y-3">
-          {skeletonKeys.map((key) => (
-            <Skeleton key={key} className="h-14" />
-          ))}
-        </div>
-      );
-    if (recentActivity?.length === 0)
-      return (
-        <div className="text-center py-8 text-muted-foreground">
-          <Receipt className="h-10 w-10 mx-auto mb-2 opacity-50" />
-          <p>No recent activity</p>
-          <Button variant="outline" size="sm" className="mt-4">
-            <Plus className="h-4 w-4 mr-2" />
-            Create transaction
-          </Button>
-        </div>
-      );
-    return (
-      <div className="space-y-3">
-        {recentActivity.map((activity) => (
-          <div
-            key={activity.id}
-            className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors min-w-0"
-          >
-            {activity.profileName && (
-              <AvatarCircle
-                name={activity.profileName}
-                imageUrl={activity.avatarUrl}
-                size="sm"
-                className="flex-shrink-0"
-              />
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">
-                {activity.description}
-              </p>
-              {activity.profileName && (
-                <p className="text-xs text-muted-foreground truncate">
-                  with {activity.profileName}
-                </p>
-              )}
-            </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              {arrowDisplay(activity)}
-              <AmountDisplay
-                amount={activity.amount}
-                size="sm"
-                showSign={false}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
 
   const friendsCardContent = () => {
     if (friendshipsLoading)
@@ -243,11 +119,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2">
         {debtSummaryLoading ? (
           <>
-            <Skeleton className="h-28" />
-            <Skeleton className="h-28" />
             <Skeleton className="h-28" />
             <Skeleton className="h-28" />
           </>
@@ -281,36 +155,12 @@ export default function DashboardPage() {
               icon={<TrendingDown className="h-5 w-5" />}
               variant="negative"
             />
-            <StatCard
-              label="Total friends"
-              value={friendships?.length || 0}
-              icon={<Users className="h-5 w-5" />}
-            />
-            <StatCard
-              label="Group expenses"
-              value={expenses?.length || 0}
-              icon={<Receipt className="h-5 w-5" />}
-            />
           </>
         )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Recent Activity */}
-        <Card className="border-border/50 min-w-0 overflow-hidden">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg font-display">
-              Recent Activity
-            </CardTitle>
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/expenses">
-                View all
-                <ArrowRight className="h-4 w-4 ml-1" />
-              </Link>
-            </Button>
-          </CardHeader>
-          <CardContent className="min-w-0">{activityCardContent()}</CardContent>
-        </Card>
+        <RecentTransactions />
 
         {/* Friends with Balances */}
         <Card className="border-border/50 min-w-0 overflow-hidden">

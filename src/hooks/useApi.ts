@@ -191,6 +191,15 @@ export function useDebtSummary() {
   });
 }
 
+export function useRecentDebts() {
+  return useQuery({
+    queryKey: queryKeys.debts.recent,
+    queryFn: debtsApi.getRecent,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+  });
+}
+
 // Group Expenses hooks
 export function useGroupExpenses(
   status?: string,
