@@ -94,7 +94,7 @@ export default function DashboardPage() {
 
   const arrowDisplay = (activity) => {
     if (activity.type === "debt") {
-      if (debts?.find((d) => d.id === activity.id)?.type === "CREDIT")
+      if (debts?.find((d) => d.id === activity.id)?.type === "LENT")
         return <ArrowUpRight className="h-4 w-4 text-success" />;
       return <ArrowDownRight className="h-4 w-4 text-destructive" />;
     }

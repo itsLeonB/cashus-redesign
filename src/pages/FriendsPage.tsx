@@ -49,14 +49,15 @@ export default function FriendsPage() {
     debts?.forEach((debt) => {
       const amount = Number.parseFloat(debt.amount);
       const current = map.get(debt.profileId) || 0;
-      const change = debt.type === "CREDIT" ? amount : -amount;
+      const change = debt.type === "LENT" ? amount : -amount;
+
       map.set(debt.profileId, current + change);
     });
     return map;
   }, [debts]);
 
   const filteredFriends = friendships?.filter((f) =>
-    f.profileName.toLowerCase().includes(searchQuery.toLowerCase())
+    f.profileName.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleAcceptRequest = async (requestId: string) => {

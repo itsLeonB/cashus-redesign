@@ -1,7 +1,7 @@
 import { FormEvent, useState } from "react";
 import { useFriendships, useCreateDebt } from "@/hooks/useApi";
 import { useFilteredTransferMethods } from "@/hooks/useMasterData";
-import { DebtAction, TransferMethod } from "@/lib/api/types";
+import { DebtDirection, TransferMethod } from "@/lib/api/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,11 +29,11 @@ interface TransactionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultFriendId?: string;
-  defaultAction?: DebtAction;
+  defaultDirection?: DebtDirection;
 }
 
-const actionConfig: Record<
-  DebtAction,
+const directionConfig: Record<
+  DebtDirection,
   {
     label: string;
     description: string;
@@ -41,28 +41,16 @@ const actionConfig: Record<
     colorClass: string;
   }
 > = {
-  LEND: {
-    label: "Lend",
+  OUTGOING: {
+    label: "I gave money",
     description: "You gave money to friend",
     icon: ArrowUpRight,
     colorClass: "border-success text-success bg-success/10",
   },
-  BORROW: {
-    label: "Borrow",
+  INCOMING: {
+    label: "I received money",
     description: "You received money from friend",
     icon: ArrowDownLeft,
-    colorClass: "border-warning text-warning bg-warning/10",
-  },
-  RECEIVE: {
-    label: "Receive",
-    description: "Friend paid you back",
-    icon: ArrowDownLeft,
-    colorClass: "border-success text-success bg-success/10",
-  },
-  RETURN: {
-    label: "Return",
-    description: "You paid friend back",
-    icon: ArrowUpRight,
     colorClass: "border-warning text-warning bg-warning/10",
   },
 };
@@ -71,10 +59,10 @@ export function TransactionModal({
   open,
   onOpenChange,
   defaultFriendId,
-  defaultAction = "LEND",
+  defaultDirection = "OUTGOING",
 }: Readonly<TransactionModalProps>) {
   const [friendId, setFriendId] = useState(defaultFriendId || "");
-  const [action, setAction] = useState<DebtAction>(defaultAction);
+  const [direction, setDirection] = useState<DebtDirection>(defaultDirection);
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [selectedMethod, setSelectedMethod] = useState<TransferMethod>(null);
@@ -93,16 +81,16 @@ export function TransactionModal({
     try {
       await createDebt.mutateAsync({
         friendProfileId: friendId,
-        action,
+        direction,
         amount: Number.parseFloat(amount),
         transferMethodId: selectedMethod.id,
         description: description || undefined,
       });
       toast({
         title: "Transaction recorded",
-        description: `Successfully recorded ${actionConfig[
-          action
-        ].label.toLowerCase()} transaction`,
+        description: `Successfully recorded ${directionConfig[
+          direction
+        ].label.toLowerCase()}`,
       });
       resetForm();
       onOpenChange(false);
@@ -118,7 +106,7 @@ export function TransactionModal({
 
   const resetForm = () => {
     setFriendId(defaultFriendId || "");
-    setAction(defaultAction);
+    setDirection(defaultDirection);
     setAmount("");
     setDescription("");
     setSelectedMethod(null);
@@ -132,21 +120,21 @@ export function TransactionModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Action Type */}
+          {/* Direction Type */}
           <div className="grid grid-cols-2 gap-2">
-            {(Object.keys(actionConfig) as DebtAction[]).map((key) => {
-              const config = actionConfig[key];
+            {(Object.keys(directionConfig) as DebtDirection[]).map((key) => {
+              const config = directionConfig[key];
               const Icon = config.icon;
               return (
                 <button
                   key={key}
                   type="button"
-                  onClick={() => setAction(key)}
+                  onClick={() => setDirection(key)}
                   className={cn(
-                    "flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all",
-                    action === key
+                    "flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all text-center",
+                    direction === key
                       ? config.colorClass
-                      : "border-border/50 hover:border-border text-muted-foreground"
+                      : "border-border/50 hover:border-border text-muted-foreground",
                   )}
                 >
                   <Icon className="h-5 w-5" />
