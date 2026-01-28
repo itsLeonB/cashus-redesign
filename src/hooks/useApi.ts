@@ -212,6 +212,15 @@ export function useGroupExpenses(
   });
 }
 
+export function useRecentExpenses() {
+  return useQuery({
+    queryKey: queryKeys.groupExpenses.recent,
+    queryFn: groupExpensesApi.getRecent,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+  });
+}
+
 export function useGroupExpense(expenseId: string) {
   return useQuery({
     queryKey: queryKeys.groupExpenses.detail(expenseId),

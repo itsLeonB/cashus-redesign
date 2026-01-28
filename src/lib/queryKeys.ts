@@ -38,5 +38,6 @@ export const queryKeys = {
       status
         ? (["group-expenses", status] as const)
         : (["group-expenses"] as const),
+    recent: ["group-expenses", "recent"] as const,
   },
 } as const;

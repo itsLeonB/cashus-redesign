@@ -1,13 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowDownRight, ArrowUpRight, Plus, Receipt } from "lucide-react";
+import { Plus, Receipt } from "lucide-react";
 import { AmountDisplay } from "@/components/AmountDisplay";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useRecentDebts } from "@/hooks/useApi";
+import { useRecentExpenses } from "@/hooks/useApi";
+import { Link } from "react-router-dom";
 
-const RecentTransactions = () => {
-  const { data, isLoading } = useRecentDebts();
+const RecentExpenses = () => {
+  const { data, isLoading } = useRecentExpenses();
 
   const cardContent = () => {
     if (isLoading)
@@ -25,58 +26,48 @@ const RecentTransactions = () => {
       return (
         <div className="text-center py-8 text-muted-foreground">
           <Receipt className="h-10 w-10 mx-auto mb-2 opacity-50" />
-          <p>No recent transactions</p>
+          <p>No recent expenses</p>
           <Button variant="outline" size="sm" className="mt-4">
             <Plus className="h-4 w-4 mr-2" />
-            Create transaction
+            Create expense
           </Button>
         </div>
       );
 
     return (
       <div className="space-y-3">
-        {data.map((transaction) => (
-          <div
-            key={transaction.id}
-            className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors min-w-0"
+        {data.map((expense) => (
+          <Link
+            to={`/expenses/${expense.id}`}
+            key={expense.id}
+            className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors min-w-0 cursor-pointer"
           >
-            {transaction.profile.name && (
+            {expense.creator.name && (
               <AvatarCircle
-                name={transaction.profile.name}
-                imageUrl={transaction.profile.avatar}
+                name={expense.creator.name}
+                imageUrl={expense.creator.avatar}
                 size="sm"
                 className="flex-shrink-0"
               />
             )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
-                {transaction.description
-                  ? transaction.description
-                  : `Transaction with ${transaction.profile.name}`}
+                {expense.description}
               </p>
-              {transaction.description && transaction.profile.name && (
+              {expense.description && expense.creator.name && (
                 <p className="text-xs text-muted-foreground truncate">
-                  with {transaction.profile.name}
+                  by {expense.creator.isUser ? "You" : expense.creator.name}
                 </p>
               )}
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
-              {transaction.type === "LENT" ? (
-                <ArrowUpRight className="h-4 w-4 text-success" />
-              ) : (
-                <ArrowDownRight className="h-4 w-4 text-destructive" />
-              )}
               <AmountDisplay
-                amount={
-                  transaction.type === "LENT"
-                    ? Number.parseFloat(transaction.amount)
-                    : Number.parseFloat(transaction.amount) * -1
-                }
+                amount={Number.parseFloat(expense.totalAmount)}
                 size="sm"
                 showSign={false}
               />
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     );
@@ -85,13 +76,11 @@ const RecentTransactions = () => {
   return (
     <Card className="border-border/50 min-w-0 overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-lg font-display">
-          Recent Transactions
-        </CardTitle>
+        <CardTitle className="text-lg font-display">Recent Expenses</CardTitle>
       </CardHeader>
       <CardContent className="min-w-0">{cardContent()}</CardContent>
     </Card>
   );
 };
 
-export default RecentTransactions;
+export default RecentExpenses;
