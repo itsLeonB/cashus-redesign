@@ -27,6 +27,13 @@ const notificationConfigs: Record<string, NotificationConfig> = {
       return "New Transaction";
     },
   },
+
+  "friend-request-received": {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    route: (_) => "/friends?tab=requests",
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    title: (_) => "New Friend Request",
+  },
 };
 
 /**
