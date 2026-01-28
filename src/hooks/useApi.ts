@@ -510,6 +510,8 @@ export function useNotifications(unread: boolean) {
       ? queryKeys.notifications.unread
       : queryKeys.notifications.all,
     queryFn: () => notificationApi.getAll(unread),
+    refetchInterval: 30000, // Poll every 30 seconds
+    refetchIntervalInBackground: false, // Only poll when tab is active
   });
 }
 

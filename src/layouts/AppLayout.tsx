@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Logo } from "@/components/Logo";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { Button } from "@/components/ui/button";
+import { NotificationDropdown } from "@/components/NotificationDropdown";
 import {
   LayoutDashboard,
   Users,
@@ -156,12 +157,20 @@ export function AppLayout() {
               <Menu className="h-5 w-5" />
             </Button>
             <Logo />
-            <AvatarCircle
-              name={user?.name || "User"}
-              imageUrl={user?.avatar}
-              size="sm"
-            />
+            <div className="flex items-center gap-2">
+              <NotificationDropdown />
+              <AvatarCircle
+                name={user?.name || "User"}
+                imageUrl={user?.avatar}
+                size="sm"
+              />
+            </div>
           </div>
+        </header>
+
+        {/* Desktop header with notifications */}
+        <header className="hidden lg:flex sticky top-0 z-30 h-16 bg-background/80 backdrop-blur-lg border-b border-border items-center justify-end px-8">
+          <NotificationDropdown />
         </header>
 
         {/* Page content */}
