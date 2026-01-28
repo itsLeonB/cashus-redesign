@@ -34,6 +34,16 @@ const notificationConfigs: Record<string, NotificationConfig> = {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     title: (_) => "New Friend Request",
   },
+
+  "friendship-created": {
+    route: (notification) => `/friends/${notification.entityId}`,
+    title: (notification) => {
+      if (notification.metadata["friendName"]) {
+        return `You are now friends with ${notification.metadata["friendName"]}`;
+      }
+      return "You have a new friend";
+    },
+  },
 };
 
 /**
