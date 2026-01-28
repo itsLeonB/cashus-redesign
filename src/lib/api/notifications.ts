@@ -6,7 +6,6 @@ export interface Notification {
   entityType: string;
   entityId: string;
   metadata: Record<string, string>;
-  readAt?: string;
   createdAt: string;
 }
 

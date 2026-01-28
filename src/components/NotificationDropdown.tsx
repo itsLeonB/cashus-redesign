@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Check, CheckCheck, Loader2 } from "lucide-react";
+import { Bell, CheckCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -46,14 +46,10 @@ function NotificationItem({
   onNavigate,
 }: Readonly<NotificationItemProps>) {
   const navigate = useNavigate();
-  const isUnread = !notification.readAt;
   const markAsReadMutation = useMarkNotificationAsRead(notification.id);
 
   const handleClick = () => {
-    if (isUnread) {
-      markAsReadMutation.mutate();
-    }
-
+    markAsReadMutation.mutate();
     const route = resolveNotificationRoute(notification);
     navigate(route);
     onNavigate();
@@ -64,23 +60,14 @@ function NotificationItem({
   return (
     <button
       onClick={handleClick}
-      className={cn(
-        "w-full text-left p-3 rounded-lg transition-colors",
-        "hover:bg-accent/50 focus:outline-none focus:ring-2 focus:ring-ring",
-        isUnread ? "bg-accent/30" : "opacity-70",
-      )}
+      className={
+        "w-full text-left p-3 rounded-lg transition-colors hover:bg-accent/50 focus:outline-none focus:ring-2 focus:ring-ring bg-accent/30"
+      }
     >
       <div className="flex items-start gap-3">
-        <div
-          className={cn(
-            "mt-1 h-2 w-2 rounded-full flex-shrink-0",
-            isUnread ? "bg-primary" : "bg-transparent",
-          )}
-        />
+        <div className={"mt-1 h-2 w-2 rounded-full flex-shrink-0 bg-primary"} />
         <div className="flex-1 min-w-0">
-          <p className={cn("text-sm", isUnread && "font-medium")}>
-            {description}
-          </p>
+          <p className={"text-sm font-medium"}>{description}</p>
           <p className="text-xs text-muted-foreground mt-1">
             {formatRelativeTime(notification.createdAt)}
           </p>
@@ -117,11 +104,7 @@ export function NotificationDropdown({
   const [open, setOpen] = useState(false);
   const { data: notifications, isLoading, isError } = useUnreadNotifications();
   const markAllAsReadMutation = useMarkAllNotificationsAsRead();
-
-  const unreadCount = useMemo(() => {
-    if (!notifications) return 0;
-    return notifications.filter((n) => !n.readAt).length;
-  }, [notifications]);
+  const unreadCount = notifications?.length || 0;
 
   const handleMarkAllAsRead = () => {
     markAllAsReadMutation.mutate();
@@ -148,7 +131,7 @@ export function NotificationDropdown({
       return (
         <div className="p-6 text-center text-muted-foreground">
           <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">No notifications yet</p>
+          <p className="text-sm">No new notifications</p>
         </div>
       );
 
@@ -212,16 +195,6 @@ export function NotificationDropdown({
         </div>
 
         <div className="overflow-y-auto flex-1 scrollbar-thin">{content()}</div>
-
-        {/* Footer with read status */}
-        {notifications?.length > 0 && unreadCount === 0 && (
-          <div className="p-3 border-t border-border text-center">
-            <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-              <Check className="h-3 w-3" />
-              All caught up!
-            </p>
-          </div>
-        )}
       </PopoverContent>
     </Popover>
   );
