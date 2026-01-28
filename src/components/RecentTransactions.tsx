@@ -4,6 +4,14 @@ import { AmountDisplay } from "@/components/AmountDisplay";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRecentDebts } from "@/hooks/useApi";
+import { DebtTransactionResponse } from "@/lib/api";
+
+const descriptionDisplay = (transaction: DebtTransactionResponse) => {
+  if (transaction?.description) return transaction.description;
+  if (transaction?.type === "LENT")
+    return `Lent to ${transaction.profile.name}`;
+  return `Borrowed from ${transaction.profile.name}`;
+};
 
 const RecentTransactions = () => {
   const { data, isLoading } = useRecentDebts();
@@ -45,9 +53,7 @@ const RecentTransactions = () => {
             )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">
-                {transaction.description
-                  ? transaction.description
-                  : `Transaction with ${transaction.profile.name}`}
+                {descriptionDisplay(transaction)}
               </p>
               {transaction.description && transaction.profile.name && (
                 <p className="text-xs text-muted-foreground truncate">
