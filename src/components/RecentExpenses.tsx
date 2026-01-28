@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Receipt } from "lucide-react";
-import { AmountDisplay } from "@/components/AmountDisplay";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -67,18 +66,15 @@ const RecentExpenses = () => {
                 variant="outline"
                 className={cn(
                   "text-xs",
-                  expense.status === "DRAFT" && "border-muted-foreground/50 text-muted-foreground",
+                  expense.status === "DRAFT" &&
+                    "border-muted-foreground/50 text-muted-foreground",
                   expense.status === "READY" && "border-warning text-warning",
-                  expense.status === "CONFIRMED" && "border-success text-success"
+                  expense.status === "CONFIRMED" &&
+                    "border-success text-success",
                 )}
               >
                 {statusDisplay[expense.status]}
               </Badge>
-              <AmountDisplay
-                amount={Number.parseFloat(expense.totalAmount)}
-                size="sm"
-                showSign={false}
-              />
             </div>
           </Link>
         ))}
