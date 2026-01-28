@@ -88,9 +88,11 @@ export default function DashboardPage() {
               label="You owe"
               value={
                 <AmountDisplay
-                  amount={Number.parseFloat(
-                    "-" + debtSummary?.totalBorrowedFromFriend || "0",
-                  )}
+                  amount={
+                    -Number.parseFloat(
+                      debtSummary?.totalBorrowedFromFriend || "0",
+                    )
+                  }
                   showSign={false}
                   size="lg"
                 />
