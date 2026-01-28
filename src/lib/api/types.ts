@@ -140,6 +140,9 @@ export interface SimpleProfile {
   isUser: boolean;
 }
 
+// Expense Ownership Types
+export type ExpenseOwnership = "OWNED" | "PARTICIPATING";
+
 // Group Expense Types
 export interface GroupExpenseResponse {
   id: string;
