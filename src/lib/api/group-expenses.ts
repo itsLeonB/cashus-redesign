@@ -21,9 +21,12 @@ export const groupExpensesApi = {
     return apiClient.get<GroupExpenseResponse[]>(`/group-expenses${query}`);
   },
 
+  getRecent: () =>
+    apiClient.get<GroupExpenseResponse[]>("/group-expenses/recent"),
+
   getById: async (expenseId: string) => {
     const data = await apiClient.get<GroupExpenseResponse>(
-      `/group-expenses/${expenseId}`
+      `/group-expenses/${expenseId}`,
     );
     return {
       ...data,
@@ -42,7 +45,7 @@ export const groupExpensesApi = {
     formData.append("bill", file);
     return apiClient.uploadFile<ExpenseBillResponse>(
       `/group-expenses/${expenseId}/bills`,
-      formData
+      formData,
     );
   },
 
@@ -55,13 +58,13 @@ export const groupExpensesApi = {
   addItem: (groupExpenseId: string, data: NewExpenseItemRequest) =>
     apiClient.post<ExpenseItem>(
       `/group-expenses/${groupExpenseId}/items`,
-      data
+      data,
     ),
 
   updateItem: (itemId: string, data: UpdateExpenseItemRequest) =>
     apiClient.put<ExpenseItem>(
       `/group-expenses/${data.groupExpenseId}/items/${itemId}`,
-      data
+      data,
     ),
 
   removeItem: (groupExpenseId: string, itemId: string) =>
@@ -70,11 +73,11 @@ export const groupExpensesApi = {
   syncItemParticipants: (
     expenseId: string,
     itemId: string,
-    data: SyncItemParticipantsRequest
+    data: SyncItemParticipantsRequest,
   ) =>
     apiClient.put(
       `/group-expenses/${expenseId}/items/${itemId}/participants`,
-      data
+      data,
     ),
 
   addFee: (groupExpenseId: string, data: NewOtherFeeRequest) =>
@@ -83,11 +86,11 @@ export const groupExpensesApi = {
   updateFee: (
     groupExpenseId: string,
     feeId: string,
-    data: UpdateOtherFeeRequest
+    data: UpdateOtherFeeRequest,
   ) =>
     apiClient.put<OtherFee>(
       `/group-expenses/${groupExpenseId}/fees/${feeId}`,
-      data
+      data,
     ),
 
   removeFee: (groupExpenseId: string, feeId: string) =>
@@ -96,13 +99,13 @@ export const groupExpensesApi = {
   confirm: (groupExpenseId: string, dryRun: boolean) => {
     const query = dryRun ? "?dry-run=true" : "";
     return apiClient.patch<ExpenseConfirmationResponse>(
-      `/group-expenses/${groupExpenseId}/confirmed${query}`
+      `/group-expenses/${groupExpenseId}/confirmed${query}`,
     );
   },
 
   getCalculationMethods: () =>
     apiClient.get<FeeCalculationMethodInfo[]>(
-      "/group-expenses/fee-calculation-methods"
+      "/group-expenses/fee-calculation-methods",
     ),
 
   syncParticipants: (expenseId: string, data: ExpenseParticipantsRequest) =>

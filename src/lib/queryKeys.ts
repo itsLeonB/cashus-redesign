@@ -18,6 +18,8 @@ export const queryKeys = {
 
   debts: {
     all: ["debts"] as const,
+    summary: ["debts", "summary"] as const,
+    recent: ["debts", "recent"] as const,
   },
   calculationMethods: {
     all: ["calculation-methods"] as const,
@@ -36,5 +38,6 @@ export const queryKeys = {
       status
         ? (["group-expenses", status] as const)
         : (["group-expenses"] as const),
+    recent: ["group-expenses", "recent"] as const,
   },
 } as const;

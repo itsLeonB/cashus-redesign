@@ -19,7 +19,7 @@ interface AuthContextType {
   register: (
     email: string,
     password: string,
-    passwordConfirmation: string
+    passwordConfirmation: string,
   ) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -65,17 +65,22 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         queryKey: queryKeys.friendRequests.all,
       });
       queryClient.invalidateQueries({ queryKey: queryKeys.debts.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.debts.summary });
+      queryClient.invalidateQueries({ queryKey: queryKeys.debts.recent });
       queryClient.invalidateQueries({ queryKey: queryKeys.groupExpenses.all });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.groupExpenses.recent,
+      });
       queryClient.invalidateQueries({ queryKey: queryKeys.profiles.all });
     },
-    [queryClient]
+    [queryClient],
   );
 
   const register = useCallback(
     async (email: string, password: string, passwordConfirmation: string) => {
       await authApi.register({ email, password, passwordConfirmation });
     },
-    []
+    [],
   );
 
   const logout = useCallback(() => {
@@ -94,7 +99,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       logout,
       refreshUser,
     }),
-    [user, isLoading, login, register, logout, refreshUser]
+    [user, isLoading, login, register, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

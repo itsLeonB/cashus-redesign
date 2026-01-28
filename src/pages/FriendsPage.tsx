@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { AddFriendModal } from "@/components/AddFriendModal";
 import {
   useFriendships,
@@ -8,10 +8,8 @@ import {
   useCancelFriendRequest,
   useBlockFriendRequest,
   useUnblockFriendRequest,
-  useDebts,
 } from "@/hooks/useApi";
 import { AvatarCircle } from "@/components/AvatarCircle";
-import { AmountDisplay } from "@/components/AmountDisplay";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,7 +33,6 @@ export default function FriendsPage() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
 
   const { data: friendships, isLoading } = useFriendships();
-  const { data: debts } = useDebts();
   const { sent, received } = useFriendRequests();
   const acceptFriendRequest = useAcceptFriendRequest();
   const ignoreFriendRequest = useIgnoreFriendRequest();
@@ -44,19 +41,8 @@ export default function FriendsPage() {
   const unblockFriendRequest = useUnblockFriendRequest();
   const { toast } = useToast();
 
-  const balances = useMemo(() => {
-    const map = new Map<string, number>();
-    debts?.forEach((debt) => {
-      const amount = Number.parseFloat(debt.amount);
-      const current = map.get(debt.profileId) || 0;
-      const change = debt.type === "CREDIT" ? amount : -amount;
-      map.set(debt.profileId, current + change);
-    });
-    return map;
-  }, [debts]);
-
   const filteredFriends = friendships?.filter((f) =>
-    f.profileName.toLowerCase().includes(searchQuery.toLowerCase())
+    f.profileName.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const handleAcceptRequest = async (requestId: string) => {
@@ -161,7 +147,7 @@ export default function FriendsPage() {
 
     if (filteredFriends?.length > 0)
       return (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {filteredFriends.map((friendship) => (
             <Link key={friendship.id} to={`/friends/${friendship.id}`}>
               <Card className="border-border/50 hover:border-border transition-colors h-full">
@@ -189,10 +175,6 @@ export default function FriendsPage() {
                         )}
                       </div>
                     </div>
-                    <AmountDisplay
-                      amount={balances.get(friendship.profileId) || 0}
-                      size="md"
-                    />
                   </div>
                 </CardContent>
               </Card>

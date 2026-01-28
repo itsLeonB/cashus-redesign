@@ -92,27 +92,21 @@ export interface NewAnonymousFriendshipRequest {
 }
 
 // Debt Transaction Types
-export type DebtType = "DEBT" | "CREDIT";
-// DEBT = You Owe (Borrow), CREDIT = You are Owed (Lend)
-// The legacy app uses type: "DEBT" | "CREDIT".
-// But the redesign uses Action: "LEND" | "BORROW" etc.
-// We need to map this in the frontend or update the type here.
-// Legacy type:
-export type DebtAction = "LEND" | "BORROW" | "RECEIVE" | "RETURN";
+export type DebtDirection = "INCOMING" | "OUTGOING";
 
 export interface DebtTransactionResponse {
   id: string;
-  profileId: string; // The friend's profile ID
-  type: DebtType;
-  amount: string; // Legacy uses string for amount
-  transferMethod: string; // Legacy returns string name
+  profile: SimpleProfile;
+  type: "LENT" | "BORROWED";
+  amount: string;
+  transferMethod: string;
   description: string;
   createdAt: string;
 }
 
 export interface NewDebtTransactionRequest {
   friendProfileId: string;
-  action: DebtAction;
+  direction: DebtDirection;
   amount: number;
   transferMethodId: string;
   description?: string;
