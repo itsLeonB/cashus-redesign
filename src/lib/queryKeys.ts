@@ -40,4 +40,9 @@ export const queryKeys = {
         : (["group-expenses"] as const),
     recent: ["group-expenses", "recent"] as const,
   },
+
+  notifications: {
+    all: ["notifications"] as const,
+    unread: ["notifications", "unread"] as const,
+  },
 } as const;

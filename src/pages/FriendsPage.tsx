@@ -26,11 +26,14 @@ import {
   Ban,
   ShieldOff,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 export default function FriendsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const activeTab = searchParams.get("tab") || "all";
 
   const { data: friendships, isLoading } = useFriendships();
   const { sent, received } = useFriendRequests();
@@ -424,7 +427,7 @@ export default function FriendsPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="all">
+      <Tabs value={activeTab} onValueChange={(value) => setSearchParams({ tab: value })}>
         <TabsList>
           <TabsTrigger value="all" className="gap-2">
             <Users className="h-4 w-4" />

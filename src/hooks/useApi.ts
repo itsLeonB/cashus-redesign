@@ -15,6 +15,7 @@ import {
 import { profileApi } from "@/lib/api/profile";
 import { profilesApi } from "@/lib/api/profiles";
 import { queryKeys } from "@/lib/queryKeys";
+import { notificationApi } from "@/lib/api/notifications";
 
 // Profile hooks
 export function useMyTransferMethods() {
@@ -497,6 +498,48 @@ export function useAddTransferMethod() {
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.transferMethods.all,
+      });
+    },
+  });
+}
+
+// Notification hooks
+export function useUnreadNotifications() {
+  return useQuery({
+    queryKey: queryKeys.notifications.unread,
+    queryFn: notificationApi.getUnread,
+    refetchInterval: 30000, // Poll every 30 seconds
+    refetchIntervalInBackground: false, // Only poll when tab is active
+  });
+}
+
+export function useMarkNotificationAsRead(id: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => notificationApi.markAsRead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.notifications.all,
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.notifications.unread,
+      });
+    },
+  });
+}
+
+export function useMarkAllNotificationsAsRead() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: notificationApi.markAllAsRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.notifications.all,
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.notifications.unread,
       });
     },
   });
