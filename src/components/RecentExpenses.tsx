@@ -4,9 +4,11 @@ import { Plus, Receipt } from "lucide-react";
 import { AmountDisplay } from "@/components/AmountDisplay";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { useRecentExpenses } from "@/hooks/useApi";
 import { Link } from "react-router-dom";
-
+import { statusDisplay } from "@/lib/api/types";
+import { cn } from "@/lib/utils";
 const RecentExpenses = () => {
   const { data, isLoading } = useRecentExpenses();
 
@@ -60,7 +62,18 @@ const RecentExpenses = () => {
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Badge
+                variant="outline"
+                className={cn(
+                  "text-xs",
+                  expense.status === "DRAFT" && "border-muted-foreground/50 text-muted-foreground",
+                  expense.status === "READY" && "border-warning text-warning",
+                  expense.status === "CONFIRMED" && "border-success text-success"
+                )}
+              >
+                {statusDisplay[expense.status]}
+              </Badge>
               <AmountDisplay
                 amount={Number.parseFloat(expense.totalAmount)}
                 size="sm"
