@@ -177,6 +177,8 @@ export function useCreateDebt() {
     mutationFn: (data: NewDebtTransactionRequest) => debtsApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.debts.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.debts.summary });
+      queryClient.invalidateQueries({ queryKey: queryKeys.debts.recent });
       queryClient.invalidateQueries({ queryKey: queryKeys.friendships.all });
     },
   });
@@ -236,6 +238,9 @@ export function useCreateDraftExpense() {
     mutationFn: groupExpensesApi.createDraft,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.groupExpenses.all });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.groupExpenses.recent,
+      });
     },
   });
 }
@@ -277,6 +282,9 @@ export function useConfirmGroupExpense(expenseId: string) {
       groupExpensesApi.confirm(expenseId, dryRun),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.groupExpenses.all });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.groupExpenses.recent,
+      });
     },
   });
 }
@@ -288,6 +296,9 @@ export function useDeleteGroupExpense() {
     mutationFn: (expenseId: string) => groupExpensesApi.delete(expenseId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.groupExpenses.all });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.groupExpenses.recent,
+      });
     },
   });
 }
