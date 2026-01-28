@@ -1,6 +1,5 @@
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Receipt } from "lucide-react";
+import { Receipt } from "lucide-react";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -28,10 +27,6 @@ const RecentExpenses = () => {
         <div className="text-center py-8 text-muted-foreground">
           <Receipt className="h-10 w-10 mx-auto mb-2 opacity-50" />
           <p>No recent expenses</p>
-          <Button variant="outline" size="sm" className="mt-4">
-            <Plus className="h-4 w-4 mr-2" />
-            Create expense
-          </Button>
         </div>
       );
 

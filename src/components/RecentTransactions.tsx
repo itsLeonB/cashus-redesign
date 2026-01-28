@@ -1,6 +1,5 @@
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowDownRight, ArrowUpRight, Plus, Receipt } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Receipt } from "lucide-react";
 import { AmountDisplay } from "@/components/AmountDisplay";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,10 +25,6 @@ const RecentTransactions = () => {
         <div className="text-center py-8 text-muted-foreground">
           <Receipt className="h-10 w-10 mx-auto mb-2 opacity-50" />
           <p>No recent transactions</p>
-          <Button variant="outline" size="sm" className="mt-4">
-            <Plus className="h-4 w-4 mr-2" />
-            Create transaction
-          </Button>
         </div>
       );
 
