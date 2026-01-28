@@ -5,7 +5,7 @@ export interface Notification {
   type: string;
   entityType: string;
   entityId: string;
-  metadata: unknown;
+  metadata: Record<string, string>;
   readAt: string;
   createdAt: string;
 }

@@ -19,7 +19,7 @@ import { Notification } from "@/lib/api/notifications";
 import {
   resolveNotificationRoute,
   getNotificationTitle,
-} from "@/lib/notificationRoutes";
+} from "@/lib/notificationResolvers";
 
 function formatRelativeTime(dateString: string): string {
   const date = new Date(dateString);
