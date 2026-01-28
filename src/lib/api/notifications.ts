@@ -11,8 +11,7 @@ export interface Notification {
 }
 
 export const notificationApi = {
-  getAll: (unread: boolean) =>
-    apiClient.get<Notification[]>(`/notifications?unread=${unread}`),
+  getUnread: () => apiClient.get<Notification[]>("/notifications"),
 
   markAsRead: (id: string) => apiClient.patch(`/notifications/${id}`),
 

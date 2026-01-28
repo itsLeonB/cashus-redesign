@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bell, Check, CheckCheck, Loader2 } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -11,9 +10,12 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { useNotifications, useMarkAllNotificationsAsRead } from "@/hooks/useApi";
-import { notificationApi, Notification } from "@/lib/api/notifications";
-import { queryKeys } from "@/lib/queryKeys";
+import {
+  useUnreadNotifications,
+  useMarkAllNotificationsAsRead,
+  useMarkNotificationAsRead,
+} from "@/hooks/useApi";
+import { Notification } from "@/lib/api/notifications";
 import {
   resolveNotificationRoute,
   getNotificationTitle,
@@ -39,84 +41,25 @@ interface NotificationItemProps {
   onNavigate: () => void;
 }
 
-function NotificationItem({ notification, onNavigate }: NotificationItemProps) {
+function NotificationItem({
+  notification,
+  onNavigate,
+}: Readonly<NotificationItemProps>) {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const isUnread = !notification.readAt;
-
-  const markAsReadMutation = useMutation({
-    mutationFn: () => notificationApi.markAsRead(notification.id),
-    onMutate: async () => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: queryKeys.notifications.all });
-      await queryClient.cancelQueries({ queryKey: queryKeys.notifications.unread });
-
-      // Snapshot previous values
-      const previousAll = queryClient.getQueryData<Notification[]>(
-        queryKeys.notifications.all
-      );
-      const previousUnread = queryClient.getQueryData<Notification[]>(
-        queryKeys.notifications.unread
-      );
-
-      // Optimistically update the cache
-      const updateNotification = (notifications: Notification[] | undefined) =>
-        notifications?.map((n) =>
-          n.id === notification.id
-            ? { ...n, readAt: new Date().toISOString() }
-            : n
-        );
-
-      queryClient.setQueryData(
-        queryKeys.notifications.all,
-        updateNotification(previousAll)
-      );
-      queryClient.setQueryData(
-        queryKeys.notifications.unread,
-        previousUnread?.filter((n) => n.id !== notification.id)
-      );
-
-      return { previousAll, previousUnread };
-    },
-    onError: (_err, _vars, context) => {
-      // Rollback on error
-      if (context?.previousAll) {
-        queryClient.setQueryData(queryKeys.notifications.all, context.previousAll);
-      }
-      if (context?.previousUnread) {
-        queryClient.setQueryData(
-          queryKeys.notifications.unread,
-          context.previousUnread
-        );
-      }
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.notifications.unread });
-    },
-  });
+  const markAsReadMutation = useMarkNotificationAsRead(notification.id);
 
   const handleClick = () => {
-    // Mark as read optimistically
     if (isUnread) {
       markAsReadMutation.mutate();
     }
 
-    // Navigate to the relevant page
-    const route = resolveNotificationRoute(
-      notification.type,
-      notification.entityId,
-      notification.entityType
-    );
+    const route = resolveNotificationRoute(notification);
     navigate(route);
     onNavigate();
   };
 
-  const metadata = notification.metadata as Record<string, unknown> | null;
-  const description =
-    (metadata?.message as string) ||
-    (metadata?.description as string) ||
-    getNotificationTitle(notification.type);
+  const description = getNotificationTitle(notification);
 
   return (
     <button
@@ -124,14 +67,14 @@ function NotificationItem({ notification, onNavigate }: NotificationItemProps) {
       className={cn(
         "w-full text-left p-3 rounded-lg transition-colors",
         "hover:bg-accent/50 focus:outline-none focus:ring-2 focus:ring-ring",
-        isUnread ? "bg-accent/30" : "opacity-70"
+        isUnread ? "bg-accent/30" : "opacity-70",
       )}
     >
       <div className="flex items-start gap-3">
         <div
           className={cn(
             "mt-1 h-2 w-2 rounded-full flex-shrink-0",
-            isUnread ? "bg-primary" : "bg-transparent"
+            isUnread ? "bg-primary" : "bg-transparent",
           )}
         />
         <div className="flex-1 min-w-0">
@@ -168,9 +111,11 @@ interface NotificationDropdownProps {
   className?: string;
 }
 
-export function NotificationDropdown({ className }: NotificationDropdownProps) {
+export function NotificationDropdown({
+  className,
+}: Readonly<NotificationDropdownProps>) {
   const [open, setOpen] = useState(false);
-  const { data: notifications, isLoading, isError } = useNotifications(false);
+  const { data: notifications, isLoading, isError } = useUnreadNotifications();
   const markAllAsReadMutation = useMarkAllNotificationsAsRead();
 
   const unreadCount = useMemo(() => {
@@ -178,16 +123,46 @@ export function NotificationDropdown({ className }: NotificationDropdownProps) {
     return notifications.filter((n) => !n.readAt).length;
   }, [notifications]);
 
-  const sortedNotifications = useMemo(() => {
-    if (!notifications) return [];
-    return [...notifications].sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-  }, [notifications]);
-
   const handleMarkAllAsRead = () => {
     markAllAsReadMutation.mutate();
+  };
+
+  const content = () => {
+    if (isLoading)
+      return (
+        <div className="space-y-1">
+          <NotificationSkeleton />
+          <NotificationSkeleton />
+          <NotificationSkeleton />
+        </div>
+      );
+
+    if (isError)
+      return (
+        <div className="p-6 text-center text-muted-foreground">
+          <p className="text-sm">Failed to load notifications</p>
+        </div>
+      );
+
+    if ((notifications?.length || 0) === 0)
+      return (
+        <div className="p-6 text-center text-muted-foreground">
+          <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">No notifications yet</p>
+        </div>
+      );
+
+    return (
+      <div className="p-1 space-y-1">
+        {notifications?.map((notification) => (
+          <NotificationItem
+            key={notification.id}
+            notification={notification}
+            onNavigate={() => setOpen(false)}
+          />
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -236,38 +211,10 @@ export function NotificationDropdown({ className }: NotificationDropdownProps) {
           )}
         </div>
 
-        {/* Content */}
-        <div className="overflow-y-auto flex-1 scrollbar-thin">
-          {isLoading ? (
-            <div className="space-y-1">
-              <NotificationSkeleton />
-              <NotificationSkeleton />
-              <NotificationSkeleton />
-            </div>
-          ) : isError ? (
-            <div className="p-6 text-center text-muted-foreground">
-              <p className="text-sm">Failed to load notifications</p>
-            </div>
-          ) : sortedNotifications.length === 0 ? (
-            <div className="p-6 text-center text-muted-foreground">
-              <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">No notifications yet</p>
-            </div>
-          ) : (
-            <div className="p-1 space-y-1">
-              {sortedNotifications.map((notification) => (
-                <NotificationItem
-                  key={notification.id}
-                  notification={notification}
-                  onNavigate={() => setOpen(false)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        <div className="overflow-y-auto flex-1 scrollbar-thin">{content()}</div>
 
         {/* Footer with read status */}
-        {sortedNotifications.length > 0 && unreadCount === 0 && (
+        {notifications?.length > 0 && unreadCount === 0 && (
           <div className="p-3 border-t border-border text-center">
             <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
               <Check className="h-3 w-3" />

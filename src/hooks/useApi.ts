@@ -504,12 +504,10 @@ export function useAddTransferMethod() {
 }
 
 // Notification hooks
-export function useNotifications(unread: boolean) {
+export function useUnreadNotifications() {
   return useQuery({
-    queryKey: unread
-      ? queryKeys.notifications.unread
-      : queryKeys.notifications.all,
-    queryFn: () => notificationApi.getAll(unread),
+    queryKey: queryKeys.notifications.unread,
+    queryFn: notificationApi.getUnread,
     refetchInterval: 30000, // Poll every 30 seconds
     refetchIntervalInBackground: false, // Only poll when tab is active
   });
