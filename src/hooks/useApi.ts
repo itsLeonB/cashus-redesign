@@ -206,11 +206,12 @@ export function useRecentDebts() {
 // Group Expenses hooks
 export function useGroupExpenses(
   status?: string,
-  options?: { enabled?: boolean },
+  options?: { enabled?: boolean; ownership?: "OWNED" | "PARTICIPATING" },
 ) {
+  const ownership = options?.ownership ?? "OWNED";
   return useQuery({
-    queryKey: queryKeys.groupExpenses.status(status),
-    queryFn: () => groupExpensesApi.getAll(status),
+    queryKey: queryKeys.groupExpenses.status(status, ownership),
+    queryFn: () => groupExpensesApi.getAll(status, ownership),
     enabled: options?.enabled ?? true,
   });
 }
