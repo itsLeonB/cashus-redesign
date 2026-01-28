@@ -22,7 +22,7 @@ type ParticipantWeights = Record<string, number>;
 
 // Helper to convert participant response to weight map
 function participantsToWeights(
-  participants: ExpenseItemResponse["participants"] | undefined
+  participants: ExpenseItemResponse["participants"] | undefined,
 ): ParticipantWeights {
   if (!participants) return {};
   return participants.reduce<ParticipantWeights>((acc, p) => {
@@ -60,7 +60,7 @@ export function ItemParticipantManager({
 
   // Show advanced mode if any weight > 1 on initial load
   const [showAdvanced, setShowAdvanced] = useState(() =>
-    hasCustomWeights(initialWeights)
+    hasCustomWeights(initialWeights),
   );
 
   const [weights, setWeights] = useState<ParticipantWeights>(initialWeights);
@@ -90,7 +90,7 @@ export function ItemParticipantManager({
         return newWeights;
       });
     },
-    [canEdit]
+    [canEdit],
   );
 
   // Weight adjustment handler
@@ -104,7 +104,7 @@ export function ItemParticipantManager({
         return { ...prev, [profileId]: newWeight };
       });
     },
-    [canEdit]
+    [canEdit],
   );
 
   // Effect to sync when debounced weights change
@@ -129,7 +129,7 @@ export function ItemParticipantManager({
           ([profileId, weight]) => ({
             profileId,
             weight,
-          })
+          }),
         );
 
         await syncParticipants.mutateAsync({
@@ -260,7 +260,7 @@ export function ItemParticipantManager({
                     "border-border/50 opacity-50 cursor-not-allowed",
                   !isSelected &&
                     canEdit &&
-                    "border-border/50 hover:border-border"
+                    "border-border/50 hover:border-border",
                 )}
               >
                 {canEdit && (

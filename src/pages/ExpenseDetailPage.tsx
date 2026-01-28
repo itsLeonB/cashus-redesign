@@ -109,10 +109,13 @@ export default function ExpenseDetailPage() {
 
   const calculationMethodDisplayByName = useMemo(() => {
     if (!calculationMethods) return {};
-    return calculationMethods.reduce((acc, method) => {
-      acc[method.name] = method.display;
-      return acc;
-    }, {} as Record<string, string>);
+    return calculationMethods.reduce(
+      (acc, method) => {
+        acc[method.name] = method.display;
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
   }, [calculationMethods]);
 
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
@@ -121,7 +124,7 @@ export default function ExpenseDetailPage() {
   // Item modal state
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ExpenseItemResponse | null>(
-    null
+    null,
   );
 
   // Fee modal state
@@ -143,7 +146,7 @@ export default function ExpenseDetailPage() {
   const [isDryRunLoading, setIsDryRunLoading] = useState(false);
 
   const participantProfiles = (expense?.participants || []).map(
-    (p) => p.profile
+    (p) => p.profile,
   );
 
   const calculateItemsTotal = () => {
@@ -226,7 +229,7 @@ export default function ExpenseDetailPage() {
         onSettled: () => {
           setDeletingItemId(null);
         },
-      }
+      },
     );
   };
 
@@ -254,7 +257,7 @@ export default function ExpenseDetailPage() {
         onSettled: () => {
           setDeletingFeeId(null);
         },
-      }
+      },
     );
   };
 
@@ -534,7 +537,7 @@ export default function ExpenseDetailPage() {
                       size="xs"
                     />
                     <span className="font-medium text-foreground">
-                      {expense.payer.name}
+                      {expense.payer.isUser ? "You" : expense.payer.name}
                     </span>
                   </>
                 ) : (
@@ -598,7 +601,7 @@ export default function ExpenseDetailPage() {
                 <div className="flex items-center gap-2">
                   <p className="text-lg font-semibold tabular-nums">
                     {formatCurrency(
-                      Number.parseFloat(item.amount) * item.quantity
+                      Number.parseFloat(item.amount) * item.quantity,
                     )}
                   </p>
                   {canEdit && (
@@ -769,7 +772,7 @@ export default function ExpenseDetailPage() {
                 </AlertDialog>
               </>
             )}
-            
+
             {/* View-only helper text for non-owners */}
             {!isOwner && !isConfirmed && (
               <div className="text-center py-4 px-6 bg-muted/50 rounded-lg">

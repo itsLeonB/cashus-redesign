@@ -7,7 +7,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Receipt, Calendar, Users, ChevronRight, Eye } from "lucide-react";
+import {
+  Plus,
+  Receipt,
+  Calendar,
+  Users,
+  ChevronRight,
+  Eye,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { NewGroupExpenseModal } from "@/components/NewGroupExpenseModal";
 import type { GroupExpenseResponse } from "@/lib/api/types";
@@ -28,7 +35,7 @@ const formatDate = (date: string) => {
   });
 };
 
-function ExpenseCard({ expense, ownership }: ExpenseCardProps) {
+function ExpenseCard({ expense, ownership }: Readonly<ExpenseCardProps>) {
   const isParticipating = ownership === "PARTICIPATING";
 
   return (
@@ -73,7 +80,7 @@ function ExpenseCard({ expense, ownership }: ExpenseCardProps) {
                   {expense.items?.length || 0} items
                 </span>
               </div>
-              {isParticipating && expense.creator.name && (
+              {isParticipating && expense?.creator?.name && (
                 <p className="text-xs text-muted-foreground mt-1">
                   Created by {expense.creator.name}
                 </p>
@@ -120,11 +127,11 @@ function ExpenseList({
   expenses,
   isLoading,
   ownership,
-}: {
+}: Readonly<{
   expenses: GroupExpenseResponse[] | undefined;
   isLoading: boolean;
   ownership: OwnershipType;
-}) {
+}>) {
   if (isLoading) return <LoadingSkeletons />;
   if (!expenses || expenses.length === 0) return null;
 
@@ -144,11 +151,11 @@ export default function ExpensesPage() {
   // OWNED expenses
   const { data: draftExpenses, isLoading: isDraftLoading } = useGroupExpenses(
     "DRAFT",
-    { ownership: "OWNED" }
+    { ownership: "OWNED" },
   );
   const { data: readyExpenses, isLoading: isReadyLoading } = useGroupExpenses(
     "READY",
-    { ownership: "OWNED" }
+    { ownership: "OWNED" },
   );
   const { data: confirmedOwnedExpenses, isLoading: isConfirmedOwnedLoading } =
     useGroupExpenses("CONFIRMED", {
@@ -204,7 +211,11 @@ export default function ExpensesPage() {
       return <LoadingSkeletons />;
     }
 
-    if (!hasAnyUnconfirmed && !isUnconfirmedOwnedLoading && !isParticipatingUnconfirmedLoading) {
+    if (
+      !hasAnyUnconfirmed &&
+      !isUnconfirmedOwnedLoading &&
+      !isParticipatingUnconfirmedLoading
+    ) {
       return renderEmptyState();
     }
 
@@ -282,11 +293,13 @@ export default function ExpensesPage() {
   };
 
   const confirmedContent = () => {
-    const isLoading = isConfirmedOwnedLoading || isParticipatingConfirmedLoading;
+    const isLoading =
+      isConfirmedOwnedLoading || isParticipatingConfirmedLoading;
     const hasOwnedConfirmed =
       confirmedOwnedExpenses && confirmedOwnedExpenses.length > 0;
     const hasParticipatingConfirmed =
-      participatingConfirmedExpenses && participatingConfirmedExpenses.length > 0;
+      participatingConfirmedExpenses &&
+      participatingConfirmedExpenses.length > 0;
     const hasAnyConfirmed = hasOwnedConfirmed || hasParticipatingConfirmed;
 
     if (isLoading && !hasAnyConfirmed) {

@@ -35,7 +35,8 @@ export const queryKeys = {
     all: ["group-expenses"] as const,
     detail: (id: string) => ["group-expenses", id] as const,
     status: (status?: string, ownership?: string) => {
-      if (status && ownership) return ["group-expenses", status, ownership] as const;
+      if (status && ownership)
+        return ["group-expenses", status, ownership] as const;
       if (status) return ["group-expenses", status] as const;
       if (ownership) return ["group-expenses", "all", ownership] as const;
       return ["group-expenses"] as const;
