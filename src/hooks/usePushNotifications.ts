@@ -43,10 +43,9 @@ export function usePushNotifications() {
         if (!subscription) {
           const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
           if (!vapidKey) {
-            console.error("VAPID public key not found");
-            setIsLoading(false);
-            return;
+            throw new Error("VAPID public key not found");
           }
+
           const convertedVapidKey = urlBase64ToUint8Array(vapidKey);
 
           subscription = await registration.pushManager.subscribe({
