@@ -44,6 +44,16 @@ const notificationConfigs: Record<string, NotificationConfig> = {
       return "You have a new friend";
     },
   },
+
+  "expense-confirmed": {
+    route: (notification) => `/expenses/${notification.entityId}`,
+    title: (notification) => {
+      if (notification.metadata["creatorName"]) {
+        return `${notification.metadata["creatorName"]} confirmed an expense with you`;
+      }
+      return "Your friend confirmed an expense";
+    },
+  },
 };
 
 /**
