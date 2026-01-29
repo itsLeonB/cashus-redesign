@@ -16,10 +16,7 @@ import {
   useMarkNotificationAsRead,
 } from "@/hooks/useApi";
 import { Notification } from "@/lib/api/notifications";
-import {
-  resolveNotificationRoute,
-  getNotificationTitle,
-} from "@/lib/notificationResolvers";
+import { resolveNotificationRoute } from "@/lib/notificationResolvers";
 
 function formatRelativeTime(dateString: string): string {
   const date = new Date(dateString);
@@ -55,8 +52,6 @@ function NotificationItem({
     onNavigate();
   };
 
-  const description = getNotificationTitle(notification);
-
   return (
     <button
       onClick={handleClick}
@@ -67,7 +62,7 @@ function NotificationItem({
       <div className="flex items-start gap-3">
         <div className={"mt-1 h-2 w-2 rounded-full flex-shrink-0 bg-primary"} />
         <div className="flex-1 min-w-0">
-          <p className={"text-sm font-medium"}>{description}</p>
+          <p className={"text-sm font-medium"}>{notification.title}</p>
           <p className="text-xs text-muted-foreground mt-1">
             {formatRelativeTime(notification.createdAt)}
           </p>
