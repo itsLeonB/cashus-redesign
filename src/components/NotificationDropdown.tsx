@@ -62,7 +62,9 @@ function NotificationItem({
       <div className="flex items-start gap-3">
         <div className={"mt-1 h-2 w-2 rounded-full flex-shrink-0 bg-primary"} />
         <div className="flex-1 min-w-0">
-          <p className={"text-sm font-medium"}>{notification.title}</p>
+          <p className={"text-sm font-medium"}>
+            {notification.title || "Notification"}
+          </p>
           <p className="text-xs text-muted-foreground mt-1">
             {formatRelativeTime(notification.createdAt)}
           </p>

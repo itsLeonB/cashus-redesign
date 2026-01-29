@@ -14,6 +14,7 @@ export function NotificationHandler() {
   const queryClient = useQueryClient();
   const notificationId = searchParams.get("notification_id");
   const lastProcessedId = useRef<string | null>(null);
+  const lastRefetchedId = useRef<string | null>(null);
 
   const {
     data: notifications,
@@ -32,10 +33,17 @@ export function NotificationHandler() {
 
   // Force refetch if we have an ID but it's not in the list
   useEffect(() => {
-    if (notificationId && isSuccess && !notification && !isFetching) {
+    if (
+      notificationId &&
+      isSuccess &&
+      !notification &&
+      !isFetching &&
+      lastRefetchedId.current !== notificationId
+    ) {
       console.log(
         "[NotificationHandler] ID not found in list, forcing refetch...",
       );
+      lastRefetchedId.current = notificationId;
       refetch();
     }
   }, [notificationId, isSuccess, !!notification, isFetching, refetch]);
