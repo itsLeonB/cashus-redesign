@@ -7,6 +7,7 @@ export interface Notification {
   entityId: string;
   metadata: Record<string, string>;
   createdAt: string;
+  title: string;
 }
 
 export const notificationApi = {
