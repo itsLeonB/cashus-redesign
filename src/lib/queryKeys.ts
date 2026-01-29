@@ -45,7 +45,6 @@ export const queryKeys = {
   },
 
   notifications: {
-    all: ["notifications"] as const,
     unread: ["notifications", "unread"] as const,
   },
 } as const;

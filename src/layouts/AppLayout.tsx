@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import { NotificationHandler } from "@/components/NotificationHandler";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -57,6 +58,7 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen bg-background">
+      <NotificationHandler />
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div

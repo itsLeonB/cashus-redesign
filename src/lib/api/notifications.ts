@@ -16,4 +16,7 @@ export const notificationApi = {
   markAsRead: (id: string) => apiClient.patch(`/notifications/${id}`),
 
   markAllAsRead: () => apiClient.patch("/notifications"),
+
+  subscribe: (subscription: PushSubscriptionJSON) =>
+    apiClient.post("/push/subscribe", subscription),
 };
