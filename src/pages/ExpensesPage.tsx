@@ -6,43 +6,64 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Receipt, Calendar, Users, ChevronRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Plus,
+  Receipt,
+  Calendar,
+  Users,
+  ChevronRight,
+  Eye,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { NewGroupExpenseModal } from "@/components/NewGroupExpenseModal";
 import type { GroupExpenseResponse } from "@/lib/api/types";
 import { formatCurrency } from "@/lib/utils";
 
-export default function ExpensesPage() {
-  const [newExpenseOpen, setNewExpenseOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("unconfirmed");
+type OwnershipType = "OWNED" | "PARTICIPATING";
 
-  const { data: draftExpenses, isLoading: isDraftLoading } =
-    useGroupExpenses("DRAFT");
-  const { data: readyExpenses, isLoading: isReadyLoading } =
-    useGroupExpenses("READY");
-  const { data: confirmedExpenses, isLoading: isConfirmedLoading } =
-    useGroupExpenses("CONFIRMED", { enabled: activeTab === "confirmed" });
+interface ExpenseCardProps {
+  expense: GroupExpenseResponse;
+  ownership: OwnershipType;
+}
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
+const formatDate = (date: string) => {
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
 
-  const renderExpenseCard = (expense: GroupExpenseResponse) => (
-    <Link key={expense.id} to={`/expenses/${expense.id}`}>
-      <Card className="border-border/50 hover:border-border transition-all hover:shadow-md">
+function ExpenseCard({ expense, ownership }: Readonly<ExpenseCardProps>) {
+  const isParticipating = ownership === "PARTICIPATING";
+
+  return (
+    <Link to={`/expenses/${expense.id}`}>
+      <Card
+        className={`border-border/50 hover:border-border transition-all hover:shadow-md ${isParticipating ? "bg-muted/30" : ""}`}
+      >
         <CardContent className="p-4">
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Receipt className="h-6 w-6 text-primary" />
+            <div
+              className={`h-12 w-12 rounded-lg flex items-center justify-center ${isParticipating ? "bg-muted" : "bg-primary/10"}`}
+            >
+              <Receipt
+                className={`h-6 w-6 ${isParticipating ? "text-muted-foreground" : "text-primary"}`}
+              />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-medium truncate mb-1">
-                {expense.description || "Untitled Expense"}
-              </p>
+              <div className="flex items-center gap-2 mb-1">
+                <p className="font-medium truncate">
+                  {expense.description || "Untitled Expense"}
+                </p>
+                {isParticipating && (
+                  <Badge variant="outline" className="text-xs shrink-0">
+                    <Eye className="h-3 w-3 mr-1" />
+                    View only
+                  </Badge>
+                )}
+              </div>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <Calendar className="h-3.5 w-3.5" />
@@ -59,6 +80,11 @@ export default function ExpensesPage() {
                   {expense.items?.length || 0} items
                 </span>
               </div>
+              {isParticipating && expense?.creator?.name && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Created by {expense.creator.name}
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-3">
               <div className="text-right">
@@ -76,36 +102,91 @@ export default function ExpensesPage() {
                   size="sm"
                 />
               )}
-              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              <ChevronRight
+                className={`h-5 w-5 ${isParticipating ? "text-muted-foreground/50" : "text-muted-foreground"}`}
+              />
             </div>
           </div>
         </CardContent>
       </Card>
     </Link>
   );
+}
 
-  const renderLoadingSkeletons = () => (
+function LoadingSkeletons() {
+  return (
     <div className="space-y-4">
       {Array.from({ length: 3 }, (_, i) => (
         <Skeleton key={`expense-loading-${i}`} className="h-24" />
       ))}
     </div>
   );
+}
 
-  const renderExpenseList = (
-    expenses: GroupExpenseResponse[] | undefined,
-    isLoading: boolean
-  ) => {
-    if (isLoading) return renderLoadingSkeletons();
+function ExpenseList({
+  expenses,
+  isLoading,
+  ownership,
+}: Readonly<{
+  expenses: GroupExpenseResponse[] | undefined;
+  isLoading: boolean;
+  ownership: OwnershipType;
+}>) {
+  if (isLoading) return <LoadingSkeletons />;
+  if (!expenses || expenses.length === 0) return null;
 
-    if (!expenses || expenses.length === 0) return null;
+  return (
+    <div className="space-y-4">
+      {expenses.map((expense) => (
+        <ExpenseCard key={expense.id} expense={expense} ownership={ownership} />
+      ))}
+    </div>
+  );
+}
 
-    return (
-      <div className="space-y-4">
-        {expenses.map((expense) => renderExpenseCard(expense))}
-      </div>
-    );
-  };
+export default function ExpensesPage() {
+  const [newExpenseOpen, setNewExpenseOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("unconfirmed");
+
+  // OWNED expenses
+  const { data: draftExpenses, isLoading: isDraftLoading } = useGroupExpenses(
+    "DRAFT",
+    { ownership: "OWNED" },
+  );
+  const { data: readyExpenses, isLoading: isReadyLoading } = useGroupExpenses(
+    "READY",
+    { ownership: "OWNED" },
+  );
+  const { data: confirmedOwnedExpenses, isLoading: isConfirmedOwnedLoading } =
+    useGroupExpenses("CONFIRMED", {
+      ownership: "OWNED",
+      enabled: activeTab === "confirmed",
+    });
+
+  // PARTICIPATING expenses
+  const {
+    data: participatingUnconfirmedExpenses,
+    isLoading: isParticipatingUnconfirmedLoading,
+  } = useGroupExpenses("UNCONFIRMED", { ownership: "PARTICIPATING" });
+
+  const {
+    data: participatingConfirmedExpenses,
+    isLoading: isParticipatingConfirmedLoading,
+  } = useGroupExpenses("CONFIRMED", {
+    ownership: "PARTICIPATING",
+    enabled: activeTab === "confirmed",
+  });
+
+  const hasOwnedUnconfirmed =
+    (readyExpenses && readyExpenses.length > 0) ||
+    (draftExpenses && draftExpenses.length > 0);
+
+  const hasParticipatingUnconfirmed =
+    participatingUnconfirmedExpenses &&
+    participatingUnconfirmedExpenses.length > 0;
+
+  const isUnconfirmedOwnedLoading = isDraftLoading || isReadyLoading;
+  const hasAnyUnconfirmed = hasOwnedUnconfirmed || hasParticipatingUnconfirmed;
 
   const renderEmptyState = () => (
     <Card className="border-border/50">
@@ -125,71 +206,157 @@ export default function ExpensesPage() {
     </Card>
   );
 
-  const hasUnconfirmedExpenses =
-    (readyExpenses && readyExpenses.length > 0) ||
-    (draftExpenses && draftExpenses.length > 0);
-
-  const isUnconfirmedLoading = isDraftLoading || isReadyLoading;
-
   const unconfirmedContent = () => {
-    if (isUnconfirmedLoading) return renderLoadingSkeletons();
+    if (isUnconfirmedOwnedLoading && isParticipatingUnconfirmedLoading) {
+      return <LoadingSkeletons />;
+    }
 
-    if (hasUnconfirmedExpenses)
-      return (
-        <>
-          {/* Ready Expenses */}
-          {readyExpenses && readyExpenses.length > 0 && (
-            <div className="space-y-3">
-              <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                Ready to Confirm
-              </h2>
-              {renderExpenseList(readyExpenses, false)}
-            </div>
-          )}
+    if (
+      !hasAnyUnconfirmed &&
+      !isUnconfirmedOwnedLoading &&
+      !isParticipatingUnconfirmedLoading
+    ) {
+      return renderEmptyState();
+    }
 
-          {/* Divider */}
-          {readyExpenses &&
-            readyExpenses.length > 0 &&
-            draftExpenses &&
-            draftExpenses.length > 0 && <Separator className="my-6" />}
+    return (
+      <>
+        {/* YOUR EXPENSES Section */}
+        {(hasOwnedUnconfirmed || isUnconfirmedOwnedLoading) && (
+          <div className="space-y-4">
+            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+              Your Expenses
+            </h2>
 
-          {/* Draft Expenses */}
-          {draftExpenses && draftExpenses.length > 0 && (
-            <div className="space-y-3">
-              <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                Drafts
-              </h2>
-              {renderExpenseList(draftExpenses, false)}
-            </div>
-          )}
-        </>
-      );
+            {isUnconfirmedOwnedLoading ? (
+              <LoadingSkeletons />
+            ) : (
+              <>
+                {/* Ready Expenses */}
+                {readyExpenses && readyExpenses.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="text-xs font-medium text-muted-foreground/70 ml-1">
+                      Ready to Confirm
+                    </h3>
+                    <ExpenseList
+                      expenses={readyExpenses}
+                      isLoading={false}
+                      ownership="OWNED"
+                    />
+                  </div>
+                )}
 
-    return renderEmptyState();
+                {/* Divider between Ready and Draft */}
+                {readyExpenses &&
+                  readyExpenses.length > 0 &&
+                  draftExpenses &&
+                  draftExpenses.length > 0 && <Separator className="my-4" />}
+
+                {/* Draft Expenses */}
+                {draftExpenses && draftExpenses.length > 0 && (
+                  <div className="space-y-3">
+                    <h3 className="text-xs font-medium text-muted-foreground/70 ml-1">
+                      Drafts
+                    </h3>
+                    <ExpenseList
+                      expenses={draftExpenses}
+                      isLoading={false}
+                      ownership="OWNED"
+                    />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Divider between sections */}
+        {hasOwnedUnconfirmed && hasParticipatingUnconfirmed && (
+          <Separator className="my-6" />
+        )}
+
+        {/* PARTICIPATING Section */}
+        {(hasParticipatingUnconfirmed || isParticipatingUnconfirmedLoading) && (
+          <div className="space-y-4">
+            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+              Participating
+            </h2>
+            <ExpenseList
+              expenses={participatingUnconfirmedExpenses}
+              isLoading={isParticipatingUnconfirmedLoading}
+              ownership="PARTICIPATING"
+            />
+          </div>
+        )}
+      </>
+    );
   };
 
   const confirmedContent = () => {
-    if (isConfirmedLoading) return renderLoadingSkeletons();
+    const isLoading =
+      isConfirmedOwnedLoading || isParticipatingConfirmedLoading;
+    const hasOwnedConfirmed =
+      confirmedOwnedExpenses && confirmedOwnedExpenses.length > 0;
+    const hasParticipatingConfirmed =
+      participatingConfirmedExpenses &&
+      participatingConfirmedExpenses.length > 0;
+    const hasAnyConfirmed = hasOwnedConfirmed || hasParticipatingConfirmed;
 
-    if (confirmedExpenses?.length > 0)
+    if (isLoading && !hasAnyConfirmed) {
+      return <LoadingSkeletons />;
+    }
+
+    if (!hasAnyConfirmed && !isLoading) {
       return (
-        <div className="space-y-4">
-          {confirmedExpenses.map((expense) => renderExpenseCard(expense))}
-        </div>
+        <Card className="border-border/50">
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <Receipt className="h-8 w-8 text-primary" />
+            </div>
+            <h3 className="text-lg font-medium mb-1">No confirmed expenses</h3>
+            <p className="text-muted-foreground text-sm text-center max-w-sm">
+              Confirmed expenses will appear here once you finalize them
+            </p>
+          </CardContent>
+        </Card>
       );
+    }
 
     return (
-      <Card className="border-border/50">
-        <CardContent className="flex flex-col items-center justify-center py-16">
-          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-            <Receipt className="h-8 w-8 text-primary" />
+      <>
+        {/* YOUR EXPENSES Section */}
+        {(hasOwnedConfirmed || isConfirmedOwnedLoading) && (
+          <div className="space-y-4">
+            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+              Your Expenses
+            </h2>
+            <ExpenseList
+              expenses={confirmedOwnedExpenses}
+              isLoading={isConfirmedOwnedLoading}
+              ownership="OWNED"
+            />
           </div>
-          <h3 className="text-lg font-medium mb-1">No confirmed expenses</h3>
-          <p className="text-muted-foreground text-sm text-center max-w-sm">
-            Confirmed expenses will appear here once you finalize them
-          </p>
-        </CardContent>
-      </Card>
+        )}
+
+        {/* Divider between sections */}
+        {hasOwnedConfirmed && hasParticipatingConfirmed && (
+          <Separator className="my-6" />
+        )}
+
+        {/* PARTICIPATING Section */}
+        {(hasParticipatingConfirmed || isParticipatingConfirmedLoading) && (
+          <div className="space-y-4">
+            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+              Participating
+            </h2>
+            <ExpenseList
+              expenses={participatingConfirmedExpenses}
+              isLoading={isParticipatingConfirmedLoading}
+              ownership="PARTICIPATING"
+            />
+          </div>
+        )}
+      </>
     );
   };
 

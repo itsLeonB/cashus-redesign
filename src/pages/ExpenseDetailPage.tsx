@@ -109,10 +109,13 @@ export default function ExpenseDetailPage() {
 
   const calculationMethodDisplayByName = useMemo(() => {
     if (!calculationMethods) return {};
-    return calculationMethods.reduce((acc, method) => {
-      acc[method.name] = method.display;
-      return acc;
-    }, {} as Record<string, string>);
+    return calculationMethods.reduce(
+      (acc, method) => {
+        acc[method.name] = method.display;
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
   }, [calculationMethods]);
 
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
@@ -121,7 +124,7 @@ export default function ExpenseDetailPage() {
   // Item modal state
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ExpenseItemResponse | null>(
-    null
+    null,
   );
 
   // Fee modal state
@@ -143,7 +146,7 @@ export default function ExpenseDetailPage() {
   const [isDryRunLoading, setIsDryRunLoading] = useState(false);
 
   const participantProfiles = (expense?.participants || []).map(
-    (p) => p.profile
+    (p) => p.profile,
   );
 
   const calculateItemsTotal = () => {
@@ -226,7 +229,7 @@ export default function ExpenseDetailPage() {
         onSettled: () => {
           setDeletingItemId(null);
         },
-      }
+      },
     );
   };
 
@@ -254,7 +257,7 @@ export default function ExpenseDetailPage() {
         onSettled: () => {
           setDeletingFeeId(null);
         },
-      }
+      },
     );
   };
 
@@ -325,6 +328,8 @@ export default function ExpenseDetailPage() {
 
   const isConfirmed = expense.status === "CONFIRMED";
   const isReady = expense.status === "READY";
+  const isOwner = expense.creator.isUser;
+  const canEdit = isOwner && !isConfirmed;
 
   const billInformationSection = () => {
     if (isConfirmed && !expense.billExists) return null;
@@ -369,7 +374,7 @@ export default function ExpenseDetailPage() {
                     View Image
                   </Button>
                 )}
-                {isRetryableStatus(expense.bill.status) && (
+                {isRetryableStatus(expense.bill.status) && canEdit && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -380,7 +385,7 @@ export default function ExpenseDetailPage() {
                     Retry
                   </Button>
                 )}
-                {expense.bill.status === "NOT_DETECTED" && !isConfirmed && (
+                {expense.bill.status === "NOT_DETECTED" && canEdit && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -392,7 +397,7 @@ export default function ExpenseDetailPage() {
                 )}
               </>
             ) : (
-              !isConfirmed && (
+              canEdit && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -415,7 +420,7 @@ export default function ExpenseDetailPage() {
       <Card className="border-border/50">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="font-display">Additional Fees</CardTitle>
-          {!isConfirmed && (
+          {canEdit && (
             <Button size="sm" variant="outline" onClick={openAddFeeModal}>
               <Plus className="h-4 w-4 mr-1" />
               Add Fee
@@ -440,7 +445,7 @@ export default function ExpenseDetailPage() {
                     <span className="font-semibold tabular-nums">
                       {formatCurrency(fee.amount)}
                     </span>
-                    {!isConfirmed && (
+                    {canEdit && (
                       <div className="flex gap-1">
                         <Button
                           size="icon"
@@ -532,13 +537,13 @@ export default function ExpenseDetailPage() {
                       size="xs"
                     />
                     <span className="font-medium text-foreground">
-                      {expense.payer.name}
+                      {expense.payer.isUser ? "You" : expense.payer.name}
                     </span>
                   </>
                 ) : (
                   <span>No payer yet</span>
                 )}
-                {!isConfirmed && (
+                {canEdit && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -573,7 +578,7 @@ export default function ExpenseDetailPage() {
       <Card className="border-border/50">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="font-display">Items</CardTitle>
-          {!isConfirmed && (
+          {canEdit && (
             <Button size="sm" variant="outline" onClick={openAddItemModal}>
               <Plus className="h-4 w-4 mr-1" />
               Add Item
@@ -596,10 +601,10 @@ export default function ExpenseDetailPage() {
                 <div className="flex items-center gap-2">
                   <p className="text-lg font-semibold tabular-nums">
                     {formatCurrency(
-                      Number.parseFloat(item.amount) * item.quantity
+                      Number.parseFloat(item.amount) * item.quantity,
                     )}
                   </p>
-                  {!isConfirmed && (
+                  {canEdit && (
                     <div className="flex gap-1">
                       <Button
                         size="icon"
@@ -633,6 +638,7 @@ export default function ExpenseDetailPage() {
                   expenseId={expense.id}
                   availableParticipants={participantProfiles}
                   isConfirmed={isConfirmed}
+                  isReadOnly={!isOwner}
                 />
               </div>
             </div>
@@ -641,7 +647,7 @@ export default function ExpenseDetailPage() {
           {expense.items?.length < 1 ? (
             <div className="text-center py-8 text-muted-foreground">
               <p>No items yet.</p>
-              {!isConfirmed && (
+              {canEdit && (
                 <Button
                   variant="outline"
                   className="mt-2"
@@ -686,7 +692,7 @@ export default function ExpenseDetailPage() {
 
           {/* Action Buttons */}
           <div className="flex flex-col gap-3 mt-6">
-            {!isConfirmed && (
+            {canEdit && (
               <>
                 <Button
                   className="w-full"
@@ -765,6 +771,15 @@ export default function ExpenseDetailPage() {
                   </AlertDialogContent>
                 </AlertDialog>
               </>
+            )}
+
+            {/* View-only helper text for non-owners */}
+            {!isOwner && !isConfirmed && (
+              <div className="text-center py-4 px-6 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  Only the creator can edit or confirm this expense
+                </p>
+              </div>
             )}
           </div>
         </CardContent>

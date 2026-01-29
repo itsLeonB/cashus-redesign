@@ -16,8 +16,11 @@ import {
 } from "./types";
 
 export const groupExpensesApi = {
-  getAll: (status?: string) => {
-    const query = status ? `?status=${status}` : "";
+  getAll: (status?: string, ownership?: string) => {
+    const params = new URLSearchParams();
+    if (status) params.append("status", status);
+    if (ownership) params.append("ownership", ownership);
+    const query = params.toString() ? `?${params.toString()}` : "";
     return apiClient.get<GroupExpenseResponse[]>(`/group-expenses${query}`);
   },
 

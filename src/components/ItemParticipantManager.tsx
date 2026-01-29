@@ -14,6 +14,7 @@ interface ItemParticipantManagerProps {
   expenseId: string;
   availableParticipants: SimpleProfile[];
   isConfirmed: boolean;
+  isReadOnly?: boolean;
 }
 
 // Map of profileId -> weight (presence means selected, weight >= 1)
@@ -21,7 +22,7 @@ type ParticipantWeights = Record<string, number>;
 
 // Helper to convert participant response to weight map
 function participantsToWeights(
-  participants: ExpenseItemResponse["participants"] | undefined
+  participants: ExpenseItemResponse["participants"] | undefined,
 ): ParticipantWeights {
   if (!participants) return {};
   return participants.reduce<ParticipantWeights>((acc, p) => {
@@ -49,7 +50,9 @@ export function ItemParticipantManager({
   expenseId,
   availableParticipants,
   isConfirmed,
+  isReadOnly = false,
 }: Readonly<ItemParticipantManagerProps>) {
+  const canEdit = !isConfirmed && !isReadOnly;
   const syncParticipants = useSyncItemParticipants(expenseId, item.id);
 
   // Weight-based state: presence in map = selected, value = weight
@@ -57,7 +60,7 @@ export function ItemParticipantManager({
 
   // Show advanced mode if any weight > 1 on initial load
   const [showAdvanced, setShowAdvanced] = useState(() =>
-    hasCustomWeights(initialWeights)
+    hasCustomWeights(initialWeights),
   );
 
   const [weights, setWeights] = useState<ParticipantWeights>(initialWeights);
@@ -75,7 +78,7 @@ export function ItemParticipantManager({
   // Toggle handler - adds with weight 1 or removes entirely
   const handleToggle = useCallback(
     (profileId: string) => {
-      if (isConfirmed) return;
+      if (!canEdit) return;
 
       setWeights((prev) => {
         const newWeights = { ...prev };
@@ -87,13 +90,13 @@ export function ItemParticipantManager({
         return newWeights;
       });
     },
-    [isConfirmed]
+    [canEdit],
   );
 
   // Weight adjustment handler
   const handleWeightChange = useCallback(
     (profileId: string, delta: number) => {
-      if (isConfirmed) return;
+      if (!canEdit) return;
 
       setWeights((prev) => {
         if (!(profileId in prev)) return prev;
@@ -101,7 +104,7 @@ export function ItemParticipantManager({
         return { ...prev, [profileId]: newWeight };
       });
     },
-    [isConfirmed]
+    [canEdit],
   );
 
   // Effect to sync when debounced weights change
@@ -126,7 +129,7 @@ export function ItemParticipantManager({
           ([profileId, weight]) => ({
             profileId,
             weight,
-          })
+          }),
         );
 
         await syncParticipants.mutateAsync({
@@ -213,7 +216,7 @@ export function ItemParticipantManager({
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">Split between:</p>
         <div className="flex items-center gap-2">
-          {!isConfirmed && Object.keys(weights).length > 0 && (
+          {canEdit && Object.keys(weights).length > 0 && (
             <Button
               type="button"
               variant="ghost"
@@ -238,7 +241,7 @@ export function ItemParticipantManager({
           const shareAmount =
             totalWeight > 0 ? (weight / totalWeight) * itemAmount : 0;
 
-          if (isConfirmed && !isSelected) return null;
+          if (!canEdit && !isSelected) return null;
 
           return (
             <div
@@ -247,20 +250,20 @@ export function ItemParticipantManager({
             >
               <button
                 type="button"
-                disabled={isConfirmed}
+                disabled={!canEdit}
                 onClick={() => handleToggle(participant.id)}
                 className={cn(
                   "flex items-center gap-2 rounded-full px-3 py-1 border transition-colors",
                   isSelected && "border-primary bg-primary/10 text-primary",
                   !isSelected &&
-                    isConfirmed &&
+                    !canEdit &&
                     "border-border/50 opacity-50 cursor-not-allowed",
                   !isSelected &&
-                    !isConfirmed &&
-                    "border-border/50 hover:border-border"
+                    canEdit &&
+                    "border-border/50 hover:border-border",
                 )}
               >
-                {!isConfirmed && (
+                {canEdit && (
                   <Checkbox
                     checked={isSelected}
                     className="h-3 w-3 pointer-events-none"
@@ -282,7 +285,7 @@ export function ItemParticipantManager({
               </button>
 
               {/* Advanced weight controls */}
-              {showAdvanced && isSelected && !isConfirmed && (
+              {showAdvanced && isSelected && canEdit && (
                 <div className="flex items-center gap-1">
                   <Button
                     type="button"
