@@ -31,7 +31,7 @@ export default function LoginPage() {
       await login(email, password);
       navigate("/dashboard");
     } catch (error: unknown) {
-      const err = error as { message?: string };
+      const err = error as Error;
       toast({
         variant: "destructive",
         title: "Login failed",

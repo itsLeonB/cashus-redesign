@@ -57,14 +57,14 @@ export default function OAuthCallbackPage() {
           const error = err as { message?: string };
           setError(error.message || "Failed to complete authentication");
         },
-      }
+      },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provider, searchParams, navigate, refreshUser, handleOAuth]);
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-dvh flex items-center justify-center p-4">
         <Card className="w-full max-w-md border-border/50">
           <CardContent className="flex flex-col items-center gap-4 text-center py-8">
             <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -82,7 +82,7 @@ export default function OAuthCallbackPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-dvh flex items-center justify-center p-4">
       <Card className="w-full max-w-md border-border/50">
         <CardContent className="flex flex-col items-center gap-4 text-center py-8">
           <Loader2 className="h-12 w-12 text-primary animate-spin" />
