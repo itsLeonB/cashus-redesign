@@ -86,6 +86,8 @@ export function NotificationHandler() {
   }, [notificationId, isError, error]);
 
   useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+
     const handleMessage = (event: MessageEvent) => {
       console.log("[NotificationHandler] Received SW message:", event.data);
       if (event.data?.type === "NOTIFICATION_CLICK") {
