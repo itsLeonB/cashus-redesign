@@ -46,7 +46,7 @@ export function NotificationHandler() {
       lastRefetchedId.current = notificationId;
       refetch();
     }
-  }, [notificationId, isSuccess, !!notification, isFetching, refetch]);
+  }, [notificationId, isSuccess, notification, isFetching, refetch]);
 
   useEffect(() => {
     if (
