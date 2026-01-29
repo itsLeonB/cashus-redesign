@@ -19,6 +19,7 @@ import {
 } from "@/hooks/useApi";
 import { AddTransferMethodModal } from "@/components/AddTransferMethodModal";
 import { TransferMethodsList } from "@/components/TransferMethodsList";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import {
   User,
   Mail,
@@ -29,7 +30,7 @@ import {
   LogOut,
   KeyRound,
   Plus,
-  CreditCard,
+  Bell,
 } from "lucide-react";
 
 export default function ProfilePage() {
@@ -38,6 +39,9 @@ export default function ProfilePage() {
   const [name, setName] = useState(user?.name || "");
   const [addMethodModalOpen, setAddMethodModalOpen] = useState(false);
   const { toast } = useToast();
+
+  const { permission, isSupported, enableNotifications, isLoading } =
+    usePushNotifications();
 
   const { data: transferMethods, isLoading: isLoadingTransferMethods } =
     useMyTransferMethods();
@@ -116,6 +120,12 @@ export default function ProfilePage() {
         Edit
       </>
     );
+  };
+
+  const notificationPermissionDisplay = {
+    granted: "You are receiving notifications",
+    denied: "Notifications are blocked",
+    default: "Enable notifications for this device",
   };
 
   return (
@@ -203,7 +213,6 @@ export default function ProfilePage() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="font-display flex items-center gap-2">
-                <CreditCard className="h-5 w-5" />
                 Transfer Methods
               </CardTitle>
               <CardDescription>
@@ -225,6 +234,54 @@ export default function ProfilePage() {
             methods={transferMethods}
             isLoading={isLoadingTransferMethods}
           />
+        </CardContent>
+      </Card>
+
+      {/* Notifications */}
+      <Card className="border-border/50">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="font-display flex items-center gap-2">
+                Notifications
+              </CardTitle>
+              <CardDescription>
+                Stay updated with push notifications
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Push Notifications</p>
+              <p className="text-sm text-muted-foreground">
+                {notificationPermissionDisplay[permission]}
+              </p>
+            </div>
+            {permission === "granted" ? (
+              <Button
+                variant="outline"
+                disabled
+                className="text-green-600 border-green-200 bg-green-50 opacity-100"
+              >
+                Enabled
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                onClick={enableNotifications}
+                disabled={isLoading || !isSupported}
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Bell className="h-4 w-4 mr-2" />
+                )}
+                Enable
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 

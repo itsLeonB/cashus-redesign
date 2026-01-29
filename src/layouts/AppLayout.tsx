@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
+import { NotificationHandler } from "@/components/NotificationHandler";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -43,7 +44,7 @@ export function AppLayout() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-dvh flex items-center justify-center bg-background">
         <div className="animate-pulse">
           <Logo size="lg" />
         </div>
@@ -56,7 +57,8 @@ export function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
+      <NotificationHandler />
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -68,7 +70,7 @@ export function AppLayout() {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 w-64 h-screen bg-sidebar border-r border-sidebar-border transform transition-transform duration-200 ease-in-out lg:translate-x-0",
+          "fixed top-0 left-0 z-50 w-64 h-dvh bg-sidebar border-r border-sidebar-border transform transition-transform duration-200 ease-in-out lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >

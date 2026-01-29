@@ -7,6 +7,7 @@ export interface Notification {
   entityId: string;
   metadata: Record<string, string>;
   createdAt: string;
+  title: string;
 }
 
 export const notificationApi = {
@@ -15,4 +16,7 @@ export const notificationApi = {
   markAsRead: (id: string) => apiClient.patch(`/notifications/${id}`),
 
   markAllAsRead: () => apiClient.patch("/notifications"),
+
+  subscribe: (subscription: PushSubscriptionJSON) =>
+    apiClient.post("/push/subscribe", subscription),
 };

@@ -11,7 +11,7 @@ export default function VerifyRegistrationPage() {
   const token = searchParams.get("token");
 
   const [status, setStatus] = useState<"loading" | "success" | "error">(
-    "loading"
+    "loading",
   );
   const [message, setMessage] = useState("");
   const { mutate: verifyRegistration } = useVerifyRegistration();
@@ -29,7 +29,7 @@ export default function VerifyRegistrationPage() {
       onSuccess: (response) => {
         setStatus("success");
         setMessage(
-          response.message || "Your email has been verified successfully!"
+          response.message || "Your email has been verified successfully!",
         );
         timeoutId = setTimeout(() => navigate("/login"), 3000);
       },
@@ -37,7 +37,7 @@ export default function VerifyRegistrationPage() {
         const err = error as { message?: string };
         setStatus("error");
         setMessage(
-          err.message || "Verification failed. The token may have expired."
+          err.message || "Verification failed. The token may have expired.",
         );
       },
     });
@@ -48,7 +48,7 @@ export default function VerifyRegistrationPage() {
   }, [token, navigate, verifyRegistration]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-dvh flex items-center justify-center p-4">
       <Card className="w-full max-w-md border-border/50">
         <CardHeader className="text-center">
           <CardTitle className="font-display text-2xl">

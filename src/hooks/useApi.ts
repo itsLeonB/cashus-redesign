@@ -521,12 +521,16 @@ export function useMarkNotificationAsRead(id: string) {
     mutationFn: () => notificationApi.markAsRead(id),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: queryKeys.notifications.all,
-      });
-      queryClient.invalidateQueries({
         queryKey: queryKeys.notifications.unread,
       });
     },
+  });
+}
+
+export function useSubscribeToPush() {
+  return useMutation({
+    mutationFn: (subscription: PushSubscriptionJSON) =>
+      notificationApi.subscribe(subscription),
   });
 }
 
@@ -536,9 +540,6 @@ export function useMarkAllNotificationsAsRead() {
   return useMutation({
     mutationFn: notificationApi.markAllAsRead,
     onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.notifications.all,
-      });
       queryClient.invalidateQueries({
         queryKey: queryKeys.notifications.unread,
       });

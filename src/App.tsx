@@ -20,10 +20,10 @@ import DashboardPage from "@/pages/DashboardPage";
 // Lazy load other pages
 const RegisterPage = lazy(() => import("@/pages/auth/RegisterPage"));
 const ForgotPasswordPage = lazy(
-  () => import("@/pages/auth/ForgotPasswordPage")
+  () => import("@/pages/auth/ForgotPasswordPage"),
 );
 const VerifyRegistrationPage = lazy(
-  () => import("@/pages/auth/VerifyRegistrationPage")
+  () => import("@/pages/auth/VerifyRegistrationPage"),
 );
 const ResetPasswordPage = lazy(() => import("@/pages/auth/ResetPasswordPage"));
 const OAuthCallbackPage = lazy(() => import("@/pages/auth/OAuthCallbackPage"));
@@ -59,7 +59,7 @@ const App = () => {
             <UserJotTracker />
             <Suspense
               fallback={
-                <div className="h-screen w-full flex items-center justify-center">
+                <div className="h-dvh w-full flex items-center justify-center">
                   <Spinner />
                 </div>
               }
