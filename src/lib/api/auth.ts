@@ -1,23 +1,27 @@
 import { apiClient } from "./client";
 import {
-  LoginResponse,
+  TokenResponse,
   LoginRequest,
   RegisterRequest,
   ResetPasswordRequest,
   UserProfile,
+  RefreshTokenRequest,
 } from "./types";
 
 export const authApi = {
   login: (data: LoginRequest) =>
-    apiClient.post<LoginResponse>("/auth/login", data),
+    apiClient.post<TokenResponse>("/auth/login", data),
 
   register: (data: RegisterRequest) =>
     apiClient.post<{ message: string }>("/auth/register", data),
 
   verifyRegistration: (token: string) =>
     apiClient.get<{ message: string }>(
-      `/auth/verify-registration?token=${token}`
+      `/auth/verify-registration?token=${token}`,
     ),
+
+  refreshToken: (data: RefreshTokenRequest) =>
+    apiClient.put<TokenResponse>("/auth/refresh", data),
 
   forgotPassword: (email: string) =>
     apiClient.post<{ message: string }>("/auth/password-reset", { email }),
@@ -31,7 +35,9 @@ export const authApi = {
     apiClient.patch<UserProfile>("/profile", { name }),
 
   logout: () => {
-    apiClient.setToken(null);
+    apiClient
+      .delete("/auth/logout")
+      .then(() => apiClient.setTokens(null, null));
   },
 
   getOAuthUrl: (provider: string) =>
@@ -40,7 +46,7 @@ export const authApi = {
     }/v1/auth/${provider}`,
 
   handleOAuthCallback: (provider: string, code: string, state: string | null) =>
-    apiClient.get<LoginResponse>(`/auth/${provider}/callback`, {
+    apiClient.get<TokenResponse>(`/auth/${provider}/callback`, {
       code,
       state,
     }),

@@ -38,8 +38,19 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       setUser(profile);
     } catch {
       setUser(null);
-      apiClient.setToken(null);
+      apiClient.setTokens(null, null);
     }
+  }, []);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setUser(null);
+    };
+
+    globalThis.addEventListener("api:unauthorized", handleUnauthorized);
+    return () => {
+      globalThis.removeEventListener("api:unauthorized", handleUnauthorized);
+    };
   }, []);
 
   useEffect(() => {
@@ -54,7 +65,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const login = useCallback(
     async (email: string, password: string) => {
       const response = await authApi.login({ email, password });
-      apiClient.setToken(response.token);
+      apiClient.setTokens(response.token, response.refreshToken);
       const profile = await authApi.getProfile();
       setUser(profile);
 
