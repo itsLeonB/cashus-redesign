@@ -97,8 +97,6 @@ class ApiClient {
           this.onRefreshed(data.token);
         } catch (error) {
           this.isRefreshing = false;
-          this.setTokens(null, null);
-          globalThis.dispatchEvent(new CustomEvent("api:unauthorized"));
           throw error;
         }
       }
@@ -217,8 +215,6 @@ class ApiClient {
             this.onRefreshed(data.token);
           } catch (error) {
             this.isRefreshing = false;
-            this.setTokens(null, null);
-            globalThis.dispatchEvent(new CustomEvent("api:unauthorized"));
             throw error;
           }
         }

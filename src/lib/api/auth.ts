@@ -34,11 +34,7 @@ export const authApi = {
   updateProfile: (name: string) =>
     apiClient.patch<UserProfile>("/profile", { name }),
 
-  logout: () => {
-    apiClient
-      .delete("/auth/logout")
-      .then(() => apiClient.setTokens(null, null));
-  },
+  logout: () => apiClient.delete("/auth/logout"),
 
   getOAuthUrl: (provider: string) =>
     `${

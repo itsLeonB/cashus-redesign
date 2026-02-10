@@ -10,6 +10,8 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { UserProfile, authApi, apiClient } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
+import { clearNotificationContext } from "@/lib/notificationPersistence";
+import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -21,7 +23,7 @@ interface AuthContextType {
     password: string,
     passwordConfirmation: string,
   ) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -31,6 +33,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const refreshUser = useCallback(async () => {
     try {
@@ -38,19 +41,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       setUser(profile);
     } catch {
       setUser(null);
-      apiClient.setTokens(null, null);
     }
-  }, []);
-
-  useEffect(() => {
-    const handleUnauthorized = () => {
-      setUser(null);
-    };
-
-    globalThis.addEventListener("api:unauthorized", handleUnauthorized);
-    return () => {
-      globalThis.removeEventListener("api:unauthorized", handleUnauthorized);
-    };
   }, []);
 
   useEffect(() => {
@@ -94,10 +85,27 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     [],
   );
 
-  const logout = useCallback(() => {
-    authApi.logout();
-    setUser(null);
-    queryClient.clear();
+  const logout = useCallback(async () => {
+    try {
+      await authApi.logout();
+      setUser(null);
+      apiClient.setTokens(null, null);
+      clearNotificationContext();
+      queryClient.clear();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out",
+      });
+    } catch (error) {
+      const err = error as { message?: string };
+      console.error("Logout failed:", error);
+      toast({
+        variant: "destructive",
+        title: "Logout failed",
+        description: err.message || "Failed to log out. Please try again.",
+      });
+      throw error;
+    }
   }, [queryClient]);
 
   const value = useMemo(
