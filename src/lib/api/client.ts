@@ -82,7 +82,12 @@ class ApiClient {
       } catch (error) {
         this.isRefreshing = false;
         this.onRefreshed(null);
-        throw error;
+        console.error("Token refresh failed:", error);
+        throw {
+          message: "Session expired",
+          statusCode: 401,
+          isRefreshFailure: true,
+        } as ApiError;
       }
     }
 
