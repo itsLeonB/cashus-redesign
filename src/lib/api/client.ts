@@ -152,6 +152,15 @@ class ApiClient {
         message: "An unexpected error occurred",
         statusCode: response.status,
       }));
+
+      // Normalize message for validation errors
+      if (!error.message && error.errors?.[0]?.detail) {
+        error.message = error.errors[0].detail;
+      }
+      if (!error.statusCode) {
+        error.statusCode = response.status;
+      }
+
       throw error;
     }
 
@@ -228,40 +237,45 @@ class ApiClient {
 
     const url = `${this.baseUrl}${endpoint}`;
 
-    const executeRequest = async (token: string | null): Promise<T> => {
-      const headers: HeadersInit = {};
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
+    const headers: HeadersInit = {};
+    if (this.token) {
+      headers["Authorization"] = `Bearer ${this.token}`;
+    }
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
+
+    if (response.status === 401 && !isRetry && this.refreshToken) {
+      return this.handleRefreshFlow(() =>
+        this.uploadFile<T>(endpoint, formData, true),
+      );
+    }
+
+    if (!response.ok) {
+      const error: ApiError = await response.json().catch(() => ({
+        message: "An unexpected error occurred",
+        statusCode: response.status,
+      }));
+
+      // Normalize message for validation errors
+      if (!error.message && error.errors?.[0]?.detail) {
+        error.message = error.errors[0].detail;
+      }
+      if (!error.statusCode) {
+        error.statusCode = response.status;
       }
 
-      const response = await fetch(url, {
-        method: "POST",
-        headers,
-        body: formData,
-      });
+      throw error;
+    }
 
-      if (response.status === 401 && !isRetry && this.refreshToken) {
-        return this.handleRefreshFlow(() =>
-          this.uploadFile<T>(endpoint, formData, true),
-        );
-      }
-
-      if (!response.ok) {
-        const error: ApiError = await response.json().catch(() => ({
-          message: "An unexpected error occurred",
-          statusCode: response.status,
-        }));
-        throw error;
-      }
-
-      const data = await response.json();
-      if (data && typeof data === "object" && "data" in data) {
-        return data.data;
-      }
-      return data;
-    };
-
-    return executeRequest(this.token);
+    const data = await response.json();
+    if (data && typeof data === "object" && "data" in data) {
+      return data.data;
+    }
+    return data;
   }
 }
 

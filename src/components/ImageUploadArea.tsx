@@ -4,6 +4,8 @@ import { Camera, ImageIcon, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useUploadExpenseBill } from "@/hooks/useApi";
+import { ApiError } from "@/lib/api/types";
+import { AlertCircle } from "lucide-react";
 
 interface ImageUploadAreaProps {
   expenseId?: string;
@@ -19,6 +21,7 @@ export function ImageUploadArea({
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -31,6 +34,7 @@ export function ImageUploadArea({
   }, [previewUrl]);
 
   const handleFileSelect = (file: File) => {
+    setUploadError(null);
     if (!file.type.startsWith("image/")) {
       toast({
         variant: "destructive",
@@ -57,15 +61,26 @@ export function ImageUploadArea({
             onUploadSuccess?.();
           },
           onError: (error: unknown) => {
-            const err = error as { message?: string };
-            toast({
-              variant: "destructive",
-              title: "Upload failed",
-              description: err.message || "Something went wrong",
-            });
-            clearInputs();
+            const err = error as ApiError;
+
+            if (err.statusCode === 422) {
+              setUploadError(
+                err.message ||
+                  "This image couldn't be processed. Please try another photo.",
+              );
+              if (err.errors) {
+                console.error("Backend validation failed:", err.errors);
+              }
+            } else {
+              toast({
+                variant: "destructive",
+                title: "Upload failed",
+                description: err.message || "Something went wrong",
+              });
+              clearInputs();
+            }
           },
-        }
+        },
       );
     }
   };
@@ -97,6 +112,7 @@ export function ImageUploadArea({
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setSelectedFile(null);
     setPreviewUrl(null);
+    setUploadError(null);
   };
 
   if (selectedFile && previewUrl) {
@@ -104,7 +120,7 @@ export function ImageUploadArea({
       <div
         className={cn(
           "relative rounded-lg border border-border overflow-hidden",
-          className
+          className,
         )}
       >
         <img
@@ -127,6 +143,12 @@ export function ImageUploadArea({
         >
           <X className="h-4 w-4" />
         </Button>
+        {uploadError && (
+          <div className="absolute inset-x-0 bottom-0 bg-destructive/90 text-destructive-foreground p-2 text-xs flex items-center gap-2">
+            <AlertCircle className="h-3 w-3 shrink-0" />
+            <span className="flex-1">{uploadError}</span>
+          </div>
+        )}
       </div>
     );
   }
@@ -139,7 +161,7 @@ export function ImageUploadArea({
         onDragLeave={handleDragLeave}
         className={cn(
           "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
-          isDragging ? "border-primary bg-primary/5" : "border-border"
+          isDragging ? "border-primary bg-primary/5" : "border-border",
         )}
       >
         <ImageIcon className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
