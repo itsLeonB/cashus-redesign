@@ -8,7 +8,8 @@ class ApiClient {
   private token: string | null = null;
   private refreshToken: string | null = null;
   private isRefreshing = false;
-  private refreshSubscribers: ((token: string) => void)[] = [];
+  private refreshFailed = false;
+  private refreshSubscribers: ((token: string | null) => void)[] = [];
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
@@ -19,6 +20,7 @@ class ApiClient {
   setTokens(token: string | null, refreshToken: string | null) {
     this.token = token;
     this.refreshToken = refreshToken;
+    this.refreshFailed = false;
 
     if (token) {
       localStorage.setItem("authToken", token);
@@ -37,12 +39,16 @@ class ApiClient {
     return this.token;
   }
 
-  private onRefreshed(token: string) {
+  isRefreshFailed() {
+    return this.refreshFailed;
+  }
+
+  private onRefreshed(token: string | null) {
     this.refreshSubscribers.forEach((cb) => cb(token));
     this.refreshSubscribers = [];
   }
 
-  private addRefreshSubscriber(cb: (token: string) => void) {
+  private addRefreshSubscriber(cb: (token: string | null) => void) {
     this.refreshSubscribers.push(cb);
   }
 
@@ -51,6 +57,14 @@ class ApiClient {
     options: RequestInit = {},
     isRetry = false,
   ): Promise<T> {
+    if (this.refreshFailed) {
+      throw {
+        message: "Session expired",
+        statusCode: 401,
+        isRefreshFailure: true,
+      } as ApiError;
+    }
+
     const url = `${this.baseUrl}${endpoint}`;
 
     const headers: HeadersInit = {
@@ -79,6 +93,11 @@ class ApiClient {
           });
 
           if (!refreshResponse.ok) {
+            // Only mark as terminal failure if it's an auth error (4xx)
+            // Network errors or 5xx might be transient
+            if (refreshResponse.status < 500) {
+              this.refreshFailed = true;
+            }
             throw new Error("Refresh failed");
           }
 
@@ -88,13 +107,27 @@ class ApiClient {
           this.onRefreshed(data.token);
         } catch (error) {
           this.isRefreshing = false;
+          // If we marked it as failed, notify subscribers with null
+          if (this.refreshFailed) {
+            this.onRefreshed(null);
+          }
           throw error;
         }
       }
 
       return new Promise<T>((resolve, reject) => {
-        this.addRefreshSubscriber(() => {
-          this.request<T>(endpoint, options, true).then(resolve).catch(reject);
+        this.addRefreshSubscriber((newToken) => {
+          if (newToken) {
+            this.request<T>(endpoint, options, true)
+              .then(resolve)
+              .catch(reject);
+          } else {
+            reject({
+              message: "Session expired",
+              statusCode: 401,
+              isRefreshFailure: true,
+            } as ApiError);
+          }
         });
       });
     }

@@ -24,7 +24,8 @@ const navigation = [
 ];
 
 export function AppLayout() {
-  const { isAuthenticated, isLoading, user, logout } = useAuth();
+  const { isAuthenticated, isLoading, isRefreshFailed, user, logout } =
+    useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
 
@@ -49,6 +50,16 @@ export function AppLayout() {
           <Logo size="lg" />
         </div>
       </div>
+    );
+  }
+
+  if (isRefreshFailed) {
+    return (
+      <Navigate
+        to="/login?expired=true"
+        state={{ from: location.pathname }}
+        replace
+      />
     );
   }
 
