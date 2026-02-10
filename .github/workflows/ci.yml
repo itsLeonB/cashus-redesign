@@ -43,7 +43,5 @@ jobs:
         uses: ./.github/actions/setup
       - name: Check unused components
         run: bun run scripts/check-unused-components.ts
-        continue-on-error: true
       - name: Check unused dependencies
         run: bunx depcheck
-        continue-on-error: true
