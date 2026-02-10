@@ -33,15 +33,6 @@ class ApiClient {
     }
   }
 
-  setToken(token: string | null) {
-    this.token = token;
-    if (token) {
-      localStorage.setItem("authToken", token);
-    } else {
-      localStorage.removeItem("authToken");
-    }
-  }
-
   getToken() {
     return this.token;
   }

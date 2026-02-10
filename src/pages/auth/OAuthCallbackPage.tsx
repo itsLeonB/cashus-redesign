@@ -48,7 +48,7 @@ export default function OAuthCallbackPage() {
       { provider, code, state },
       {
         onSuccess: (response) => {
-          apiClient.setToken(response.token);
+          apiClient.setTokens(response.token, response.refreshToken);
           refreshUser().then(() => {
             navigate("/dashboard", { replace: true });
           });
