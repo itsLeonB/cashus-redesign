@@ -20,6 +20,7 @@ import {
 import { AddTransferMethodModal } from "@/components/AddTransferMethodModal";
 import { TransferMethodsList } from "@/components/TransferMethodsList";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { LogoutConfirmDialog } from "@/components/LogoutConfirmDialog";
 import {
   User,
   Mail,
@@ -38,6 +39,7 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || "");
   const [addMethodModalOpen, setAddMethodModalOpen] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const { toast } = useToast();
 
   const { permission, isSupported, enableNotifications, isLoading } =
@@ -103,25 +105,6 @@ export default function ProfilePage() {
     });
   };
 
-  const cardButtonDisplay = () => {
-    if (isUpdating) return <Loader2 className="h-4 w-4 animate-spin" />;
-
-    if (isEditing)
-      return (
-        <>
-          <Save className="h-4 w-4 mr-2" />
-          Save
-        </>
-      );
-
-    return (
-      <>
-        <Edit2 className="h-4 w-4 mr-2" />
-        Edit
-      </>
-    );
-  };
-
   const notificationPermissionDisplay = {
     granted: "You are receiving notifications",
     denied: "Notifications are blocked",
@@ -146,17 +129,46 @@ export default function ProfilePage() {
               name={user?.name || "User"}
               imageUrl={user?.avatar}
               size="lg"
+              className="flex-shrink-0"
             />
-            <div className="flex-1">
-              <CardTitle className="font-display">{user?.name}</CardTitle>
-              <CardDescription>{user?.email}</CardDescription>
+            <div className="flex-1 min-w-0">
+              <CardTitle className="font-display truncate">{user?.name}</CardTitle>
+              <CardDescription className="truncate">{user?.email}</CardDescription>
             </div>
             <Button
               variant={isEditing ? "default" : "outline"}
+              size="icon"
+              className="sm:hidden flex-shrink-0"
               onClick={() => (isEditing ? handleSave() : setIsEditing(true))}
               disabled={isUpdating}
             >
-              {cardButtonDisplay()}
+              {isUpdating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : isEditing ? (
+                <Save className="h-4 w-4" />
+              ) : (
+                <Edit2 className="h-4 w-4" />
+              )}
+            </Button>
+            <Button
+              variant={isEditing ? "default" : "outline"}
+              className="hidden sm:inline-flex flex-shrink-0"
+              onClick={() => (isEditing ? handleSave() : setIsEditing(true))}
+              disabled={isUpdating}
+            >
+              {isUpdating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : isEditing ? (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save
+                </>
+              ) : (
+                <>
+                  <Edit2 className="h-4 w-4 mr-2" />
+                  Edit
+                </>
+              )}
             </Button>
           </div>
         </CardHeader>
@@ -186,7 +198,7 @@ export default function ProfilePage() {
                 <Mail className="h-4 w-4 text-muted-foreground" />
                 Email Address
               </Label>
-              <p className="text-sm py-2 px-3 bg-muted/30 rounded-lg text-muted-foreground">
+              <p className="text-sm py-2 px-3 bg-muted/30 rounded-lg text-muted-foreground break-all">
                 {user?.email}
               </p>
               <p className="text-xs text-muted-foreground">
@@ -210,8 +222,8 @@ export default function ProfilePage() {
       {/* Transfer Methods */}
       <Card className="border-border/50">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
               <CardTitle className="font-display flex items-center gap-2">
                 Transfer Methods
               </CardTitle>
@@ -222,10 +234,11 @@ export default function ProfilePage() {
             <Button
               variant="outline"
               size="sm"
+              className="flex-shrink-0"
               onClick={() => setAddMethodModalOpen(true)}
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Method
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Add Method</span>
             </Button>
           </div>
         </CardHeader>
@@ -240,20 +253,16 @@ export default function ProfilePage() {
       {/* Notifications */}
       <Card className="border-border/50">
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="font-display flex items-center gap-2">
-                Notifications
-              </CardTitle>
-              <CardDescription>
-                Stay updated with push notifications
-              </CardDescription>
-            </div>
-          </div>
+          <CardTitle className="font-display flex items-center gap-2">
+            Notifications
+          </CardTitle>
+          <CardDescription>
+            Stay updated with push notifications
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
               <p className="font-medium">Push Notifications</p>
               <p className="text-sm text-muted-foreground">
                 {notificationPermissionDisplay[permission]}
@@ -262,23 +271,26 @@ export default function ProfilePage() {
             {permission === "granted" ? (
               <Button
                 variant="outline"
+                size="sm"
                 disabled
-                className="text-green-600 border-green-200 bg-green-50 opacity-100"
+                className="text-green-600 border-green-200 bg-green-50 opacity-100 flex-shrink-0"
               >
                 Enabled
               </Button>
             ) : (
               <Button
                 variant="outline"
+                size="sm"
                 onClick={enableNotifications}
                 disabled={isLoading || !isSupported}
+                className="flex-shrink-0"
               >
                 {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <Loader2 className="h-4 w-4 animate-spin sm:mr-2" />
                 ) : (
-                  <Bell className="h-4 w-4 mr-2" />
+                  <Bell className="h-4 w-4 sm:mr-2" />
                 )}
-                Enable
+                <span className="hidden sm:inline">Enable</span>
               </Button>
             )}
           </div>
@@ -292,8 +304,8 @@ export default function ProfilePage() {
           <CardDescription>Manage your account security</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="min-w-0">
               <p className="font-medium">Reset Password</p>
               <p className="text-sm text-muted-foreground">
                 Send a password reset link to your email
@@ -301,8 +313,10 @@ export default function ProfilePage() {
             </div>
             <Button
               variant="outline"
+              size="sm"
               onClick={handleResetPassword}
               disabled={isResetting}
+              className="flex-shrink-0 self-start sm:self-auto"
             >
               {isResetting ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -326,14 +340,19 @@ export default function ProfilePage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="min-w-0">
               <p className="font-medium">Sign out</p>
               <p className="text-sm text-muted-foreground">
                 Sign out from your account on this device
               </p>
             </div>
-            <Button variant="destructive" onClick={logout}>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setLogoutDialogOpen(true)}
+              className="flex-shrink-0 self-start sm:self-auto"
+            >
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
             </Button>
@@ -345,6 +364,13 @@ export default function ProfilePage() {
       <AddTransferMethodModal
         open={addMethodModalOpen}
         onOpenChange={setAddMethodModalOpen}
+      />
+
+      {/* Logout confirmation */}
+      <LogoutConfirmDialog
+        open={logoutDialogOpen}
+        onOpenChange={setLogoutDialogOpen}
+        onConfirm={logout}
       />
     </div>
   );

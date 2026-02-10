@@ -47,7 +47,7 @@ const RecentExpenses = () => {
               />
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">
+              <p className="text-sm font-medium line-clamp-2 sm:truncate">
                 {expense.description}
               </p>
               {expense.description && expense.creator.name && (
