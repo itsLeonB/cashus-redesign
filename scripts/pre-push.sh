@@ -31,7 +31,7 @@ bun run scripts/check-unused-components.ts
 echo "⚠ Note: Unused component check is informational only"
 
 echo "5. Checking unused dependencies..."
-npx depcheck
+bunx depcheck
 
 echo "🎉 All checks passed! You may push."
 exit 0

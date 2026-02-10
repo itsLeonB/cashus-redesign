@@ -1,5 +1,5 @@
 name: Setup
-description: "Checkout, setup Bun, and install dependencies"
+description: "Setup Bun and install dependencies"
 
 runs:
   using: "composite"

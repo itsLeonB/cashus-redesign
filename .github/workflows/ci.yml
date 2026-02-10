@@ -45,5 +45,5 @@ jobs:
         run: bun run scripts/check-unused-components.ts
         continue-on-error: true
       - name: Check unused dependencies
-        run: npx depcheck
+        run: bunx depcheck
         continue-on-error: true
