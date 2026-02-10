@@ -44,12 +44,61 @@ class ApiClient {
   }
 
   private onRefreshed(token: string | null) {
-    this.refreshSubscribers.forEach((cb) => cb(token));
+    this.refreshSubscribers.forEach((cb) => {
+      cb(token);
+    });
     this.refreshSubscribers = [];
   }
 
   private addRefreshSubscriber(cb: (token: string | null) => void) {
     this.refreshSubscribers.push(cb);
+  }
+
+  private async handleRefreshFlow<T>(
+    retryAction: () => Promise<T>,
+  ): Promise<T> {
+    if (!this.isRefreshing) {
+      this.isRefreshing = true;
+      try {
+        const refreshResponse = await fetch(`${this.baseUrl}/auth/refresh`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refreshToken: this.refreshToken }),
+        });
+
+        if (!refreshResponse.ok) {
+          if (refreshResponse.status < 500) {
+            this.refreshFailed = true;
+          }
+          throw new Error("Refresh failed");
+        }
+
+        const { data } = await refreshResponse.json();
+        this.setTokens(data.token, data.refreshToken);
+        this.isRefreshing = false;
+        this.onRefreshed(data.token);
+
+        return retryAction();
+      } catch (error) {
+        this.isRefreshing = false;
+        this.onRefreshed(null);
+        throw error;
+      }
+    }
+
+    return new Promise<T>((resolve, reject) => {
+      this.addRefreshSubscriber((newToken) => {
+        if (newToken) {
+          retryAction().then(resolve).catch(reject);
+        } else {
+          reject({
+            message: "Session expired",
+            statusCode: 401,
+            isRefreshFailure: true,
+          } as ApiError);
+        }
+      });
+    });
   }
 
   private async request<T>(
@@ -83,55 +132,9 @@ class ApiClient {
     });
 
     if (response.status === 401 && !isRetry && this.refreshToken) {
-      if (!this.isRefreshing) {
-        this.isRefreshing = true;
-        try {
-          const refreshResponse = await fetch(`${this.baseUrl}/auth/refresh`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ refreshToken: this.refreshToken }),
-          });
-
-          if (!refreshResponse.ok) {
-            // Only mark as terminal failure if it's an auth error (4xx)
-            // Network errors or 5xx might be transient
-            if (refreshResponse.status < 500) {
-              this.refreshFailed = true;
-            }
-            throw new Error("Refresh failed");
-          }
-
-          const { data } = await refreshResponse.json();
-          this.setTokens(data.token, data.refreshToken);
-          this.isRefreshing = false;
-          this.onRefreshed(data.token);
-
-          // Triggering request retries directly
-          return this.request<T>(endpoint, options, true);
-        } catch (error) {
-          this.isRefreshing = false;
-          // Notify subscribers of failure to prevent hangs
-          this.onRefreshed(null);
-          throw error;
-        }
-      }
-
-      // Non-triggering requests wait for the refresh to complete
-      return new Promise<T>((resolve, reject) => {
-        this.addRefreshSubscriber((newToken) => {
-          if (newToken) {
-            this.request<T>(endpoint, options, true)
-              .then(resolve)
-              .catch(reject);
-          } else {
-            reject({
-              message: "Session expired",
-              statusCode: 401,
-              isRefreshFailure: true,
-            } as ApiError);
-          }
-        });
-      });
+      return this.handleRefreshFlow(() =>
+        this.request<T>(endpoint, options, true),
+      );
     }
 
     if (!response.ok) {
@@ -142,14 +145,12 @@ class ApiClient {
       throw error;
     }
 
-    // Handle 204 No Content
     if (response.status === 204) {
       return {} as T;
     }
 
     const data = await response.json();
 
-    // Auto-unwrap the data property if it exists, matching standard ApiResponse<T>
     if (data && typeof data === "object" && "data" in data) {
       return data.data;
     }
@@ -202,7 +203,11 @@ class ApiClient {
     return this.request<T>(endpoint, { method: "DELETE" });
   }
 
-  async uploadFile<T>(endpoint: string, formData: FormData): Promise<T> {
+  async uploadFile<T>(
+    endpoint: string,
+    formData: FormData,
+    isRetry = false,
+  ): Promise<T> {
     if (this.refreshFailed) {
       throw {
         message: "Session expired",
@@ -225,55 +230,10 @@ class ApiClient {
         body: formData,
       });
 
-      if (response.status === 401 && this.refreshToken) {
-        if (!this.isRefreshing) {
-          this.isRefreshing = true;
-          try {
-            const refreshResponse = await fetch(
-              `${this.baseUrl}/auth/refresh`,
-              {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ refreshToken: this.refreshToken }),
-              },
-            );
-
-            if (!refreshResponse.ok) {
-              if (refreshResponse.status < 500) {
-                this.refreshFailed = true;
-              }
-              throw new Error("Refresh failed");
-            }
-
-            const { data } = await refreshResponse.json();
-            this.setTokens(data.token, data.refreshToken);
-            this.isRefreshing = false;
-            this.onRefreshed(data.token);
-
-            // Triggering request retries directly
-            return executeRequest(data.token);
-          } catch (error) {
-            this.isRefreshing = false;
-            // Notify subscribers of failure to prevent hangs
-            this.onRefreshed(null);
-            throw error;
-          }
-        }
-
-        // Non-triggering requests wait for the refresh to complete
-        return new Promise<T>((resolve, reject) => {
-          this.addRefreshSubscriber((newToken) => {
-            if (newToken) {
-              executeRequest(newToken).then(resolve).catch(reject);
-            } else {
-              reject({
-                message: "Session expired",
-                statusCode: 401,
-                isRefreshFailure: true,
-              } as ApiError);
-            }
-          });
-        });
+      if (response.status === 401 && !isRetry && this.refreshToken) {
+        return this.handleRefreshFlow(() =>
+          this.uploadFile<T>(endpoint, formData, true),
+        );
       }
 
       if (!response.ok) {
