@@ -10,6 +10,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 
 import { Spinner } from "@/components/ui/spinner";
 import { useUserJotTracker } from "@/hooks/useUserJotTracker";
+import { useNotificationIntent } from "@/hooks/useNotificationIntent";
 
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { AppLayout } from "@/layouts/AppLayout";
@@ -48,6 +49,11 @@ const UserJotTracker = () => {
   return null;
 };
 
+const NotificationIntentTracker = () => {
+  useNotificationIntent();
+  return null;
+};
+
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
@@ -57,6 +63,7 @@ const App = () => {
         <BrowserRouter>
           <AuthProvider>
             <UserJotTracker />
+            <NotificationIntentTracker />
             <Suspense
               fallback={
                 <div className="h-dvh w-full flex items-center justify-center">
