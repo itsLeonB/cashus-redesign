@@ -19,10 +19,14 @@ const sessionStorageMock = (() => {
     clear: () => {
       store = {};
     },
+
+    // Below are unused but required for the type
+    length: 0,
+    key: () => "",
   };
 })();
 
-(globalThis as any).sessionStorage = sessionStorageMock;
+globalThis.sessionStorage = sessionStorageMock;
 
 describe("Notification Persistence", () => {
   beforeEach(() => {
