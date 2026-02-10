@@ -105,16 +105,18 @@ class ApiClient {
           this.setTokens(data.token, data.refreshToken);
           this.isRefreshing = false;
           this.onRefreshed(data.token);
+
+          // Triggering request retries directly
+          return this.request<T>(endpoint, options, true);
         } catch (error) {
           this.isRefreshing = false;
-          // If we marked it as failed, notify subscribers with null
-          if (this.refreshFailed) {
-            this.onRefreshed(null);
-          }
+          // Notify subscribers of failure to prevent hangs
+          this.onRefreshed(null);
           throw error;
         }
       }
 
+      // Non-triggering requests wait for the refresh to complete
       return new Promise<T>((resolve, reject) => {
         this.addRefreshSubscriber((newToken) => {
           if (newToken) {
@@ -201,6 +203,14 @@ class ApiClient {
   }
 
   async uploadFile<T>(endpoint: string, formData: FormData): Promise<T> {
+    if (this.refreshFailed) {
+      throw {
+        message: "Session expired",
+        statusCode: 401,
+        isRefreshFailure: true,
+      } as ApiError;
+    }
+
     const url = `${this.baseUrl}${endpoint}`;
 
     const executeRequest = async (token: string | null): Promise<T> => {
@@ -216,11 +226,6 @@ class ApiClient {
       });
 
       if (response.status === 401 && this.refreshToken) {
-        // For file uploads, it's easier to just trigger refresh if not already doing so
-        // and then retry. However, upload might be large.
-        // For simplicity, let's follow the same logic as request() but adapted for uploadFile.
-        // But wait, request() is more generic. Maybe I can refactor request to handle both?
-        // Let's keep it separate for now but handle 401.
         if (!this.isRefreshing) {
           this.isRefreshing = true;
           try {
@@ -232,20 +237,41 @@ class ApiClient {
                 body: JSON.stringify({ refreshToken: this.refreshToken }),
               },
             );
-            if (!refreshResponse.ok) throw new Error("Refresh failed");
+
+            if (!refreshResponse.ok) {
+              if (refreshResponse.status < 500) {
+                this.refreshFailed = true;
+              }
+              throw new Error("Refresh failed");
+            }
+
             const { data } = await refreshResponse.json();
             this.setTokens(data.token, data.refreshToken);
             this.isRefreshing = false;
             this.onRefreshed(data.token);
+
+            // Triggering request retries directly
+            return executeRequest(data.token);
           } catch (error) {
             this.isRefreshing = false;
+            // Notify subscribers of failure to prevent hangs
+            this.onRefreshed(null);
             throw error;
           }
         }
 
+        // Non-triggering requests wait for the refresh to complete
         return new Promise<T>((resolve, reject) => {
           this.addRefreshSubscriber((newToken) => {
-            executeRequest(newToken).then(resolve).catch(reject);
+            if (newToken) {
+              executeRequest(newToken).then(resolve).catch(reject);
+            } else {
+              reject({
+                message: "Session expired",
+                statusCode: 401,
+                isRefreshFailure: true,
+              } as ApiError);
+            }
           });
         });
       }
