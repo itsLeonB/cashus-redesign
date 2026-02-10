@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { SubmitEventHandler, useState } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { useResetPassword } from "@/hooks/useApi";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ export default function ResetPasswordPage() {
     isSuccess,
   } = useResetPassword();
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit: SubmitEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
 
     if (!token) {

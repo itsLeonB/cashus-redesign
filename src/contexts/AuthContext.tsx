@@ -106,7 +106,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       });
       throw error;
     }
-  }, [queryClient]);
+  }, [queryClient, toast]);
 
   const value = useMemo(
     () => ({

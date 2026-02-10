@@ -1,4 +1,4 @@
-import { useState, FormEvent } from "react";
+import { SubmitEventHandler, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -59,7 +59,9 @@ export function NewGroupExpenseModal({
     onOpenChange(open);
   };
 
-  const handleDetailsSubmit = async (e: FormEvent) => {
+  const handleDetailsSubmit: SubmitEventHandler<HTMLFormElement> = async (
+    e,
+  ) => {
     e.preventDefault();
 
     try {
@@ -178,7 +180,7 @@ export function NewGroupExpenseModal({
                     "flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all",
                     inputType === "upload"
                       ? "border-primary bg-primary/10 text-primary"
-                      : "border-border bg-muted/30 text-muted-foreground hover:border-primary/50 hover:bg-muted/50"
+                      : "border-border bg-muted/30 text-muted-foreground hover:border-primary/50 hover:bg-muted/50",
                   )}
                 >
                   <Camera className="h-6 w-6" />
@@ -191,7 +193,7 @@ export function NewGroupExpenseModal({
                     "flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all",
                     inputType === "manual"
                       ? "border-primary bg-primary/10 text-primary"
-                      : "border-border bg-muted/30 text-muted-foreground hover:border-primary/50 hover:bg-muted/50"
+                      : "border-border bg-muted/30 text-muted-foreground hover:border-primary/50 hover:bg-muted/50",
                   )}
                 >
                   <PenLine className="h-6 w-6" />
