@@ -16,9 +16,14 @@ export interface ResetPasswordRequest {
   passwordConfirmation: string;
 }
 
-export interface LoginResponse {
+export interface TokenResponse {
   type: string;
   token: string;
+  refreshToken: string;
+}
+
+export interface RefreshTokenRequest {
+  refreshToken: string;
 }
 
 // User Profile
@@ -343,4 +348,5 @@ export interface ApiError {
   message: string;
   code?: string;
   statusCode: number;
+  isRefreshFailure?: boolean;
 }

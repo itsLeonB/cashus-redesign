@@ -17,6 +17,7 @@ import {
 } from "@/hooks/useApi";
 import { Notification } from "@/lib/api/notifications";
 import { resolveNotificationRoute } from "@/lib/notificationResolvers";
+import { clearNotificationContext } from "@/lib/notificationPersistence";
 
 function formatRelativeTime(dateString: string): string {
   const date = new Date(dateString);
@@ -48,6 +49,8 @@ function NotificationItem({
   const handleClick = () => {
     markAsReadMutation.mutate();
     const route = resolveNotificationRoute(notification);
+    // Clear persistence context as we are now consuming it
+    clearNotificationContext();
     navigate(route);
     onNavigate();
   };

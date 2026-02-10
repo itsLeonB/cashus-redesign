@@ -8,8 +8,10 @@ import {
   ReactNode,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { UserProfile, authApi, apiClient } from "@/lib/api";
+import { UserProfile, authApi, apiClient, ApiError } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
+import { clearNotificationContext } from "@/lib/notificationPersistence";
+import { useToast } from "@/hooks/use-toast";
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -21,8 +23,9 @@ interface AuthContextType {
     password: string,
     passwordConfirmation: string,
   ) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  isRefreshFailed: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,15 +33,27 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshFailed, setIsRefreshFailed] = useState(false);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const refreshUser = useCallback(async () => {
     try {
+      if (apiClient.isRefreshFailed()) {
+        setIsRefreshFailed(true);
+        setUser(null);
+        return;
+      }
+
       const profile = await authApi.getProfile();
       setUser(profile);
-    } catch {
+      setIsRefreshFailed(false);
+    } catch (error) {
+      const err = error as ApiError;
+      if (err.isRefreshFailure) {
+        setIsRefreshFailed(true);
+      }
       setUser(null);
-      apiClient.setToken(null);
     }
   }, []);
 
@@ -54,7 +69,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const login = useCallback(
     async (email: string, password: string) => {
       const response = await authApi.login({ email, password });
-      apiClient.setToken(response.token);
+      apiClient.setTokens(response.token, response.refreshToken);
+      setIsRefreshFailed(false);
       const profile = await authApi.getProfile();
       setUser(profile);
 
@@ -83,11 +99,35 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     [],
   );
 
-  const logout = useCallback(() => {
-    authApi.logout();
-    setUser(null);
-    queryClient.clear();
-  }, [queryClient]);
+  const logout = useCallback(async () => {
+    // 1. Local cleanup must occur unconditionally
+    const cleanup = () => {
+      setUser(null);
+      setIsRefreshFailed(false);
+      apiClient.setTokens(null, null);
+      clearNotificationContext();
+      queryClient.clear();
+    };
+
+    try {
+      // 2. Best-effort backend call
+      await authApi.logout();
+      toast({
+        title: "Logged out",
+        description: "You have been successfully logged out",
+      });
+    } catch (error) {
+      console.error("Logout API failed (swallowed):", error);
+      // We don't re-throw or show destructive toast if cleanup succeeded
+      // but we might want to notify that session was cleared locally.
+      toast({
+        title: "Logged out",
+        description: "Local session cleared. Could not notify server.",
+      });
+    } finally {
+      cleanup();
+    }
+  }, [queryClient, toast]);
 
   const value = useMemo(
     () => ({
@@ -98,8 +138,9 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       register,
       logout,
       refreshUser,
+      isRefreshFailed,
     }),
-    [user, isLoading, login, register, logout, refreshUser],
+    [user, isLoading, login, register, logout, refreshUser, isRefreshFailed],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

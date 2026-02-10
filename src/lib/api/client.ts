@@ -6,18 +6,32 @@ const API_BASE_URL =
 class ApiClient {
   private readonly baseUrl: string;
   private token: string | null = null;
+  private refreshToken: string | null = null;
+  private isRefreshing = false;
+  private refreshFailed = false;
+  private refreshSubscribers: ((token: string | null) => void)[] = [];
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
-    this.token = localStorage.getItem("auth_token");
+    this.token = localStorage.getItem("authToken");
+    this.refreshToken = localStorage.getItem("refreshToken");
   }
 
-  setToken(token: string | null) {
+  setTokens(token: string | null, refreshToken: string | null) {
     this.token = token;
+    this.refreshToken = refreshToken;
+    this.refreshFailed = false;
+
     if (token) {
-      localStorage.setItem("auth_token", token);
+      localStorage.setItem("authToken", token);
     } else {
-      localStorage.removeItem("auth_token");
+      localStorage.removeItem("authToken");
+    }
+
+    if (refreshToken) {
+      localStorage.setItem("refreshToken", refreshToken);
+    } else {
+      localStorage.removeItem("refreshToken");
     }
   }
 
@@ -25,10 +39,91 @@ class ApiClient {
     return this.token;
   }
 
+  isRefreshFailed() {
+    return this.refreshFailed;
+  }
+
+  private onRefreshed(token: string | null) {
+    this.refreshSubscribers.forEach((cb) => {
+      cb(token);
+    });
+    this.refreshSubscribers = [];
+  }
+
+  private addRefreshSubscriber(cb: (token: string | null) => void) {
+    this.refreshSubscribers.push(cb);
+  }
+
+  private async handleRefreshFlow<T>(
+    retryAction: () => Promise<T>,
+  ): Promise<T> {
+    if (!this.isRefreshing) {
+      this.isRefreshing = true;
+      try {
+        const refreshResponse = await fetch(`${this.baseUrl}/auth/refresh`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refreshToken: this.refreshToken }),
+        });
+
+        if (!refreshResponse.ok) {
+          if (refreshResponse.status < 500) {
+            this.refreshFailed = true;
+          }
+          throw new Error("Refresh failed");
+        }
+
+        const { data } = await refreshResponse.json();
+
+        if (!data?.token || !data?.refreshToken) {
+          throw new Error("Invalid refresh response");
+        }
+
+        this.setTokens(data.token, data.refreshToken);
+        this.isRefreshing = false;
+        this.onRefreshed(data.token);
+
+        return retryAction();
+      } catch (error) {
+        this.isRefreshing = false;
+        this.onRefreshed(null);
+        console.error("Token refresh failed:", error);
+        throw {
+          message: "Session expired",
+          statusCode: 401,
+          isRefreshFailure: true,
+        } as ApiError;
+      }
+    }
+
+    return new Promise<T>((resolve, reject) => {
+      this.addRefreshSubscriber((newToken) => {
+        if (newToken) {
+          retryAction().then(resolve).catch(reject);
+        } else {
+          reject({
+            message: "Session expired",
+            statusCode: 401,
+            isRefreshFailure: true,
+          } as ApiError);
+        }
+      });
+    });
+  }
+
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    isRetry = false,
   ): Promise<T> {
+    if (this.refreshFailed) {
+      throw {
+        message: "Session expired",
+        statusCode: 401,
+        isRefreshFailure: true,
+      } as ApiError;
+    }
+
     const url = `${this.baseUrl}${endpoint}`;
 
     const headers: HeadersInit = {
@@ -37,15 +132,20 @@ class ApiClient {
     };
 
     if (this.token) {
-      (headers as Record<string, string>)[
-        "Authorization"
-      ] = `Bearer ${this.token}`;
+      (headers as Record<string, string>)["Authorization"] =
+        `Bearer ${this.token}`;
     }
 
     const response = await fetch(url, {
       ...options,
       headers,
     });
+
+    if (response.status === 401 && !isRetry && this.refreshToken) {
+      return this.handleRefreshFlow(() =>
+        this.request<T>(endpoint, options, true),
+      );
+    }
 
     if (!response.ok) {
       const error: ApiError = await response.json().catch(() => ({
@@ -55,14 +155,12 @@ class ApiClient {
       throw error;
     }
 
-    // Handle 204 No Content
     if (response.status === 204) {
       return {} as T;
     }
 
     const data = await response.json();
 
-    // Auto-unwrap the data property if it exists, matching standard ApiResponse<T>
     if (data && typeof data === "object" && "data" in data) {
       return data.data;
     }
@@ -72,7 +170,7 @@ class ApiClient {
 
   get<T>(
     endpoint: string,
-    params?: Record<string, string | number | boolean | null | undefined>
+    params?: Record<string, string | number | boolean | null | undefined>,
   ) {
     let url = endpoint;
     if (params) {
@@ -115,35 +213,55 @@ class ApiClient {
     return this.request<T>(endpoint, { method: "DELETE" });
   }
 
-  async uploadFile<T>(endpoint: string, formData: FormData): Promise<T> {
+  async uploadFile<T>(
+    endpoint: string,
+    formData: FormData,
+    isRetry = false,
+  ): Promise<T> {
+    if (this.refreshFailed) {
+      throw {
+        message: "Session expired",
+        statusCode: 401,
+        isRefreshFailure: true,
+      } as ApiError;
+    }
+
     const url = `${this.baseUrl}${endpoint}`;
 
-    const headers: HeadersInit = {};
-    if (this.token) {
-      headers["Authorization"] = `Bearer ${this.token}`;
-    }
+    const executeRequest = async (token: string | null): Promise<T> => {
+      const headers: HeadersInit = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers,
-      body: formData,
-    });
+      const response = await fetch(url, {
+        method: "POST",
+        headers,
+        body: formData,
+      });
 
-    if (!response.ok) {
-      const error: ApiError = await response.json().catch(() => ({
-        message: "An unexpected error occurred",
-        statusCode: response.status,
-      }));
-      throw error;
-    }
+      if (response.status === 401 && !isRetry && this.refreshToken) {
+        return this.handleRefreshFlow(() =>
+          this.uploadFile<T>(endpoint, formData, true),
+        );
+      }
 
-    const data = await response.json();
+      if (!response.ok) {
+        const error: ApiError = await response.json().catch(() => ({
+          message: "An unexpected error occurred",
+          statusCode: response.status,
+        }));
+        throw error;
+      }
 
-    if (data && typeof data === "object" && "data" in data) {
-      return data.data;
-    }
+      const data = await response.json();
+      if (data && typeof data === "object" && "data" in data) {
+        return data.data;
+      }
+      return data;
+    };
 
-    return data;
+    return executeRequest(this.token);
   }
 }
 

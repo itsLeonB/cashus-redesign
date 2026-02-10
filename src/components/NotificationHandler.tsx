@@ -7,6 +7,10 @@ import {
 } from "@/hooks/useApi";
 import { queryKeys } from "@/lib/queryKeys";
 import { resolveNotificationRoute } from "@/lib/notificationResolvers";
+import {
+  getNotificationContext,
+  clearNotificationContext,
+} from "@/lib/notificationPersistence";
 
 export function NotificationHandler() {
   const [searchParams] = useSearchParams();
@@ -30,6 +34,26 @@ export function NotificationHandler() {
   );
 
   const markAsRead = useMarkNotificationAsRead(notificationId || "");
+
+  // Restore notificationId from persistence if missing from URL
+  useEffect(() => {
+    if (!notificationId) {
+      const persisted = getNotificationContext();
+      if (persisted) {
+        console.log(
+          "[NotificationHandler] Restoring context from persistence:",
+          persisted,
+        );
+        // Put it back in the URL to trigger the normal flow
+        navigate(
+          {
+            search: `?notification_id=${persisted.notification_id}&source=${persisted.source}`,
+          },
+          { replace: true },
+        );
+      }
+    }
+  }, [notificationId, navigate]);
 
   // Force refetch if we have an ID but it's not in the list
   useEffect(() => {
@@ -67,9 +91,10 @@ export function NotificationHandler() {
 
       // Resolve route and navigate
       const route = resolveNotificationRoute(notification);
-      console.log("[NotificationHandler] Redirecting to:", route);
-
       if (route) {
+        console.log("[NotificationHandler] Redirecting to:", route);
+        // Clear persistence context as we are now consuming it
+        clearNotificationContext();
         navigate(route, { replace: true });
       }
     }

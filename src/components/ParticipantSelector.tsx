@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, SubmitEventHandler } from "react";
 import { Loader2, Users, Check, CreditCard, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AvatarCircle } from "./AvatarCircle";
@@ -106,7 +106,7 @@ export function ParticipantSelector({
     })) || []),
   ];
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit: SubmitEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
 
     if (!payerProfileId) {
