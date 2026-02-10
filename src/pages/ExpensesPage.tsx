@@ -45,13 +45,6 @@ function ExpenseCard({ expense, ownership }: Readonly<ExpenseCardProps>) {
       >
         <CardContent className="p-3 sm:p-4">
           <div className="flex items-start sm:items-center gap-3 sm:gap-4">
-            <div
-              className={`h-10 w-10 sm:h-12 sm:w-12 rounded-lg flex items-center justify-center flex-shrink-0 ${isParticipating ? "bg-muted" : "bg-primary/10"}`}
-            >
-              <Receipt
-                className={`h-5 w-5 sm:h-6 sm:w-6 ${isParticipating ? "text-muted-foreground" : "text-primary"}`}
-              />
-            </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-start sm:items-center gap-2 mb-1">
                 <p className="font-medium line-clamp-2 sm:truncate text-sm sm:text-base">

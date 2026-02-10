@@ -41,7 +41,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   ArrowLeft,
-  Receipt,
   Calendar,
   Users,
   CheckCircle2,
@@ -499,9 +498,6 @@ export default function ExpenseDetailPage() {
       <Card className="border-border/50">
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-            <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Receipt className="h-7 w-7 text-primary" />
-            </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <h1 className="text-2xl font-display font-bold">

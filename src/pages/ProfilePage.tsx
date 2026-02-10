@@ -111,6 +111,29 @@ export default function ProfilePage() {
     default: "Enable notifications for this device",
   };
 
+  const desktopEditButton = () => {
+    if (isUpdating) return <Loader2 className="h-4 w-4 animate-spin" />;
+    if (isEditing) return <Save className="h-4 w-4" />;
+    return <Edit2 className="h-4 w-4" />;
+  };
+
+  const mobileEditButton = () => {
+    if (isUpdating) return <Loader2 className="h-4 w-4 animate-spin" />;
+    if (isEditing)
+      return (
+        <>
+          <Save className="h-4 w-4 mr-2" />
+          Save
+        </>
+      );
+    return (
+      <>
+        <Edit2 className="h-4 w-4 mr-2" />
+        Edit
+      </>
+    );
+  };
+
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-up">
       {/* Header */}
@@ -132,8 +155,12 @@ export default function ProfilePage() {
               className="flex-shrink-0"
             />
             <div className="flex-1 min-w-0">
-              <CardTitle className="font-display truncate">{user?.name}</CardTitle>
-              <CardDescription className="truncate">{user?.email}</CardDescription>
+              <CardTitle className="font-display truncate">
+                {user?.name}
+              </CardTitle>
+              <CardDescription className="truncate">
+                {user?.email}
+              </CardDescription>
             </div>
             <Button
               variant={isEditing ? "default" : "outline"}
@@ -142,13 +169,7 @@ export default function ProfilePage() {
               onClick={() => (isEditing ? handleSave() : setIsEditing(true))}
               disabled={isUpdating}
             >
-              {isUpdating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : isEditing ? (
-                <Save className="h-4 w-4" />
-              ) : (
-                <Edit2 className="h-4 w-4" />
-              )}
+              {desktopEditButton()}
             </Button>
             <Button
               variant={isEditing ? "default" : "outline"}
@@ -156,19 +177,7 @@ export default function ProfilePage() {
               onClick={() => (isEditing ? handleSave() : setIsEditing(true))}
               disabled={isUpdating}
             >
-              {isUpdating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : isEditing ? (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save
-                </>
-              ) : (
-                <>
-                  <Edit2 className="h-4 w-4 mr-2" />
-                  Edit
-                </>
-              )}
+              {mobileEditButton()}
             </Button>
           </div>
         </CardHeader>
