@@ -74,6 +74,11 @@ class ApiClient {
         }
 
         const { data } = await refreshResponse.json();
+
+        if (!data?.token || !data?.refreshToken) {
+          throw new Error("Invalid refresh response");
+        }
+
         this.setTokens(data.token, data.refreshToken);
         this.isRefreshing = false;
         this.onRefreshed(data.token);
