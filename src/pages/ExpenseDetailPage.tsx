@@ -711,9 +711,11 @@ export default function ExpenseDetailPage() {
                   {isReady && !isDryRunLoading && (
                     <CheckCircle2 className="h-4 w-4 mr-2" />
                   )}
-                  {isReady
-                    ? "Confirm & Record Debts"
-                    : "Please assign participants to all items before confirming"}
+                  <span className="text-wrap text-center leading-snug">
+                    {isReady
+                      ? "Confirm & Record Debts"
+                      : "Please assign participants to all items before confirming"}
+                  </span>
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>

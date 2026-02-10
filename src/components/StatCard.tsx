@@ -26,11 +26,11 @@ export function StatCard({
         className
       )}
     >
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">{label}</p>
-            <div className="text-2xl font-semibold font-display">{value}</div>
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex items-start justify-between gap-2">
+          <div className="space-y-1 min-w-0 flex-1">
+            <p className="text-xs sm:text-sm text-muted-foreground">{label}</p>
+            <div className="text-lg sm:text-2xl font-semibold font-display break-all">{value}</div>
           </div>
           {icon && (
             <div

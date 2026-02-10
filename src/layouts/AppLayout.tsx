@@ -4,6 +4,7 @@ import { Logo } from "@/components/Logo";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { Button } from "@/components/ui/button";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
+import { LogoutConfirmDialog } from "@/components/LogoutConfirmDialog";
 import {
   LayoutDashboard,
   Users,
@@ -27,6 +28,7 @@ export function AppLayout() {
   const { isAuthenticated, isLoading, isRefreshFailed, user, logout } =
     useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -122,8 +124,8 @@ export function AppLayout() {
             })}
           </nav>
 
-          {/* User section */}
-          <div className="p-4 border-t border-sidebar-border bg-sidebar">
+          {/* User section - ensure enough bottom padding for external widgets */}
+          <div className="p-4 pb-6 border-t border-sidebar-border bg-sidebar relative z-[60]">
             <div className="flex items-center gap-3 mb-3">
               <AvatarCircle
                 name={user?.name || "User"}
@@ -147,7 +149,7 @@ export function AppLayout() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={logout}
+                onClick={() => setLogoutDialogOpen(true)}
                 className="text-destructive hover:text-destructive hover:bg-destructive/10"
               >
                 <LogOut className="h-4 w-4" />
@@ -184,6 +186,13 @@ export function AppLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Logout confirmation */}
+      <LogoutConfirmDialog
+        open={logoutDialogOpen}
+        onOpenChange={setLogoutDialogOpen}
+        onConfirm={logout}
+      />
     </div>
   );
 }

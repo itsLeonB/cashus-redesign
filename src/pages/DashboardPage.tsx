@@ -4,12 +4,12 @@ import { TransactionModal } from "@/components/TransactionModal";
 import { NewGroupExpenseModal } from "@/components/NewGroupExpenseModal";
 import { AddFriendModal } from "@/components/AddFriendModal";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { ArrowUpRight, Plus, Users } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import RecentTransactions from "@/components/RecentTransactions";
 import RecentExpenses from "@/components/RecentExpenses";
 import DebtSummary from "@/components/DebtSummary";
+import { MobileFAB } from "@/components/MobileFAB";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -37,7 +37,7 @@ export default function DashboardPage() {
             Here's your financial overview
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="hidden sm:flex gap-2">
           <Button variant="outline" asChild>
             <Link to="/friends">
               <Users className="h-4 w-4 mr-2" />
@@ -58,34 +58,12 @@ export default function DashboardPage() {
         <RecentExpenses />
       </div>
 
-      {/* Quick Actions */}
-      <Card className="border-border/50 gradient-card">
-        <CardContent className="p-6">
-          <h3 className="text-lg font-display font-semibold mb-4">
-            Quick Actions
-          </h3>
-          <div className="grid gap-3 grid-cols-2">
-            <Button
-              variant="secondary"
-              className="h-auto py-4 flex-col gap-2"
-              onClick={() => setAddFriendModalOpen(true)}
-            >
-              <Users className="h-6 w-6" />
-              <span>Add Friend</span>
-            </Button>
-            <Button
-              variant="secondary"
-              className="h-auto py-4 flex-col gap-2"
-              onClick={() => {
-                setTransactionOpen(true);
-              }}
-            >
-              <ArrowUpRight className="h-6 w-6" />
-              <span>Record Transaction</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Mobile FAB replaces Quick Actions on mobile */}
+      <MobileFAB
+        onNewExpense={() => setExpenseModalOpen(true)}
+        onRecordTransaction={() => setTransactionOpen(true)}
+        onAddFriend={() => setAddFriendModalOpen(true)}
+      />
 
       {/* Transaction Modal */}
       <TransactionModal
