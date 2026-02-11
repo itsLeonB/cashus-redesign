@@ -71,6 +71,8 @@ export function MobileFAB({
       {/* Main FAB button */}
       <button
         onClick={() => setExpanded(!expanded)}
+        aria-label={expanded ? "Close actions menu" : "Open actions menu"}
+        aria-expanded={expanded}
         className={cn(
           "h-14 w-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-200",
           expanded

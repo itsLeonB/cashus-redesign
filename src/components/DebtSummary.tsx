@@ -47,7 +47,7 @@ const DebtSummary = ({ data, isLoading }: DebtSummaryProps) => {
     return (
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
         <Skeleton className="h-24 sm:h-28" />
-        <Skeleton className="hidden sm:block h-28" />
+        <Skeleton className="h-24 sm:h-28" />
       </div>
     );
   }
