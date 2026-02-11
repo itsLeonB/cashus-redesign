@@ -21,6 +21,7 @@ import {
   CreditCard,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import DebtSummary from "@/components/DebtSummary";
 
 export default function FriendDetailPage() {
   const { friendId } = useParams<{ friendId: string }>();
@@ -32,12 +33,6 @@ export default function FriendDetailPage() {
 
   const friendDebts = friendship?.balance.transactionHistory || [];
   const balance = Number.parseFloat(friendship?.balance.netBalance || "0");
-  const totalLent = Number.parseFloat(
-    friendship?.balance.totalLentToFriend || "0"
-  );
-  const totalBorrowed = Number.parseFloat(
-    friendship?.balance.totalBorrowedFromFriend || "0"
-  );
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString("en-US", {
@@ -123,7 +118,10 @@ export default function FriendDetailPage() {
                   <CreditCard className="h-4 w-4 mr-2" />
                   Transfer Methods
                 </Button>
-                <Button className="w-full sm:w-auto" onClick={() => setTransactionOpen(true)}>
+                <Button
+                  className="w-full sm:w-auto"
+                  onClick={() => setTransactionOpen(true)}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Record Transaction
                 </Button>
@@ -133,39 +131,7 @@ export default function FriendDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Balance Summary */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card className="border-border/50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center">
-                <ArrowUpRight className="h-5 w-5 text-success" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Lent</p>
-                <p className="text-lg font-semibold tabular-nums">
-                  {formatCurrency(totalLent)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border/50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-warning/10 flex items-center justify-center">
-                <ArrowDownLeft className="h-5 w-5 text-warning" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Borrowed</p>
-                <p className="text-lg font-semibold tabular-nums">
-                  {formatCurrency(totalBorrowed)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <DebtSummary data={friendship.balance} isLoading={isLoading} />
 
       {/* Transaction History */}
       <Card className="border-border/50">

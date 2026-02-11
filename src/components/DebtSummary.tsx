@@ -1,12 +1,16 @@
 import { AmountDisplay } from "@/components/AmountDisplay";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown } from "lucide-react";
-import { useDebtSummary } from "@/hooks/useApi";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { StatCard } from "@/components/StatCard";
+import { FriendBalance } from "@/lib/api";
 
-const DebtSummary = () => {
-  const { data: debtSummary, isLoading } = useDebtSummary();
+type DebtSummaryProps = {
+  data: FriendBalance;
+  isLoading: boolean;
+};
+
+const DebtSummary = ({ data, isLoading }: DebtSummaryProps) => {
   const isMobile = useIsMobile();
 
   // Common card configuration
@@ -29,7 +33,7 @@ const DebtSummary = () => {
 
   const renderCard = (config: (typeof cardConfigs)[0]) => {
     const amount =
-      Number.parseFloat(debtSummary?.[config.amountKey] || "0") * config.sign;
+      Number.parseFloat(data?.[config.amountKey] || "0") * config.sign;
 
     return (
       <StatCard

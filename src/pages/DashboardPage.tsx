@@ -10,9 +10,11 @@ import RecentTransactions from "@/components/RecentTransactions";
 import RecentExpenses from "@/components/RecentExpenses";
 import DebtSummary from "@/components/DebtSummary";
 import { MobileFAB } from "@/components/MobileFAB";
+import { useDebtSummary } from "@/hooks/useApi";
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { data: debtSummary, isLoading } = useDebtSummary();
 
   const [transactionOpen, setTransactionOpen] = useState(false);
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
@@ -54,7 +56,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <DebtSummary />
+      <DebtSummary data={debtSummary} isLoading={isLoading} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <RecentTransactions />
