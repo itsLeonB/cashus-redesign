@@ -41,7 +41,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   ArrowLeft,
-  Receipt,
   Calendar,
   Users,
   CheckCircle2,
@@ -499,9 +498,6 @@ export default function ExpenseDetailPage() {
       <Card className="border-border/50">
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-            <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Receipt className="h-7 w-7 text-primary" />
-            </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <h1 className="text-2xl font-display font-bold">
@@ -694,27 +690,33 @@ export default function ExpenseDetailPage() {
           <div className="flex flex-col gap-3 mt-6">
             {canEdit && (
               <>
-                <Button
-                  className="w-full"
-                  size={isReady ? "lg" : "default"}
-                  onClick={handleConfirmDryRun}
-                  disabled={
-                    !isReady ||
-                    isDryRunLoading ||
-                    confirmExpense.isPending ||
-                    deleteExpense.isPending
-                  }
-                >
-                  {isDryRunLoading && (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  )}
-                  {isReady && !isDryRunLoading && (
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                  )}
-                  {isReady
-                    ? "Confirm & Record Debts"
-                    : "Please assign participants to all items before confirming"}
-                </Button>
+                {isReady ? (
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    onClick={handleConfirmDryRun}
+                    disabled={
+                      isDryRunLoading ||
+                      confirmExpense.isPending ||
+                      deleteExpense.isPending
+                    }
+                  >
+                    {isDryRunLoading && (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    )}
+                    {!isDryRunLoading && (
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                    )}
+                    Confirm & Record Debts
+                  </Button>
+                ) : (
+                  <div className="flex items-start gap-3 p-4 rounded-lg bg-warning/10 border border-warning/20">
+                    <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-warning leading-relaxed">
+                      Please assign participants to all items before confirming
+                    </p>
+                  </div>
+                )}
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button

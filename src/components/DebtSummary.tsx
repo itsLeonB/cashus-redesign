@@ -1,53 +1,75 @@
-import { StatCard } from "@/components/StatCard";
 import { AmountDisplay } from "@/components/AmountDisplay";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown } from "lucide-react";
-import { useDebtSummary } from "@/hooks/useApi";
+import { StatCard } from "@/components/StatCard";
+import { FriendBalance } from "@/lib/api";
 
-const DebtSummary = () => {
-  const { data: debtSummary, isLoading: debtSummaryLoading } = useDebtSummary();
+type DebtSummaryProps = {
+  data: FriendBalance | undefined;
+  isLoading: boolean;
+  error?: Error | null;
+  isError?: boolean;
+};
+
+// Common card configuration
+const cardConfigs = [
+  {
+    label: "Owed to you",
+    amountKey: "totalLentToFriend" as const,
+    icon: <TrendingUp className="h-5 w-5" />,
+    variant: "positive" as const,
+    sign: 1,
+  },
+  {
+    label: "You owe",
+    amountKey: "totalBorrowedFromFriend" as const,
+    icon: <TrendingDown className="h-5 w-5" />,
+    variant: "negative" as const,
+    sign: -1,
+  },
+];
+
+const DebtSummary = ({ data, isLoading, error, isError }: DebtSummaryProps) => {
+  if (isLoading) {
+    return (
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+        <Skeleton className="h-24 sm:h-28" />
+        <Skeleton className="h-24 sm:h-28" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-6 rounded-xl border border-destructive/20 bg-destructive/5 text-destructive">
+        <div className="flex items-center gap-2 mb-1">
+          <TrendingDown className="h-5 w-5" />
+          <h3 className="font-semibold">Failed to load summary</h3>
+        </div>
+        <p className="text-sm opacity-90">
+          {error?.message ||
+            "Something went wrong while fetching your balances."}
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <div className="grid gap-4 grid-cols-2">
-      {debtSummaryLoading ? (
-        <>
-          <Skeleton className="h-28" />
-          <Skeleton className="h-28" />
-        </>
-      ) : (
-        <>
+    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 sm:gap-6">
+      {cardConfigs.map((config) => {
+        const amount =
+          Number.parseFloat(data?.[config.amountKey] || "0") * config.sign;
+
+        return (
           <StatCard
-            label="Owed to you"
-            value={
-              <AmountDisplay
-                amount={Number.parseFloat(
-                  debtSummary?.totalLentToFriend || "0",
-                )}
-                showSign={false}
-                size="lg"
-              />
-            }
-            icon={<TrendingUp className="h-5 w-5" />}
-            variant="positive"
+            key={config.label}
+            label={config.label}
+            value={<AmountDisplay amount={amount} showSign={false} size="lg" />}
+            icon={config.icon}
+            variant={config.variant}
           />
-          <StatCard
-            label="You owe"
-            value={
-              <AmountDisplay
-                amount={
-                  -Number.parseFloat(
-                    debtSummary?.totalBorrowedFromFriend || "0",
-                  )
-                }
-                showSign={false}
-                size="lg"
-              />
-            }
-            icon={<TrendingDown className="h-5 w-5" />}
-            variant="negative"
-          />
-        </>
-      )}
+        );
+      })}
     </div>
   );
 };

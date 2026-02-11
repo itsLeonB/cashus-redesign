@@ -21,23 +21,23 @@ import {
   CreditCard,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
+import DebtSummary from "@/components/DebtSummary";
 
 export default function FriendDetailPage() {
   const { friendId } = useParams<{ friendId: string }>();
   const navigate = useNavigate();
-  const { data: friendship, isLoading } = useFriendship(friendId || "");
+  const {
+    data: friendship,
+    isLoading,
+    error,
+    isError,
+  } = useFriendship(friendId || "");
   const [transactionOpen, setTransactionOpen] = useState(false);
   const [associateOpen, setAssociateOpen] = useState(false);
   const [transferMethodsOpen, setTransferMethodsOpen] = useState(false);
 
   const friendDebts = friendship?.balance.transactionHistory || [];
   const balance = Number.parseFloat(friendship?.balance.netBalance || "0");
-  const totalLent = Number.parseFloat(
-    friendship?.balance.totalLentToFriend || "0"
-  );
-  const totalBorrowed = Number.parseFloat(
-    friendship?.balance.totalBorrowedFromFriend || "0"
-  );
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString("en-US", {
@@ -112,17 +112,21 @@ export default function FriendDetailPage() {
                 </Button>
               )}
             </div>
-            <div className="flex flex-col items-end gap-2">
+            <div className="flex flex-col sm:items-end gap-2 w-full sm:w-auto">
               <AmountDisplay amount={balance} size="lg" showLabel />
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <Button
                   variant="outline"
+                  className="w-full sm:w-auto"
                   onClick={() => setTransferMethodsOpen(true)}
                 >
                   <CreditCard className="h-4 w-4 mr-2" />
                   Transfer Methods
                 </Button>
-                <Button onClick={() => setTransactionOpen(true)}>
+                <Button
+                  className="w-full sm:w-auto"
+                  onClick={() => setTransactionOpen(true)}
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Record Transaction
                 </Button>
@@ -132,39 +136,12 @@ export default function FriendDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Balance Summary */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Card className="border-border/50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-success/10 flex items-center justify-center">
-                <ArrowUpRight className="h-5 w-5 text-success" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Lent</p>
-                <p className="text-lg font-semibold tabular-nums">
-                  {formatCurrency(totalLent)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border/50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-warning/10 flex items-center justify-center">
-                <ArrowDownLeft className="h-5 w-5 text-warning" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Total Borrowed</p>
-                <p className="text-lg font-semibold tabular-nums">
-                  {formatCurrency(totalBorrowed)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <DebtSummary
+        data={friendship.balance}
+        isLoading={isLoading}
+        error={error}
+        isError={isError}
+      />
 
       {/* Transaction History */}
       <Card className="border-border/50">
@@ -179,10 +156,10 @@ export default function FriendDetailPage() {
                 return (
                   <div
                     key={debt.id}
-                    className="flex items-center gap-4 p-3 rounded-lg bg-muted/30"
+                    className="flex items-start sm:items-center gap-3 sm:gap-4 p-3 rounded-lg bg-muted/30"
                   >
                     <div
-                      className={`h-10 w-10 rounded-lg bg-muted flex items-center justify-center ${
+                      className={`h-10 w-10 rounded-lg flex-shrink-0 flex items-center justify-center ${
                         isCredit
                           ? "text-success bg-success/10"
                           : "text-warning bg-warning/10"
@@ -195,7 +172,7 @@ export default function FriendDetailPage() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-medium">
                           {isCredit ? "Lent" : "Borrowed"}
                         </p>
@@ -207,17 +184,27 @@ export default function FriendDetailPage() {
                         )}
                       </div>
                       {debt.description && (
-                        <p className="text-sm text-muted-foreground truncate">
+                        <p className="text-sm text-muted-foreground line-clamp-2 sm:truncate">
                           {debt.description}
                         </p>
                       )}
-                      <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                        <Calendar className="h-3 w-3" />
-                        {formatDate(debt.createdAt)}
-                      </p>
+                      <div className="flex items-center justify-between mt-1">
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          {formatDate(debt.createdAt)}
+                        </p>
+                        <p
+                          className={`text-sm font-semibold tabular-nums sm:hidden ${
+                            isCredit ? "text-success" : "text-warning"
+                          }`}
+                        >
+                          {isCredit ? "+" : "-"}
+                          {formatCurrency(debt.amount || 0)}
+                        </p>
+                      </div>
                     </div>
                     <p
-                      className={`text-lg font-semibold tabular-nums ${
+                      className={`hidden sm:block text-lg font-semibold tabular-nums flex-shrink-0 ${
                         isCredit ? "text-success" : "text-warning"
                       }`}
                     >

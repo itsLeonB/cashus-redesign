@@ -4,6 +4,7 @@ import { Logo } from "@/components/Logo";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { Button } from "@/components/ui/button";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
+import { LogoutConfirmDialog } from "@/components/LogoutConfirmDialog";
 import {
   LayoutDashboard,
   Users,
@@ -12,10 +13,12 @@ import {
   LogOut,
   Menu,
   X,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { NotificationHandler } from "@/components/NotificationHandler";
+import { Separator } from "@/components/ui/separator";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -27,6 +30,7 @@ export function AppLayout() {
   const { isAuthenticated, isLoading, isRefreshFailed, user, logout } =
     useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -100,30 +104,47 @@ export function AppLayout() {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-            {navigation.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <NavLink
-                  key={item.name}
-                  to={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-sidebar-accent text-sidebar-primary"
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.name}
-                </NavLink>
-              );
-            })}
+          <nav className="flex-1 p-4 space-y-4 overflow-y-auto">
+            <div className="space-y-2">
+              {navigation.map((item) => {
+                const isActive = location.pathname === item.href;
+                return (
+                  <NavLink
+                    key={item.name}
+                    to={item.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-sidebar-accent text-sidebar-primary"
+                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                    )}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    {item.name}
+                  </NavLink>
+                );
+              })}
+            </div>
+            <Separator />
+            <div className="border-sidebar-border/50">
+              <Button
+                variant="ghost"
+                className="w-full justify-start gap-3 h-10 px-3 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                onClick={() => {
+                  globalThis.uj?.showWidget();
+                  globalThis.history.pushState({ ujWidget: true }, "");
+                  setSidebarOpen(false);
+                }}
+              >
+                <MessageSquare className="h-5 w-5" />
+                Give Feedback
+              </Button>
+            </div>
           </nav>
 
-          {/* User section */}
-          <div className="p-4 border-t border-sidebar-border bg-sidebar">
+          {/* User section - ensure enough bottom padding for external widgets */}
+          <div className="p-4 pb-8 border-t border-sidebar-border bg-sidebar relative z-[60]">
             <div className="flex items-center gap-3 mb-3">
               <AvatarCircle
                 name={user?.name || "User"}
@@ -147,7 +168,7 @@ export function AppLayout() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={logout}
+                onClick={() => setLogoutDialogOpen(true)}
                 className="text-destructive hover:text-destructive hover:bg-destructive/10"
               >
                 <LogOut className="h-4 w-4" />
@@ -184,6 +205,13 @@ export function AppLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Logout confirmation */}
+      <LogoutConfirmDialog
+        open={logoutDialogOpen}
+        onOpenChange={setLogoutDialogOpen}
+        onConfirm={logout}
+      />
     </div>
   );
 }

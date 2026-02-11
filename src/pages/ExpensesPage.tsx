@@ -43,18 +43,11 @@ function ExpenseCard({ expense, ownership }: Readonly<ExpenseCardProps>) {
       <Card
         className={`border-border/50 hover:border-border transition-all hover:shadow-md ${isParticipating ? "bg-muted/30" : ""}`}
       >
-        <CardContent className="p-4">
-          <div className="flex items-center gap-4">
-            <div
-              className={`h-12 w-12 rounded-lg flex items-center justify-center ${isParticipating ? "bg-muted" : "bg-primary/10"}`}
-            >
-              <Receipt
-                className={`h-6 w-6 ${isParticipating ? "text-muted-foreground" : "text-primary"}`}
-              />
-            </div>
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex items-start sm:items-center gap-3 sm:gap-4">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <p className="font-medium truncate">
+              <div className="flex items-start sm:items-center gap-2 mb-1">
+                <p className="font-medium line-clamp-2 sm:truncate text-sm sm:text-base">
                   {expense.description || "Untitled Expense"}
                 </p>
                 {isParticipating && (
@@ -64,19 +57,19 @@ function ExpenseCard({ expense, ownership }: Readonly<ExpenseCardProps>) {
                   </Badge>
                 )}
               </div>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs sm:text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5" />
+                  <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                   {expense.status === "CONFIRMED"
                     ? `Confirmed ${formatDate(expense.updatedAt)}`
                     : formatDate(expense.createdAt)}
                 </span>
                 <span className="flex items-center gap-1">
-                  <Users className="h-3.5 w-3.5" />
+                  <Users className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                   {expense.participants?.length || 0}
                 </span>
                 <span className="flex items-center gap-1">
-                  <Receipt className="h-3.5 w-3.5" />
+                  <Receipt className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                   {expense.items?.length || 0} items
                 </span>
               </div>
@@ -85,8 +78,25 @@ function ExpenseCard({ expense, ownership }: Readonly<ExpenseCardProps>) {
                   Created by {expense.creator.name}
                 </p>
               )}
+              {/* Amount on mobile - below description */}
+              <div className="flex items-center justify-between mt-2 sm:hidden">
+                <p className="text-sm font-semibold tabular-nums">
+                  {formatCurrency(expense.totalAmount)}
+                </p>
+                {expense.payer.name && (
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <span>Paid by</span>
+                    <AvatarCircle
+                      name={expense.payer.name}
+                      imageUrl={expense.payer.avatar}
+                      size="xs"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="flex items-center gap-3">
+            {/* Amount on desktop - right side */}
+            <div className="hidden sm:flex items-center gap-3 flex-shrink-0">
               <div className="text-right">
                 <p className="text-lg font-semibold tabular-nums">
                   {formatCurrency(expense.totalAmount)}
@@ -136,7 +146,7 @@ function ExpenseList({
   if (!expenses || expenses.length === 0) return null;
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-y-3">
       {expenses.map((expense) => (
         <ExpenseCard key={expense.id} expense={expense} ownership={ownership} />
       ))}

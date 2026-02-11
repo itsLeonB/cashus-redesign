@@ -4,15 +4,16 @@ import { TransactionModal } from "@/components/TransactionModal";
 import { NewGroupExpenseModal } from "@/components/NewGroupExpenseModal";
 import { AddFriendModal } from "@/components/AddFriendModal";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { ArrowUpRight, Plus, Users } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Plus, Users } from "lucide-react";
 import RecentTransactions from "@/components/RecentTransactions";
 import RecentExpenses from "@/components/RecentExpenses";
 import DebtSummary from "@/components/DebtSummary";
+import { MobileFAB } from "@/components/MobileFAB";
+import { useDebtSummary } from "@/hooks/useApi";
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { data: debtSummary, isLoading, error, isError } = useDebtSummary();
 
   const [transactionOpen, setTransactionOpen] = useState(false);
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
@@ -37,12 +38,14 @@ export default function DashboardPage() {
             Here's your financial overview
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" asChild>
-            <Link to="/friends">
-              <Users className="h-4 w-4 mr-2" />
-              Friends
-            </Link>
+        <div className="hidden sm:flex gap-2">
+          <Button variant="outline" onClick={() => setTransactionOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Record Transaction
+          </Button>
+          <Button variant="outline" onClick={() => setAddFriendModalOpen(true)}>
+            <Users className="h-4 w-4 mr-2" />
+            Add Friend
           </Button>
           <Button variant="premium" onClick={() => setExpenseModalOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -51,41 +54,24 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <DebtSummary />
+      <DebtSummary
+        data={debtSummary}
+        isLoading={isLoading}
+        error={error}
+        isError={isError}
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <RecentTransactions />
         <RecentExpenses />
       </div>
 
-      {/* Quick Actions */}
-      <Card className="border-border/50 gradient-card">
-        <CardContent className="p-6">
-          <h3 className="text-lg font-display font-semibold mb-4">
-            Quick Actions
-          </h3>
-          <div className="grid gap-3 grid-cols-2">
-            <Button
-              variant="secondary"
-              className="h-auto py-4 flex-col gap-2"
-              onClick={() => setAddFriendModalOpen(true)}
-            >
-              <Users className="h-6 w-6" />
-              <span>Add Friend</span>
-            </Button>
-            <Button
-              variant="secondary"
-              className="h-auto py-4 flex-col gap-2"
-              onClick={() => {
-                setTransactionOpen(true);
-              }}
-            >
-              <ArrowUpRight className="h-6 w-6" />
-              <span>Record Transaction</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Mobile FAB replaces Quick Actions on mobile */}
+      <MobileFAB
+        onNewExpense={() => setExpenseModalOpen(true)}
+        onRecordTransaction={() => setTransactionOpen(true)}
+        onAddFriend={() => setAddFriendModalOpen(true)}
+      />
 
       {/* Transaction Modal */}
       <TransactionModal
