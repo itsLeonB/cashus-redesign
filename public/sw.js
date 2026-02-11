@@ -3,6 +3,8 @@
 /**
  * Service Worker for Cashus
  * 
+ * Version: 1.0.0
+ * 
  * Handles push notifications and background sync.
  * To ensure background push works on mobile:
  * 1. event.waitUntil() MUST wrap the entire promise chain.
@@ -10,6 +12,91 @@
  * 3. A fallback notification must be shown if data parsing fails.
  */
 
+const CACHE_NAME = 'cashus-v1';
+const ASSETS_TO_CACHE = [
+  '/',
+  '/index.html',
+  '/favicon.svg',
+  '/manifest.json',
+  '/manifest-icon-192.maskable.png',
+  '/manifest-icon-512.maskable.png',
+  '/apple-icon-180.png',
+  '/screenshot-desktop.png',
+  '/screenshot-mobile.png'
+];
+
+// Install event - caching the app shell
+globalThis.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('[Service Worker] Caching app shell');
+      return cache.addAll(ASSETS_TO_CACHE);
+    })
+  );
+  // Force the waiting service worker to become the active service worker
+  globalThis.skipWaiting();
+});
+
+// Activate event - cleaning up old caches
+globalThis.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('[Service Worker] Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+  // Ensure that the service worker is controlling all pages immediately
+  globalThis.clients.claim();
+});
+
+// Fetch event - Caching strategies
+globalThis.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  // Strategy: Network-first for API calls and navigation
+  if (url.origin === self.location.origin && (event.request.mode === 'navigate' || url.pathname.startsWith('/api/'))) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          // Cache a copy of the fresh response
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+          return response;
+        })
+        .catch(() => {
+          // If network fails, try the cache
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // Strategy: Cache-first for static assets
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request).then((networkResponse) => {
+        // Cache the new resource
+        const responseClone = networkResponse.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseClone);
+        });
+        return networkResponse;
+      });
+    })
+  );
+});
+
+/**
+ * Push Notifications Handling
+ */
 self.addEventListener('push', (event) => {
   console.log('[Service Worker] Push Received.');
 
