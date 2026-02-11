@@ -38,6 +38,9 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="hidden sm:flex gap-2">
+          <Button variant="outline" onClick={() => setTransactionOpen(true)}>
+            Record Transaction
+          </Button>
           <Button variant="outline" asChild>
             <Link to="/friends">
               <Users className="h-4 w-4 mr-2" />
