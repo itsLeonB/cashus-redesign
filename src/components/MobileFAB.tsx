@@ -39,7 +39,7 @@ export function MobileFAB({
   };
 
   return (
-    <div className="fixed bottom-6 right-4 z-30 flex flex-col items-end gap-3 lg:hidden">
+    <div className="fixed bottom-16 right-4 z-30 flex flex-col items-end gap-3 lg:hidden">
       {/* Backdrop */}
       {expanded && (
         <div
@@ -75,14 +75,10 @@ export function MobileFAB({
           "h-14 w-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-200",
           expanded
             ? "bg-muted text-foreground rotate-0"
-            : "gradient-primary text-primary-foreground"
+            : "gradient-primary text-primary-foreground",
         )}
       >
-        {expanded ? (
-          <X className="h-6 w-6" />
-        ) : (
-          <Plus className="h-6 w-6" />
-        )}
+        {expanded ? <X className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
       </button>
     </div>
   );
