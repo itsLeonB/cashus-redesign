@@ -26,7 +26,12 @@ import DebtSummary from "@/components/DebtSummary";
 export default function FriendDetailPage() {
   const { friendId } = useParams<{ friendId: string }>();
   const navigate = useNavigate();
-  const { data: friendship, isLoading } = useFriendship(friendId || "");
+  const {
+    data: friendship,
+    isLoading,
+    error,
+    isError,
+  } = useFriendship(friendId || "");
   const [transactionOpen, setTransactionOpen] = useState(false);
   const [associateOpen, setAssociateOpen] = useState(false);
   const [transferMethodsOpen, setTransferMethodsOpen] = useState(false);
@@ -131,7 +136,12 @@ export default function FriendDetailPage() {
         </CardContent>
       </Card>
 
-      <DebtSummary data={friendship.balance} isLoading={isLoading} />
+      <DebtSummary
+        data={friendship.balance}
+        isLoading={isLoading}
+        error={error}
+        isError={isError}
+      />
 
       {/* Transaction History */}
       <Card className="border-border/50">

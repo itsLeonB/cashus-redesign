@@ -13,7 +13,7 @@ import { useDebtSummary } from "@/hooks/useApi";
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { data: debtSummary, isLoading } = useDebtSummary();
+  const { data: debtSummary, isLoading, error, isError } = useDebtSummary();
 
   const [transactionOpen, setTransactionOpen] = useState(false);
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
@@ -54,7 +54,12 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <DebtSummary data={debtSummary} isLoading={isLoading} />
+      <DebtSummary
+        data={debtSummary}
+        isLoading={isLoading}
+        error={error}
+        isError={isError}
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <RecentTransactions />
