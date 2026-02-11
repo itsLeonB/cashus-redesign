@@ -146,7 +146,7 @@ function ExpenseList({
   if (!expenses || expenses.length === 0) return null;
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-y-3">
       {expenses.map((expense) => (
         <ExpenseCard key={expense.id} expense={expense} ownership={ownership} />
       ))}
