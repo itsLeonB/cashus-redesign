@@ -42,12 +42,12 @@ globalThis.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
+        cacheNames
+          .filter((cacheName) => cacheName !== CACHE_NAME)
+          .map((cacheName) => {
             console.log('[Service Worker] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
-          }
-        })
+          })
       );
     })
   );
@@ -59,8 +59,14 @@ globalThis.addEventListener('activate', (event) => {
 globalThis.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Strategy: Network-first for API calls and navigation
-  if (url.origin === self.location.origin && (event.request.mode === 'navigate' || url.pathname.startsWith('/api/'))) {
+  // Strategy: Always network for API calls
+  if (url.origin === self.location.origin && url.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // Strategy: Network-first for navigation
+  if (url.origin === self.location.origin && event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
