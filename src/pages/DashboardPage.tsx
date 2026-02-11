@@ -5,7 +5,6 @@ import { NewGroupExpenseModal } from "@/components/NewGroupExpenseModal";
 import { AddFriendModal } from "@/components/AddFriendModal";
 import { Button } from "@/components/ui/button";
 import { Plus, Users } from "lucide-react";
-import { Link } from "react-router-dom";
 import RecentTransactions from "@/components/RecentTransactions";
 import RecentExpenses from "@/components/RecentExpenses";
 import DebtSummary from "@/components/DebtSummary";
@@ -41,13 +40,12 @@ export default function DashboardPage() {
         </div>
         <div className="hidden sm:flex gap-2">
           <Button variant="outline" onClick={() => setTransactionOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
             Record Transaction
           </Button>
-          <Button variant="outline" asChild>
-            <Link to="/friends">
-              <Users className="h-4 w-4 mr-2" />
-              Friends
-            </Link>
+          <Button variant="outline" onClick={() => setAddFriendModalOpen(true)}>
+            <Users className="h-4 w-4 mr-2" />
+            Add Friend
           </Button>
           <Button variant="premium" onClick={() => setExpenseModalOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />

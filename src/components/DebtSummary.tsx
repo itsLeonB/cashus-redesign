@@ -1,7 +1,6 @@
 import { AmountDisplay } from "@/components/AmountDisplay";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { StatCard } from "@/components/StatCard";
 import { FriendBalance } from "@/lib/api";
 
@@ -10,27 +9,25 @@ type DebtSummaryProps = {
   isLoading: boolean;
 };
 
+// Common card configuration
+const cardConfigs = [
+  {
+    label: "Owed to you",
+    amountKey: "totalLentToFriend" as const,
+    icon: <TrendingUp className="h-5 w-5" />,
+    variant: "positive" as const,
+    sign: 1,
+  },
+  {
+    label: "You owe",
+    amountKey: "totalBorrowedFromFriend" as const,
+    icon: <TrendingDown className="h-5 w-5" />,
+    variant: "negative" as const,
+    sign: -1,
+  },
+];
+
 const DebtSummary = ({ data, isLoading }: DebtSummaryProps) => {
-  const isMobile = useIsMobile();
-
-  // Common card configuration
-  const cardConfigs = [
-    {
-      label: "Owed to you",
-      amountKey: "totalLentToFriend" as const,
-      icon: <TrendingUp className="h-5 w-5" />,
-      variant: "positive" as const,
-      sign: 1,
-    },
-    {
-      label: "You owe",
-      amountKey: "totalBorrowedFromFriend" as const,
-      icon: <TrendingDown className="h-5 w-5" />,
-      variant: "negative" as const,
-      sign: -1,
-    },
-  ];
-
   const renderCard = (config: (typeof cardConfigs)[0]) => {
     const amount =
       Number.parseFloat(data?.[config.amountKey] || "0") * config.sign;
@@ -46,20 +43,17 @@ const DebtSummary = ({ data, isLoading }: DebtSummaryProps) => {
     );
   };
 
-  // Loading state
   if (isLoading) {
     return (
-      <div className={`grid gap-4 ${isMobile ? "grid-cols-1" : "grid-cols-2"}`}>
-        <Skeleton className={`${isMobile ? "h-24" : "h-28"}`} />
-        <Skeleton className={`${isMobile ? "hidden" : "h-28"}`} />
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+        <Skeleton className="h-24 sm:h-28" />
+        <Skeleton className="hidden sm:block h-28" />
       </div>
     );
   }
 
   return (
-    <div
-      className={`grid gap-4 ${isMobile ? "grid-cols-1 sm:gap-6" : "grid-cols-2"}`}
-    >
+    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 sm:gap-6">
       {cardConfigs.map(renderCard)}
     </div>
   );
