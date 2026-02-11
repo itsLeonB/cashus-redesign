@@ -161,11 +161,15 @@ self.addEventListener('notificationclick', (event) => {
 
     for (const client of windowClients) {
       // If we find an existing client, focus it and navigate
-      if ('focus' in client) {
+      if ('focus' in client && 'navigate' in client) {
+        await client.focus();
+        if (client.url !== new URL(targetUrl, self.location.origin).href) {
+          await client.navigate(targetUrl);
+        }
         if (notificationId) {
           client.postMessage({ type: 'NOTIFICATION_CLICK', notificationId });
         }
-        return client.focus();
+        return;
       }
     }
 
