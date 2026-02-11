@@ -13,10 +13,12 @@ import {
   LogOut,
   Menu,
   X,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { NotificationHandler } from "@/components/NotificationHandler";
+import { Separator } from "@/components/ui/separator";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -102,26 +104,42 @@ export function AppLayout() {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-            {navigation.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <NavLink
-                  key={item.name}
-                  to={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-sidebar-accent text-sidebar-primary"
-                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
-                  )}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.name}
-                </NavLink>
-              );
-            })}
+          <nav className="flex-1 p-4 space-y-4 overflow-y-auto">
+            <div className="space-y-2">
+              {navigation.map((item) => {
+                const isActive = location.pathname === item.href;
+                return (
+                  <NavLink
+                    key={item.name}
+                    to={item.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-sidebar-accent text-sidebar-primary"
+                        : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                    )}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    {item.name}
+                  </NavLink>
+                );
+              })}
+            </div>
+            <Separator />
+            <div className="border-sidebar-border/50">
+              <Button
+                variant="ghost"
+                className="w-full justify-start gap-3 h-10 px-3 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                onClick={() => {
+                  globalThis.uj?.showWidget();
+                  setSidebarOpen(false);
+                }}
+              >
+                <MessageSquare className="h-5 w-5" />
+                Give Feedback
+              </Button>
+            </div>
           </nav>
 
           {/* User section - ensure enough bottom padding for external widgets */}

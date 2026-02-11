@@ -13,6 +13,7 @@ declare global {
           lastName?: string;
           avatar?: string;
         }) => void;
+        showWidget: () => void;
       }
     | undefined;
 }
@@ -37,7 +38,7 @@ export function useUserJotTracker() {
       widget: true,
       position: "right",
       theme: "auto",
-      trigger: "default",
+      trigger: "custom",
     });
 
     initialized.current = true;
