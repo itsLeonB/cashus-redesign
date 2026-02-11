@@ -28,21 +28,6 @@ const cardConfigs = [
 ];
 
 const DebtSummary = ({ data, isLoading }: DebtSummaryProps) => {
-  const renderCard = (config: (typeof cardConfigs)[0]) => {
-    const amount =
-      Number.parseFloat(data?.[config.amountKey] || "0") * config.sign;
-
-    return (
-      <StatCard
-        key={config.label}
-        label={config.label}
-        value={<AmountDisplay amount={amount} showSign={false} size="lg" />}
-        icon={config.icon}
-        variant={config.variant}
-      />
-    );
-  };
-
   if (isLoading) {
     return (
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
@@ -54,7 +39,20 @@ const DebtSummary = ({ data, isLoading }: DebtSummaryProps) => {
 
   return (
     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 sm:gap-6">
-      {cardConfigs.map(renderCard)}
+      {cardConfigs.map((config) => {
+        const amount =
+          Number.parseFloat(data?.[config.amountKey] || "0") * config.sign;
+
+        return (
+          <StatCard
+            key={config.label}
+            label={config.label}
+            value={<AmountDisplay amount={amount} showSign={false} size="lg" />}
+            icon={config.icon}
+            variant={config.variant}
+          />
+        );
+      })}
     </div>
   );
 };
