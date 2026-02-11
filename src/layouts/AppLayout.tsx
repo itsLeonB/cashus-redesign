@@ -125,7 +125,7 @@ export function AppLayout() {
           </nav>
 
           {/* User section - ensure enough bottom padding for external widgets */}
-          <div className="p-4 pb-6 border-t border-sidebar-border bg-sidebar relative z-[60]">
+          <div className="p-4 pb-8 border-t border-sidebar-border bg-sidebar relative z-[60]">
             <div className="flex items-center gap-3 mb-3">
               <AvatarCircle
                 name={user?.name || "User"}

@@ -690,29 +690,33 @@ export default function ExpenseDetailPage() {
           <div className="flex flex-col gap-3 mt-6">
             {canEdit && (
               <>
-                <Button
-                  className="w-full"
-                  size={isReady ? "lg" : "default"}
-                  onClick={handleConfirmDryRun}
-                  disabled={
-                    !isReady ||
-                    isDryRunLoading ||
-                    confirmExpense.isPending ||
-                    deleteExpense.isPending
-                  }
-                >
-                  {isDryRunLoading && (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  )}
-                  {isReady && !isDryRunLoading && (
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                  )}
-                  <span className="text-wrap text-center leading-snug">
-                    {isReady
-                      ? "Confirm & Record Debts"
-                      : "Please assign participants to all items before confirming"}
-                  </span>
-                </Button>
+                {isReady ? (
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    onClick={handleConfirmDryRun}
+                    disabled={
+                      isDryRunLoading ||
+                      confirmExpense.isPending ||
+                      deleteExpense.isPending
+                    }
+                  >
+                    {isDryRunLoading && (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    )}
+                    {!isDryRunLoading && (
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                    )}
+                    Confirm & Record Debts
+                  </Button>
+                ) : (
+                  <div className="flex items-start gap-3 p-4 rounded-lg bg-warning/10 border border-warning/20">
+                    <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-warning leading-relaxed">
+                      Please assign participants to all items before confirming
+                    </p>
+                  </div>
+                )}
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button
