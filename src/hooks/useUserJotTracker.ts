@@ -14,6 +14,8 @@ declare global {
           avatar?: string;
         }) => void;
         showWidget: () => void;
+        hideWidget: () => void;
+        getWidgetState: () => { isOpen: boolean; section: string | null };
       }
     | undefined;
 }
@@ -59,4 +61,18 @@ export function useUserJotTracker() {
       avatar: user.avatar,
     });
   }, [user]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const state = globalThis.uj?.getWidgetState();
+      if (state?.isOpen) {
+        globalThis.uj?.hideWidget();
+      }
+    };
+
+    globalThis.addEventListener("popstate", handlePopState);
+    return () => {
+      globalThis.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
 }

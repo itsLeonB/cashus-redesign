@@ -133,6 +133,7 @@ export function AppLayout() {
                 className="w-full justify-start gap-3 h-10 px-3 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                 onClick={() => {
                   globalThis.uj?.showWidget();
+                  globalThis.history.pushState({ ujWidget: true }, "");
                   setSidebarOpen(false);
                 }}
               >
