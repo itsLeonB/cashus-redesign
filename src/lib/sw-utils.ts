@@ -103,13 +103,8 @@ export function isServiceWorkerActive(): boolean {
  */
 export async function waitForServiceWorker(): Promise<boolean> {
   if ("serviceWorker" in navigator) {
-    try {
-      await navigator.serviceWorker.ready;
-      return true;
-    } catch (error) {
-      console.error("[SW Utils] Service worker not ready:", error);
-      return false;
-    }
+    await navigator.serviceWorker.ready;
+    return true;
   }
   return false;
 }
