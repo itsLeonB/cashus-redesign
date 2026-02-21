@@ -3,7 +3,7 @@
 /**
  * Service Worker for Cashus
  * 
- * Version: 1.0.0
+ * Version: 1.0.1
  * 
  * Handles push notifications and background sync.
  * To ensure background push works on mobile:
@@ -12,7 +12,7 @@
  * 3. A fallback notification must be shown if data parsing fails.
  */
 
-const CACHE_NAME = 'cashus-v1';
+const CACHE_NAME = 'cashus-v1.0.1';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -59,6 +59,12 @@ globalThis.addEventListener('activate', (event) => {
 globalThis.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
+  // Skip caching for non-GET requests (POST, PUT, DELETE, etc.)
+  if (event.request.method !== 'GET') {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   // Strategy: Always network for API calls
   if (url.origin === self.location.origin && url.pathname.startsWith('/api/')) {
     event.respondWith(fetch(event.request));
@@ -97,15 +103,17 @@ globalThis.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Strategy: Cache-first for static assets
+  // Strategy: Cache-first for static assets (GET requests only)
   event.respondWith(
     caches.match(event.request).then((response) => {
       return response || fetch(event.request).then((networkResponse) => {
-        // Cache the new resource
-        const responseClone = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseClone);
-        });
+        // Only cache successful responses
+        if (networkResponse.ok) {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+        }
         return networkResponse;
       });
     })
