@@ -75,12 +75,10 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       setUser(profile);
 
       // Clear all caches to prevent stale data from previous user
-      try {
-        await clearServiceWorkerCache();
-      } catch (error) {
+      // Fire-and-forget clearing of SW cache to prevent blocking navigation
+      clearServiceWorkerCache().catch((error) => {
         console.error("Failed to clear service worker cache:", error);
-        // Continue anyway - cache clearing failure shouldn't block login
-      }
+      });
 
       // Clear React Query cache
       queryClient.clear();
@@ -108,13 +106,10 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       clearNotificationContext();
       queryClient.clear();
 
-      // Clear service worker cache
-      try {
-        await clearServiceWorkerCache();
-      } catch (error) {
+      // Clear service worker cache - fire and forget to avoid delaying navigation
+      clearServiceWorkerCache().catch((error) => {
         console.error("Failed to clear service worker cache:", error);
-        // Continue anyway - cache clearing failure shouldn't block logout
-      }
+      });
     };
 
     try {
