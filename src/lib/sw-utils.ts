@@ -17,7 +17,7 @@ export async function clearServiceWorkerCache(): Promise<void> {
 
       const clearPromise = new Promise<void>((resolve, reject) => {
         messageChannel.port1.onmessage = (event) => {
-          if (event.data.success) {
+          if (event?.data?.success) {
             resolve();
           } else {
             reject(new Error("Cache clearing failed"));

@@ -228,6 +228,11 @@ self.addEventListener('message', (event) => {
         if (event.ports && event.ports[0]) {
           event.ports[0].postMessage({ success: true });
         }
+      }).catch((error) => {
+        console.error('[Service Worker] Failed to clear caches:', error);
+        if (event.ports && event.ports[0]) {
+          event.ports[0].postMessage({ success: false, error: error.message });
+        }
       })
     );
   }
