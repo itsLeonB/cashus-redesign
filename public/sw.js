@@ -3,7 +3,7 @@
 /**
  * Service Worker for Cashus
  * 
- * Version: 1.0.0
+ * Version: 1.0.1
  * 
  * Handles push notifications and background sync.
  * To ensure background push works on mobile:
@@ -12,7 +12,7 @@
  * 3. A fallback notification must be shown if data parsing fails.
  */
 
-const CACHE_NAME = 'cashus-v1';
+const CACHE_NAME = 'cashus-v1.0.1';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -59,41 +59,61 @@ globalThis.addEventListener('activate', (event) => {
 globalThis.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
+  // Skip caching for non-GET requests (POST, PUT, DELETE, etc.)
+  if (event.request.method !== 'GET') {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   // Strategy: Always network for API calls
   if (url.origin === self.location.origin && url.pathname.startsWith('/api/')) {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  // Strategy: Network-first for navigation
-  if (url.origin === self.location.origin && event.request.mode === 'navigate') {
+  // Strategy: Network-only for HTML documents to prevent stale data
+  // Only cache for offline fallback, never serve cached HTML when online
+  if (url.origin === self.location.origin &&
+    (event.request.mode === 'navigate' ||
+      event.request.destination === 'document' ||
+      url.pathname.endsWith('.html'))) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          // Cache a copy of the fresh response
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
+          // Only cache if it's a successful response
+          if (response.ok) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseClone);
+            });
+          }
           return response;
         })
         .catch(() => {
-          // If network fails, try the cache
-          return caches.match(event.request);
+          // Only use cache as offline fallback
+          return caches.match(event.request).then(cachedResponse => {
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            // Return a custom offline page if available
+            return caches.match('/index.html');
+          });
         })
     );
     return;
   }
 
-  // Strategy: Cache-first for static assets
+  // Strategy: Cache-first for static assets (GET requests only)
   event.respondWith(
     caches.match(event.request).then((response) => {
       return response || fetch(event.request).then((networkResponse) => {
-        // Cache the new resource
-        const responseClone = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseClone);
-        });
+        // Only cache successful responses
+        if (networkResponse.ok) {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+        }
         return networkResponse;
       });
     })
@@ -161,10 +181,14 @@ self.addEventListener('notificationclick', (event) => {
 
     for (const client of windowClients) {
       // If we find an existing client, focus it and navigate
-      if ('focus' in client && 'navigate' in client) {
+      if ('focus' in client) {
         await client.focus();
-        if (client.url !== new URL(targetUrl, self.location.origin).href) {
-          await client.navigate(targetUrl);
+        if ('navigate' in client && client.url !== new URL(targetUrl, self.location.origin).href) {
+          try {
+            await client.navigate(targetUrl);
+          } catch (e) {
+            console.warn('[Service Worker] navigate() failed, falling back to URL param', e);
+          }
         }
         if (notificationId) {
           client.postMessage({ type: 'NOTIFICATION_CLICK', notificationId });
@@ -180,4 +204,40 @@ self.addEventListener('notificationclick', (event) => {
   });
 
   event.waitUntil(clickTask);
+});
+
+/**
+ * Message handling for cache management
+ * Listen for messages from the app to clear cache on logout/login
+ */
+self.addEventListener('message', (event) => {
+  console.log('[Service Worker] Message received:', event.data);
+
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    event.waitUntil(
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            console.log('[Service Worker] Clearing cache:', cacheName);
+            return caches.delete(cacheName);
+          })
+        );
+      }).then(() => {
+        console.log('[Service Worker] All caches cleared');
+        // Notify the client that cache clearing is complete
+        if (event.ports && event.ports[0]) {
+          event.ports[0].postMessage({ success: true });
+        }
+      }).catch((error) => {
+        console.error('[Service Worker] Failed to clear caches:', error);
+        if (event.ports && event.ports[0]) {
+          event.ports[0].postMessage({ success: false, error: error.message });
+        }
+      })
+    );
+  }
+
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    globalThis.skipWaiting();
+  }
 });

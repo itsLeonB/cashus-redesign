@@ -9,9 +9,9 @@ import {
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { UserProfile, authApi, apiClient, ApiError } from "@/lib/api";
-import { queryKeys } from "@/lib/queryKeys";
 import { clearNotificationContext } from "@/lib/notificationPersistence";
 import { useToast } from "@/hooks/use-toast";
+import { clearServiceWorkerCache } from "@/lib/sw-utils";
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -74,20 +74,18 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       const profile = await authApi.getProfile();
       setUser(profile);
 
-      // Invalidate useApi.ts queries
-      queryClient.invalidateQueries({ queryKey: queryKeys.profile.current });
-      queryClient.invalidateQueries({ queryKey: queryKeys.friendships.all });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.friendRequests.all,
+      // Clear all caches to prevent stale data from previous user
+      // Fire-and-forget clearing of SW cache to prevent blocking navigation
+      clearServiceWorkerCache().catch((error) => {
+        console.error("Failed to clear service worker cache:", error);
       });
-      queryClient.invalidateQueries({ queryKey: queryKeys.debts.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.debts.summary });
-      queryClient.invalidateQueries({ queryKey: queryKeys.debts.recent });
-      queryClient.invalidateQueries({ queryKey: queryKeys.groupExpenses.all });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.groupExpenses.recent,
-      });
-      queryClient.invalidateQueries({ queryKey: queryKeys.profiles.all });
+
+      // Clear React Query cache
+      queryClient.clear();
+
+      // Force a hard reload to ensure clean state
+      // This prevents any stale data or state from persisting
+      globalThis.location.href = "/dashboard";
     },
     [queryClient],
   );
@@ -101,12 +99,17 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
   const logout = useCallback(async () => {
     // 1. Local cleanup must occur unconditionally
-    const cleanup = () => {
+    const cleanup = async () => {
       setUser(null);
       setIsRefreshFailed(false);
       apiClient.setTokens(null, null);
       clearNotificationContext();
       queryClient.clear();
+
+      // Clear service worker cache - fire and forget to avoid delaying navigation
+      clearServiceWorkerCache().catch((error) => {
+        console.error("Failed to clear service worker cache:", error);
+      });
     };
 
     try {
@@ -125,7 +128,9 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
         description: "Local session cleared. Could not notify server.",
       });
     } finally {
-      cleanup();
+      await cleanup();
+      // Force a hard navigation to login page to ensure clean state
+      globalThis.location.href = "/login";
     }
   }, [queryClient, toast]);
 
