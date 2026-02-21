@@ -65,21 +65,33 @@ globalThis.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Strategy: Network-first for navigation
-  if (url.origin === self.location.origin && event.request.mode === 'navigate') {
+  // Strategy: Network-only for HTML documents to prevent stale data
+  // Only cache for offline fallback, never serve cached HTML when online
+  if (url.origin === self.location.origin &&
+    (event.request.mode === 'navigate' ||
+      event.request.destination === 'document' ||
+      url.pathname.endsWith('.html'))) {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          // Cache a copy of the fresh response
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
+          // Only cache if it's a successful response
+          if (response.ok) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseClone);
+            });
+          }
           return response;
         })
         .catch(() => {
-          // If network fails, try the cache
-          return caches.match(event.request);
+          // Only use cache as offline fallback
+          return caches.match(event.request).then(cachedResponse => {
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            // Return a custom offline page if available
+            return caches.match('/index.html');
+          });
         })
     );
     return;
@@ -180,4 +192,35 @@ self.addEventListener('notificationclick', (event) => {
   });
 
   event.waitUntil(clickTask);
+});
+
+/**
+ * Message handling for cache management
+ * Listen for messages from the app to clear cache on logout/login
+ */
+self.addEventListener('message', (event) => {
+  console.log('[Service Worker] Message received:', event.data);
+
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    event.waitUntil(
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => {
+            console.log('[Service Worker] Clearing cache:', cacheName);
+            return caches.delete(cacheName);
+          })
+        );
+      }).then(() => {
+        console.log('[Service Worker] All caches cleared');
+        // Notify the client that cache clearing is complete
+        if (event.ports && event.ports[0]) {
+          event.ports[0].postMessage({ success: true });
+        }
+      })
+    );
+  }
+
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    globalThis.skipWaiting();
+  }
 });
