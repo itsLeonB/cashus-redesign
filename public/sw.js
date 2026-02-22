@@ -34,11 +34,8 @@ self.addEventListener("activate", (event) => {
           .filter((key) => key !== CACHE_NAME)
           .map((key) => caches.delete(key))
       )
-    )
+    ).then(() => self.clients.claim())
   );
-
-  // Take control of all clients immediately
-  self.clients.claim();
 });
 
 // ------------------ Fetch ------------------
