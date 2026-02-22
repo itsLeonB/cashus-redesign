@@ -117,9 +117,3 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(fetch(event.request));
 });
 
-// ------------------ Message from Client for Update ------------------
-self.addEventListener("message", (event) => {
-  if (event.data?.type === "SKIP_WAITING") {
-    self.skipWaiting();
-  }
-});
