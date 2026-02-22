@@ -75,7 +75,17 @@ self.addEventListener("fetch", (event) => {
           }
           return response;
         })
-        .catch(() => caches.match(event.request).then((r) => r))
+        .catch(() =>
+          caches.match(event.request).then(
+            (r) =>
+              r ||
+              new Response("You are offline and this page is not cached.", {
+                status: 503,
+                statusText: "Service Unavailable",
+                headers: { "Content-Type": "text/plain" },
+              })
+          )
+        )
     );
     return;
   }
