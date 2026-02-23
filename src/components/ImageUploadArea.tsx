@@ -157,6 +157,13 @@ export function ImageUploadArea({
 
   const isDisabled = uploadPermission.isLoading || !uploadPermission.canUpload;
 
+  const uploadHelpMsg = () => {
+    if (uploadPermission.isLoading) return "Checking upload permissions…";
+    if (uploadPermission.canUpload)
+      return "Drag and drop an image, or choose an option below";
+    return "Uploads are currently unavailable";
+  };
+
   return (
     <div className={className}>
       <div
@@ -170,11 +177,7 @@ export function ImageUploadArea({
         )}
       >
         <ImageIcon className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-        <p className="text-sm text-muted-foreground mb-3">
-          {isDisabled
-            ? "Uploads are currently unavailable"
-            : "Drag and drop an image, or choose an option below"}
-        </p>
+        <p className="text-sm text-muted-foreground mb-3">{uploadHelpMsg()}</p>
         <UploadLimitInfo permission={uploadPermission} />
         <div className="flex gap-3 justify-center mt-3">
           <Button
