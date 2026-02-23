@@ -15,29 +15,34 @@ function formatResetTime(resetAt: string): string {
 
 function formatResetDateTime(resetAt: string): string {
   const d = new Date(resetAt);
-  return d.toLocaleDateString([], {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }) + " at " + d.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return (
+    d.toLocaleDateString([], {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }) +
+    " at " +
+    d.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  );
 }
 
 function LimitLine({
   label,
   limit,
   blocked,
-}: {
+}: Readonly<{
   label: string;
   limit: UploadLimit;
   blocked: boolean;
-}) {
+}>) {
   if (blocked) {
-    const resetDisplay = label === "Monthly"
-      ? `Resets on ${formatResetDateTime(limit.resetAt)}`
-      : `Resets at ${formatResetTime(limit.resetAt)}`;
+    const resetDisplay =
+      label === "Monthly"
+        ? `Resets on ${formatResetDateTime(limit.resetAt)}`
+        : `Resets at ${formatResetTime(limit.resetAt)}`;
     return (
       <span className="flex items-center gap-1.5 text-destructive text-xs">
         <AlertCircle className="h-3 w-3 shrink-0" />
@@ -49,12 +54,15 @@ function LimitLine({
   return (
     <span className="flex items-center gap-1.5 text-muted-foreground text-xs">
       <Clock className="h-3 w-3 shrink-0" />
-      {limit.remaining} {label.toLowerCase()} upload{limit.remaining !== 1 ? "s" : ""} remaining
+      {limit.remaining} {label.toLowerCase()} upload
+      {limit.remaining === 1 ? "" : "s"} remaining
     </span>
   );
 }
 
-export function UploadLimitInfo({ permission }: Readonly<UploadLimitInfoProps>) {
+export function UploadLimitInfo({
+  permission,
+}: Readonly<UploadLimitInfoProps>) {
   if (permission.isLoading) {
     return (
       <div className="flex items-center gap-2 text-xs text-muted-foreground">

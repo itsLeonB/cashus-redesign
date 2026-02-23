@@ -11,10 +11,18 @@ export interface UploadPermission {
 
 export function useUploadPermission(): UploadPermission {
   const { user, isLoading } = useAuth();
-
-  if (isLoading || !user) {
+  if (isLoading)
     return {
       isLoading: true,
+      canUpload: false,
+      daily: null,
+      monthly: null,
+      hasLimits: false,
+    };
+
+  if (!user) {
+    return {
+      isLoading: false,
       canUpload: false,
       daily: null,
       monthly: null,
@@ -23,8 +31,7 @@ export function useUploadPermission(): UploadPermission {
   }
 
   const { uploads } = user.currentSubscription.limits;
-  const daily = uploads.daily;
-  const monthly = uploads.monthly;
+  const { daily, monthly } = uploads;
   const hasDailyLimit = daily.limit > 0;
   const hasMonthlyLimit = monthly.limit > 0;
 
