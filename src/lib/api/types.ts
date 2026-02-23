@@ -34,6 +34,26 @@ export interface UserProfile {
   avatar?: string;
   email?: string;
   createdAt: string;
+  currentSubscription: CurrentSubscription;
+}
+
+export interface CurrentSubscription {
+  plan: string;
+  limits: {
+    uploads: {
+      daily: UploadLimit;
+      monthly: UploadLimit;
+      canUpload: boolean;
+    };
+  };
+}
+
+export interface UploadLimit {
+  used: number;
+  limit: number;
+  remaining: number;
+  resetAt: string;
+  canUpload: boolean;
 }
 
 // Friendship Types
