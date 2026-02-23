@@ -1,6 +1,6 @@
+import { useState } from "react";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -8,11 +8,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { LogOut } from "lucide-react";
 
 interface LogoutConfirmDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
 }
 
 export function LogoutConfirmDialog({
@@ -20,8 +23,19 @@ export function LogoutConfirmDialog({
   onOpenChange,
   onConfirm,
 }: Readonly<LogoutConfirmDialogProps>) {
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleConfirm = async () => {
+    setIsLoggingOut(true);
+    try {
+      await onConfirm();
+    } catch {
+      setIsLoggingOut(false);
+    }
+  };
+
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
+    <AlertDialog open={open} onOpenChange={isLoggingOut ? undefined : onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Sign out</AlertDialogTitle>
@@ -30,13 +44,19 @@ export function LogoutConfirmDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            onClick={onConfirm}
+          <AlertDialogCancel disabled={isLoggingOut}>Cancel</AlertDialogCancel>
+          <Button
+            variant="destructive"
+            onClick={handleConfirm}
+            disabled={isLoggingOut}
           >
-            Sign Out
-          </AlertDialogAction>
+            {isLoggingOut ? (
+              <Spinner className="mr-2" />
+            ) : (
+              <LogOut className="h-4 w-4 mr-2" />
+            )}
+            {isLoggingOut ? "Signing out…" : "Sign Out"}
+          </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

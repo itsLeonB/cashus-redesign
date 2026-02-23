@@ -1,11 +1,12 @@
 import { useRef, useState, DragEvent, ChangeEvent, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Camera, ImageIcon, X, Loader2 } from "lucide-react";
+import { Camera, ImageIcon, X, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useUploadExpenseBill } from "@/hooks/useApi";
 import { ApiError } from "@/lib/api/types";
-import { AlertCircle } from "lucide-react";
+import { useUploadPermission } from "@/hooks/useUploadPermission";
+import { UploadLimitInfo } from "@/components/UploadLimitInfo";
 
 interface ImageUploadAreaProps {
   expenseId?: string;
@@ -25,6 +26,7 @@ export function ImageUploadArea({
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const uploadPermission = useUploadPermission();
   const uploadBill = useUploadExpenseBill(expenseId);
 
   useEffect(() => {
@@ -52,7 +54,7 @@ export function ImageUploadArea({
 
     setPreviewUrl(URL.createObjectURL(file));
 
-    if (expenseId) {
+    if (expenseId && uploadPermission.canUpload) {
       uploadBill.mutate(
         { file },
         {
@@ -153,27 +155,37 @@ export function ImageUploadArea({
     );
   }
 
+  const isDisabled = uploadPermission.isLoading || !uploadPermission.canUpload;
+
+  const uploadHelpMsg = () => {
+    if (uploadPermission.isLoading) return "Checking upload permissions…";
+    if (uploadPermission.canUpload)
+      return "Drag and drop an image, or choose an option below";
+    return "Uploads are currently unavailable";
+  };
+
   return (
     <div className={className}>
       <div
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
+        onDrop={isDisabled ? undefined : handleDrop}
+        onDragOver={isDisabled ? undefined : handleDragOver}
+        onDragLeave={isDisabled ? undefined : handleDragLeave}
         className={cn(
           "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
           isDragging ? "border-primary bg-primary/5" : "border-border",
+          isDisabled && "opacity-60 cursor-not-allowed",
         )}
       >
         <ImageIcon className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-        <p className="text-sm text-muted-foreground mb-4">
-          Drag and drop an image, or choose an option below
-        </p>
-        <div className="flex gap-3 justify-center">
+        <p className="text-sm text-muted-foreground mb-3">{uploadHelpMsg()}</p>
+        <UploadLimitInfo permission={uploadPermission} />
+        <div className="flex gap-3 justify-center mt-3">
           <Button
             type="button"
             variant="outline"
             onClick={() => cameraInputRef.current?.click()}
             className="flex items-center gap-2"
+            disabled={isDisabled}
           >
             <Camera className="h-4 w-4" />
             Take Photo
@@ -183,6 +195,7 @@ export function ImageUploadArea({
             variant="outline"
             onClick={() => galleryInputRef.current?.click()}
             className="flex items-center gap-2"
+            disabled={isDisabled}
           >
             <ImageIcon className="h-4 w-4" />
             Gallery
