@@ -13,6 +13,18 @@ function formatResetTime(resetAt: string): string {
   });
 }
 
+function formatResetDateTime(resetAt: string): string {
+  const d = new Date(resetAt);
+  return d.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }) + " at " + d.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function LimitLine({
   label,
   limit,
@@ -23,10 +35,13 @@ function LimitLine({
   blocked: boolean;
 }) {
   if (blocked) {
+    const resetDisplay = label === "Monthly"
+      ? `Resets on ${formatResetDateTime(limit.resetAt)}`
+      : `Resets at ${formatResetTime(limit.resetAt)}`;
     return (
       <span className="flex items-center gap-1.5 text-destructive text-xs">
         <AlertCircle className="h-3 w-3 shrink-0" />
-        {label} limit reached. Resets at {formatResetTime(limit.resetAt)}
+        {label} limit reached. {resetDisplay}
       </span>
     );
   }

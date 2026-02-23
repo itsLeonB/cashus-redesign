@@ -16,6 +16,8 @@ import { ItemParticipantManager } from "@/components/ItemParticipantManager";
 import { ExpenseConfirmationPreview } from "@/components/ExpenseConfirmationPreview";
 import { ParticipantSelector } from "@/components/ParticipantSelector";
 import { ImageUploadArea } from "@/components/ImageUploadArea";
+import { useUploadPermission } from "@/hooks/useUploadPermission";
+import { UploadLimitInfo } from "@/components/UploadLimitInfo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -105,6 +107,7 @@ export default function ExpenseDetailPage() {
   const { mutate: deleteItem } = useDeleteExpenseItem();
   const { mutate: deleteFee } = useDeleteExpenseFee();
   const { data: calculationMethods } = useCalculationMethods();
+  const uploadPermission = useUploadPermission();
 
   const calculationMethodDisplayByName = useMemo(() => {
     if (!calculationMethods) return {};
@@ -332,6 +335,7 @@ export default function ExpenseDetailPage() {
 
   const billInformationSection = () => {
     if (isConfirmed && !expense.billExists) return null;
+    const uploadDisabled = !uploadPermission.canUpload;
     return (
       <>
         <div className="border-t border-border/50 my-6" />
@@ -389,6 +393,7 @@ export default function ExpenseDetailPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => setUploadBillModalOpen(true)}
+                    disabled={uploadDisabled}
                   >
                     <Upload className="h-4 w-4 mr-1" />
                     Upload New
@@ -401,6 +406,7 @@ export default function ExpenseDetailPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => setUploadBillModalOpen(true)}
+                  disabled={uploadDisabled}
                 >
                   <Upload className="h-4 w-4 mr-1" />
                   Upload Bill
@@ -409,6 +415,7 @@ export default function ExpenseDetailPage() {
             )}
           </div>
         </div>
+        {canEdit && <UploadLimitInfo permission={uploadPermission} />}
       </>
     );
   };

@@ -23,6 +23,8 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { ParticipantSelector } from "./ParticipantSelector";
 import { ImageUploadArea } from "./ImageUploadArea";
+import { useUploadPermission } from "@/hooks/useUploadPermission";
+import { UploadLimitInfo } from "./UploadLimitInfo";
 
 type InputType = "upload" | "manual";
 type Step = "details" | "upload" | "participants";
@@ -44,6 +46,8 @@ export function NewGroupExpenseModal({
   const createDraft = useCreateDraftExpense();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const uploadPermission = useUploadPermission();
+  const uploadBlocked = inputType === "upload" && !uploadPermission.isLoading && !uploadPermission.canUpload;
 
   const resetModal = () => {
     setDescription("");
@@ -202,10 +206,14 @@ export function NewGroupExpenseModal({
               </div>
             </div>
 
+            {inputType === "upload" && (
+              <UploadLimitInfo permission={uploadPermission} />
+            )}
+
             <Button
               type="submit"
               className="w-full"
-              disabled={createDraft.isPending}
+              disabled={createDraft.isPending || uploadBlocked}
             >
               {createDraft.isPending && (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
