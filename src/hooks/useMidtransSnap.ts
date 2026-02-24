@@ -5,11 +5,19 @@ const snapJsSrc =
   "https://app.sandbox.midtrans.com/snap/snap.js";
 const clientKey = import.meta.env.VITE_MIDTRANS_CLIENT_KEY;
 
+type SnapResult = Record<string, unknown>;
+
 interface PayCallbacks {
-  onSuccess?: (result) => void;
-  onPending?: (result) => void;
-  onError?: (result) => void;
-  onClose?: (result) => void;
+  onSuccess?: (result: SnapResult) => void;
+  onPending?: (result: SnapResult) => void;
+  onError?: (result: SnapResult) => void;
+  onClose?: (result: SnapResult) => void;
+}
+
+declare global {
+  interface Window {
+    snap?: { pay: (token: string, callbacks?: PayCallbacks) => void };
+  }
 }
 
 const useMidtransSnap = () => {
