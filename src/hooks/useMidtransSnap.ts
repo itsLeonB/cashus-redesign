@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 
 const snapJsSrc =
   import.meta.env.VITE_MIDTRANS_SNAP_JS_SRC ||
@@ -21,31 +21,51 @@ declare global {
 }
 
 const useMidtransSnap = () => {
+  const SNAP_SCRIPT_ID = "midtrans-snap-sdk";
+  const snapLoader = useRef<Promise<void> | null>(null);
+
+  const loadSnap = useCallback((): Promise<void> => {
+    if (snapLoader.current !== null) return snapLoader.current;
+    if (globalThis.snap) return Promise.resolve();
+
+    snapLoader.current = new Promise((resolve, reject) => {
+      const existing = document.getElementById(
+        SNAP_SCRIPT_ID,
+      ) as HTMLScriptElement | null;
+      if (existing) {
+        existing.addEventListener("load", () => resolve());
+        existing.addEventListener("error", () =>
+          reject(new Error("Midtrans Snap failed to load")),
+        );
+        return;
+      }
+      const script = document.createElement("script");
+      script.id = SNAP_SCRIPT_ID;
+      script.src = snapJsSrc;
+      script.dataset.clientKey = clientKey ?? "";
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error("Midtrans Snap failed to load"));
+      document.body.appendChild(script);
+    });
+    return snapLoader.current;
+  }, []);
+
   const snapLoaded = useRef(false);
 
   useEffect(() => {
-    if (snapLoaded.current) return;
-
-    const script = document.createElement("script");
-    script.src = snapJsSrc;
-    script.dataset.clientKey = clientKey;
-    script.async = true;
-    script.onload = () => {
+    loadSnap().then(() => {
       snapLoaded.current = true;
-    };
-    document.body.appendChild(script);
-
+    });
     return () => {
-      script.remove();
+      // keep script to avoid breaking unmount/remount
     };
-  }, []);
+  }, [loadSnap]);
 
   const pay = (snapToken: string, callbacks: PayCallbacks = {}) => {
-    if (!globalThis.snap) {
-      console.error("Midtrans Snap is not loaded yet.");
-      return;
-    }
-    globalThis.snap.pay(snapToken, callbacks);
+    loadSnap()
+      .then(() => globalThis.snap?.pay(snapToken, callbacks))
+      .catch(() => console.error("Failed to load payment SDK."));
   };
 
   return { pay };
