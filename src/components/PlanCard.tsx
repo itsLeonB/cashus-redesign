@@ -11,23 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Check, AlertTriangle, Loader2 } from "lucide-react";
 import { PlanVersionResponse } from "@/lib/api/plan";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 interface PlanCardProps {
   plan: PlanVersionResponse;
   isCurrent: boolean;
   isPurchasing: boolean;
   onSubscribe: (planId: string, planVersionId: string) => void;
-}
-
-function formatPrice(amount: string, currency: string) {
-  const num = parseFloat(amount);
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: currency || "IDR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(num);
 }
 
 function formatInterval(interval: string) {
@@ -64,6 +54,12 @@ export function PlanCard({
     },
   ];
 
+  const footerBtnText = () => {
+    if (isPurchasing) return "Processing…";
+    if (isCurrent) return "Current Plan";
+    return "Subscribe";
+  };
+
   return (
     <Card
       className={cn(
@@ -82,7 +78,7 @@ export function PlanCard({
         </div>
         <CardDescription>
           <span className="text-2xl font-bold font-display text-foreground">
-            {formatPrice(plan.priceAmount, plan.priceCurrency)}
+            {formatCurrency(plan.priceAmount)}
           </span>{" "}
           <span className="text-muted-foreground">
             {formatInterval(plan.billingInterval)}
@@ -97,34 +93,25 @@ export function PlanCard({
               <Check className="h-4 w-4 text-success mt-0.5 shrink-0" />
               <span>
                 <span className="font-medium">{feature.value}</span>{" "}
-                <span className="text-muted-foreground">
-                  — {feature.label}
-                </span>
+                <span className="text-muted-foreground">— {feature.label}</span>
               </span>
             </li>
           ))}
         </ul>
       </CardContent>
-
-      <CardFooter>
-        <Button
-          className="w-full"
-          variant={isCurrent ? "secondary" : "default"}
-          disabled={isCurrent || isPurchasing}
-          onClick={() => onSubscribe(plan.planId, plan.id)}
-        >
-          {isPurchasing ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Processing…
-            </>
-          ) : isCurrent ? (
-            "Current Plan"
-          ) : (
-            "Subscribe"
-          )}
-        </Button>
-      </CardFooter>
+      {!plan.isDefault && (
+        <CardFooter>
+          <Button
+            className="w-full"
+            variant={isCurrent ? "secondary" : "default"}
+            disabled={isCurrent || isPurchasing}
+            onClick={() => onSubscribe(plan.planId, plan.id)}
+          >
+            {isPurchasing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            {footerBtnText()}
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 }
@@ -147,7 +134,7 @@ export function PlanCardSkeleton() {
   );
 }
 
-export function PlanCardsError({ onRetry }: { onRetry: () => void }) {
+export function PlanCardsError({ onRetry }: Readonly<{ onRetry: () => void }>) {
   return (
     <Card className="border-destructive/30">
       <CardContent className="p-6 text-center space-y-3">

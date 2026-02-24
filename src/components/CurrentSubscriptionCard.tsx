@@ -27,7 +27,9 @@ function formatDate(dateStr: string) {
   });
 }
 
-function StatusBadge({ subscription }: { subscription: SubscriptionDetails }) {
+function StatusBadge({
+  subscription,
+}: Readonly<{ subscription: SubscriptionDetails }>) {
   const isCanceled = !!subscription.canceledAt;
   const isExpired =
     subscription.endsAt && new Date(subscription.endsAt) < new Date();
@@ -41,10 +43,7 @@ function StatusBadge({ subscription }: { subscription: SubscriptionDetails }) {
   }
   if (isCanceled) {
     return (
-      <Badge
-        variant="outline"
-        className="text-xs border-warning text-warning"
-      >
+      <Badge variant="outline" className="text-xs border-warning text-warning">
         Canceled
       </Badge>
     );
@@ -127,10 +126,11 @@ export function CurrentSubscriptionCard({
           <CardTitle className="text-lg">{subscription.planName}</CardTitle>
           <StatusBadge subscription={subscription} />
         </div>
-        <CardDescription>
-          {subscription.autoRenew ? "Auto-renews" : "Expires"}{" "}
-          {subscription.endsAt ? formatDate(subscription.endsAt) : "—"}
-        </CardDescription>
+        {subscription.endsAt ? (
+          <CardDescription>
+            Until {formatDate(subscription.endsAt)}
+          </CardDescription>
+        ) : null}
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Cancel warning */}

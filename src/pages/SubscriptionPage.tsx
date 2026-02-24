@@ -101,6 +101,33 @@ export default function SubscriptionPage() {
     }
   };
 
+  const plansSection = () => {
+    if (plansQuery.isLoading)
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <PlanCardSkeleton />
+          <PlanCardSkeleton />
+        </div>
+      );
+
+    if (plansQuery.isError)
+      return <PlanCardsError onRetry={() => plansQuery.refetch()} />;
+
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {plansQuery.data.map((plan) => (
+          <PlanCard
+            key={plan.id}
+            plan={plan}
+            isCurrent={subscription?.planVersionId === plan.id}
+            isPurchasing={purchasingPlanId === plan.id}
+            onSubscribe={handleSubscribe}
+          />
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-8 max-w-4xl mx-auto">
       {/* Header */}
@@ -133,32 +160,7 @@ export default function SubscriptionPage() {
         <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">
           Available Plans
         </h2>
-
-        {plansQuery.isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <PlanCardSkeleton />
-            <PlanCardSkeleton />
-          </div>
-        ) : plansQuery.isError ? (
-          <PlanCardsError onRetry={() => plansQuery.refetch()} />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {(Array.isArray(plansQuery.data)
-              ? plansQuery.data
-              : plansQuery.data
-                ? [plansQuery.data]
-                : []
-            ).map((plan) => (
-              <PlanCard
-                key={plan.id}
-                plan={plan}
-                isCurrent={subscription?.planVersionId === plan.id}
-                isPurchasing={purchasingPlanId === plan.id}
-                onSubscribe={handleSubscribe}
-              />
-            ))}
-          </div>
-        )}
+        {plansSection()}
       </section>
     </div>
   );

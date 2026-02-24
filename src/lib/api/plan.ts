@@ -35,7 +35,7 @@ export interface PaymentResponse {
 }
 
 export const planApi = {
-  getActive: () => apiClient.get<PlanVersionResponse>("/plans"),
+  getActive: () => apiClient.get<PlanVersionResponse[]>("/plans"),
 
   purchasePlan: (planId: string, planVersionId: string) =>
     apiClient.post<PaymentResponse>(
