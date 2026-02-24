@@ -16,6 +16,7 @@ import { profileApi } from "@/lib/api/profile";
 import { profilesApi } from "@/lib/api/profiles";
 import { queryKeys } from "@/lib/queryKeys";
 import { notificationApi } from "@/lib/api/notifications";
+import { planApi } from "@/lib/api/plan";
 
 // Profile hooks
 export function useMyTransferMethods() {
@@ -30,6 +31,13 @@ export function useProfileTransferMethods(profileId: string, enabled = true) {
     queryKey: queryKeys.transferMethods.profile(profileId),
     queryFn: () => profilesApi.getTransferMethods(profileId),
     enabled: !!profileId && enabled,
+  });
+}
+
+export function useActiveSubscriptionDetails() {
+  return useQuery({
+    queryKey: queryKeys.profile.subscription,
+    queryFn: profileApi.getActiveSubscriptionDetails,
   });
 }
 
@@ -544,5 +552,13 @@ export function useMarkAllNotificationsAsRead() {
         queryKey: queryKeys.notifications.unread,
       });
     },
+  });
+}
+
+// Plan hooks
+export function useActivePlans() {
+  return useQuery({
+    queryKey: queryKeys.plans.active,
+    queryFn: planApi.getActive,
   });
 }

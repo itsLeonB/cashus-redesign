@@ -1,6 +1,7 @@
 export const queryKeys = {
   profile: {
     current: ["profile"] as const,
+    subscription: ["profile", "subscription"] as const,
   },
   profiles: {
     all: ["profiles"] as const,
@@ -46,5 +47,9 @@ export const queryKeys = {
 
   notifications: {
     unread: ["notifications", "unread"] as const,
+  },
+
+  plans: {
+    active: ["plans"] as const,
   },
 } as const;
