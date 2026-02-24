@@ -30,7 +30,17 @@ export default function SubscriptionPage() {
   const subscription = subscriptionQuery.data;
 
   const handleSubscribe = async (planId: string, planVersionId: string) => {
+    if (purchasingPlanId) {
+      toast({
+        title: "Payment already in progress",
+        description:
+          "Please complete the current payment before starting another.",
+      });
+      return;
+    }
+
     setPurchasingPlanId(planVersionId);
+
     try {
       const payment = await purchaseMutation.mutateAsync({
         planId,
