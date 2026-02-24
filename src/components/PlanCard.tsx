@@ -1,0 +1,167 @@
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Check, AlertTriangle, Loader2 } from "lucide-react";
+import { PlanVersionResponse } from "@/lib/api/plan";
+import { cn } from "@/lib/utils";
+
+interface PlanCardProps {
+  plan: PlanVersionResponse;
+  isCurrent: boolean;
+  isPurchasing: boolean;
+  onSubscribe: (planId: string, planVersionId: string) => void;
+}
+
+function formatPrice(amount: string, currency: string) {
+  const num = parseFloat(amount);
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: currency || "IDR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(num);
+}
+
+function formatInterval(interval: string) {
+  switch (interval?.toLowerCase()) {
+    case "monthly":
+      return "/ month";
+    case "yearly":
+      return "/ year";
+    default:
+      return `/ ${interval}`;
+  }
+}
+
+export function PlanCard({
+  plan,
+  isCurrent,
+  isPurchasing,
+  onSubscribe,
+}: Readonly<PlanCardProps>) {
+  const features = [
+    {
+      label: "Daily uploads",
+      value:
+        plan.billUploadsDaily === 0
+          ? "Unlimited"
+          : `${plan.billUploadsDaily} per day`,
+    },
+    {
+      label: "Monthly uploads",
+      value:
+        plan.billUploadsMonthly === 0
+          ? "Unlimited"
+          : `${plan.billUploadsMonthly} per month`,
+    },
+  ];
+
+  return (
+    <Card
+      className={cn(
+        "border-border/50 transition-all duration-200 flex flex-col",
+        isCurrent && "border-primary/50 ring-1 ring-primary/20",
+      )}
+    >
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">{plan.planName}</CardTitle>
+          {isCurrent && (
+            <Badge className="bg-primary/15 text-primary border-primary/30 hover:bg-primary/20 text-xs">
+              Current
+            </Badge>
+          )}
+        </div>
+        <CardDescription>
+          <span className="text-2xl font-bold font-display text-foreground">
+            {formatPrice(plan.priceAmount, plan.priceCurrency)}
+          </span>{" "}
+          <span className="text-muted-foreground">
+            {formatInterval(plan.billingInterval)}
+          </span>
+        </CardDescription>
+      </CardHeader>
+
+      <CardContent className="flex-1">
+        <ul className="space-y-2.5">
+          {features.map((feature) => (
+            <li key={feature.label} className="flex items-start gap-2 text-sm">
+              <Check className="h-4 w-4 text-success mt-0.5 shrink-0" />
+              <span>
+                <span className="font-medium">{feature.value}</span>{" "}
+                <span className="text-muted-foreground">
+                  — {feature.label}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+
+      <CardFooter>
+        <Button
+          className="w-full"
+          variant={isCurrent ? "secondary" : "default"}
+          disabled={isCurrent || isPurchasing}
+          onClick={() => onSubscribe(plan.planId, plan.id)}
+        >
+          {isPurchasing ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Processing…
+            </>
+          ) : isCurrent ? (
+            "Current Plan"
+          ) : (
+            "Subscribe"
+          )}
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}
+
+export function PlanCardSkeleton() {
+  return (
+    <Card className="border-border/50">
+      <CardHeader>
+        <Skeleton className="h-6 w-32" />
+        <Skeleton className="h-8 w-40" />
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-3/4" />
+      </CardContent>
+      <CardFooter>
+        <Skeleton className="h-10 w-full" />
+      </CardFooter>
+    </Card>
+  );
+}
+
+export function PlanCardsError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <Card className="border-destructive/30">
+      <CardContent className="p-6 text-center space-y-3">
+        <AlertTriangle className="h-8 w-8 text-destructive mx-auto" />
+        <p className="text-sm text-muted-foreground">
+          Failed to load available plans.
+        </p>
+        <button
+          onClick={onRetry}
+          className="text-sm text-primary hover:underline"
+        >
+          Try again
+        </button>
+      </CardContent>
+    </Card>
+  );
+}
