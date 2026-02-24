@@ -44,6 +44,7 @@ export default function SubscriptionPage() {
           description: "No payment token received. Please try again.",
           variant: "destructive",
         });
+        setPurchasingPlanId(null);
         return;
       }
 
@@ -59,6 +60,7 @@ export default function SubscriptionPage() {
           queryClient.invalidateQueries({
             queryKey: queryKeys.profile.current,
           });
+          setPurchasingPlanId(null);
         },
         onPending: () => {
           toast({
@@ -75,6 +77,7 @@ export default function SubscriptionPage() {
               queryKey: queryKeys.profile.current,
             });
           }, 3000);
+          setPurchasingPlanId(null);
         },
         onError: () => {
           toast({
@@ -82,12 +85,14 @@ export default function SubscriptionPage() {
             description: "Something went wrong. Please try again.",
             variant: "destructive",
           });
+          setPurchasingPlanId(null);
         },
         onClose: () => {
           toast({
             title: "Payment canceled",
             description: "You closed the payment window.",
           });
+          setPurchasingPlanId(null);
         },
       });
     } catch {
@@ -96,7 +101,6 @@ export default function SubscriptionPage() {
         description: "Failed to start payment. Please try again.",
         variant: "destructive",
       });
-    } finally {
       setPurchasingPlanId(null);
     }
   };
