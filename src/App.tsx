@@ -33,6 +33,7 @@ const FriendDetailPage = lazy(() => import("@/pages/FriendDetailPage"));
 const ExpensesPage = lazy(() => import("@/pages/ExpensesPage"));
 const ExpenseDetailPage = lazy(() => import("@/pages/ExpenseDetailPage"));
 const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
+const SubscriptionPage = lazy(() => import("@/pages/SubscriptionPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -105,6 +106,7 @@ const App = () => {
                     element={<ExpenseDetailPage />}
                   />
                   <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/subscription" element={<SubscriptionPage />} />
                 </Route>
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="*" element={<NotFound />} />

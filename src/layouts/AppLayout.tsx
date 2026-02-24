@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   MessageSquare,
+  CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -24,6 +25,7 @@ const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Expenses", href: "/expenses", icon: Receipt },
   { name: "Friends", href: "/friends", icon: Users },
+  { name: "Your Plan", href: "/subscription", icon: CreditCard },
 ];
 
 export function AppLayout() {
