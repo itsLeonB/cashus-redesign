@@ -21,12 +21,18 @@ export function FooterSection() {
             <h4 className="text-sm font-semibold">Links</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <a href="#features" className="hover:text-foreground transition-colors">
+                <a
+                  href="#features"
+                  className="hover:text-foreground transition-colors"
+                >
                   Features
                 </a>
               </li>
               <li>
-                <a href="#pricing" className="hover:text-foreground transition-colors">
+                <a
+                  href="#pricing"
+                  className="hover:text-foreground transition-colors"
+                >
                   Pricing
                 </a>
               </li>
@@ -37,7 +43,7 @@ export function FooterSection() {
           <div className="space-y-3">
             <h4 className="text-sm font-semibold">Contact</h4>
             <p className="text-sm text-muted-foreground">
-              support@cashus.app
+              {import.meta.env.VITE_SUPPORT_EMAIL || "support@cashus.app"}
             </p>
           </div>
         </div>
