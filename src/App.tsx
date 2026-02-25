@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -35,6 +35,7 @@ const ExpenseDetailPage = lazy(() => import("@/pages/ExpenseDetailPage"));
 const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
 const SubscriptionPage = lazy(() => import("@/pages/SubscriptionPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
+const LandingPage = lazy(() => import("@/pages/LandingPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -108,7 +109,7 @@ const App = () => {
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/subscription" element={<SubscriptionPage />} />
                 </Route>
-                <Route path="/" element={<Navigate to="/login" replace />} />
+                <Route path="/" element={<LandingPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
