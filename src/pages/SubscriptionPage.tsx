@@ -153,20 +153,29 @@ export default function SubscriptionPage() {
 
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {plansQuery.data.map((plan) => (
-          <PlanCard
-            key={plan.id}
-            plan={plan}
-            isCurrent={subscription?.planVersionId === plan.id}
-            isPurchasing={purchasingPlanId === plan.id}
-            isPastDue={
-              subscription?.planVersionId === plan.id &&
-              subscription?.status === "past_due_payment"
-            }
-            isNearingDueDate={subscription?.paymentDueDays <= 3}
-            onSubscribe={handleSubscribe}
-          />
-        ))}
+        {plansQuery.data.map((plan) => {
+          const isCurrentPlan = subscription?.planVersionId === plan.id;
+          const dueDays = subscription?.paymentDueDays;
+          const isNearingDueDate =
+            isCurrentPlan &&
+            dueDays !== undefined &&
+            dueDays >= 0 &&
+            dueDays <= 3;
+
+          return (
+            <PlanCard
+              key={plan.id}
+              plan={plan}
+              isCurrent={isCurrentPlan}
+              isPurchasing={purchasingPlanId === plan.id}
+              isPastDue={
+                isCurrentPlan && subscription?.status === "past_due_payment"
+              }
+              isNearingDueDate={isNearingDueDate}
+              onSubscribe={handleSubscribe}
+            />
+          );
+        })}
       </div>
     );
   };
