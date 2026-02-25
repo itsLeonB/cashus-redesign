@@ -152,14 +152,14 @@ export function CurrentSubscriptionCard({
   const uploads = currentSubscription?.limits?.uploads;
 
   const warningContent = () => {
-    if (isNearingDueDate)
-      return `${paymentDueMessage(paymentDueDays)} Please make a payment soon.`;
     if (isCanceled) {
       const period = subscription.endsAt
         ? ` (${formatDate(subscription.endsAt)})`
         : "";
       return `Your plan will downgrade at the end of this billing period${period}.`;
     }
+    if (isNearingDueDate)
+      return `${paymentDueMessage(paymentDueDays)} Please make a payment soon.`;
     if (isPastDue) return "Your limits are downgraded, please make a payment.";
     if (isIncomplete)
       return "You have incomplete payment, please make a payment.";
@@ -168,7 +168,7 @@ export function CurrentSubscriptionCard({
 
   const warningBar = () => {
     const content = warningContent();
-    if (content) return <WarningBanner>{warningContent()}</WarningBanner>;
+    if (content) return <WarningBanner>{content}</WarningBanner>;
     return <p className="text-sm">{paymentDueMessage(paymentDueDays)}</p>;
   };
 
