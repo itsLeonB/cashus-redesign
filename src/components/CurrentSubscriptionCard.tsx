@@ -30,7 +30,6 @@ function formatDate(dateStr: string) {
 function StatusBadge({
   subscription,
 }: Readonly<{ subscription: SubscriptionDetails }>) {
-  const isCanceled = !!subscription.canceledAt;
   const isExpired =
     subscription.endsAt && new Date(subscription.endsAt) < new Date();
 
@@ -41,10 +40,17 @@ function StatusBadge({
       </Badge>
     );
   }
-  if (isCanceled) {
+  if (subscription.status === "canceled") {
     return (
       <Badge variant="outline" className="text-xs border-warning text-warning">
         Canceled
+      </Badge>
+    );
+  }
+  if (subscription.status === "past_due") {
+    return (
+      <Badge variant="outline" className="text-xs border-warning text-warning">
+        Past Due Payment
       </Badge>
     );
   }
@@ -116,7 +122,10 @@ export function CurrentSubscriptionCard({
     );
   }
 
-  const isCanceled = !!subscription.canceledAt;
+  const isCanceled =
+    !!subscription.canceledAt || subscription.status === "canceled";
+
+  const isPastDue = subscription.status === "past_due";
   const uploads = currentSubscription?.limits?.uploads;
 
   return (
@@ -143,6 +152,14 @@ export function CurrentSubscriptionCard({
                 ? ` (${formatDate(subscription.endsAt)})`
                 : ""}
               .
+            </p>
+          </div>
+        )}
+        {isPastDue && (
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/10 border border-warning/30">
+            <AlertTriangle className="h-4 w-4 text-warning mt-0.5 shrink-0" />
+            <p className="text-sm text-warning">
+              Your limits are downgraded, please make a payment.
             </p>
           </div>
         )}
@@ -189,26 +206,6 @@ export function CurrentSubscriptionCard({
             </div>
           </div>
         )}
-
-        {/* Limits */}
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="p-2.5 rounded-lg bg-secondary/50">
-            <p className="text-muted-foreground text-xs">Daily uploads</p>
-            <p className="font-medium font-display">
-              {subscription.billUploadsDaily === 0
-                ? "Unlimited"
-                : subscription.billUploadsDaily}
-            </p>
-          </div>
-          <div className="p-2.5 rounded-lg bg-secondary/50">
-            <p className="text-muted-foreground text-xs">Monthly uploads</p>
-            <p className="font-medium font-display">
-              {subscription.billUploadsMonthly === 0
-                ? "Unlimited"
-                : subscription.billUploadsMonthly}
-            </p>
-          </div>
-        </div>
       </CardContent>
     </Card>
   );

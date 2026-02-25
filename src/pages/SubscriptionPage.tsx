@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useActiveSubscriptionDetails, useActivePlans } from "@/hooks/useApi";
-import { usePurchasePlan } from "@/hooks/useSubscription";
+import { useMakePayment, usePurchasePlan } from "@/hooks/useSubscription";
 import useMidtransSnap from "@/hooks/useMidtransSnap";
 import { CurrentSubscriptionCard } from "@/components/CurrentSubscriptionCard";
 import {
@@ -13,6 +13,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { queryKeys } from "@/lib/queryKeys";
 import { CreditCard } from "lucide-react";
+import { PaymentResponse } from "@/lib/api/plan";
 
 export default function SubscriptionPage() {
   const { user } = useAuth();
@@ -23,13 +24,18 @@ export default function SubscriptionPage() {
   const subscriptionQuery = useActiveSubscriptionDetails();
   const plansQuery = useActivePlans();
   const purchaseMutation = usePurchasePlan();
+  const paymentMutation = useMakePayment();
 
   const [purchasingPlanId, setPurchasingPlanId] = useState<string | null>(null);
 
   const currentSubscription = user?.currentSubscription;
   const subscription = subscriptionQuery.data;
 
-  const handleSubscribe = async (planId: string, planVersionId: string) => {
+  const handleSubscribe = async (
+    planId: string,
+    planVersionId: string,
+    isPastDue: boolean,
+  ) => {
     if (purchasingPlanId) {
       toast({
         title: "Payment already in progress",
@@ -41,11 +47,19 @@ export default function SubscriptionPage() {
 
     setPurchasingPlanId(planVersionId);
 
+    let mutator: () => Promise<PaymentResponse>;
+    if (isPastDue) {
+      mutator = async () => paymentMutation.mutateAsync(subscription.id);
+    } else {
+      mutator = async () =>
+        purchaseMutation.mutateAsync({
+          planId,
+          planVersionId,
+        });
+    }
+
     try {
-      const payment = await purchaseMutation.mutateAsync({
-        planId,
-        planVersionId,
-      });
+      const payment = await mutator();
 
       const snapToken = payment.gatewayTransactionId;
       if (!snapToken) {
@@ -135,6 +149,10 @@ export default function SubscriptionPage() {
             plan={plan}
             isCurrent={subscription?.planVersionId === plan.id}
             isPurchasing={purchasingPlanId === plan.id}
+            isPastDue={
+              subscription?.planVersionId === plan.id &&
+              subscription?.status === "past_due"
+            }
             onSubscribe={handleSubscribe}
           />
         ))}

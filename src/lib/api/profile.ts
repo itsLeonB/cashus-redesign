@@ -14,6 +14,7 @@ export interface SubscriptionDetails {
   autoRenew: boolean;
   billUploadsDaily: number;
   billUploadsMonthly: number;
+  status: "active" | "past_due" | "canceled" | "incomplete_payment";
 }
 
 export const profileApi = {

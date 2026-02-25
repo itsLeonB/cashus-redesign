@@ -17,7 +17,12 @@ interface PlanCardProps {
   plan: PlanVersionResponse;
   isCurrent: boolean;
   isPurchasing: boolean;
-  onSubscribe: (planId: string, planVersionId: string) => void;
+  isPastDue: boolean;
+  onSubscribe: (
+    planId: string,
+    planVersionId: string,
+    isPastDue: boolean,
+  ) => void;
 }
 
 function formatInterval(interval: string) {
@@ -35,6 +40,7 @@ export function PlanCard({
   plan,
   isCurrent,
   isPurchasing,
+  isPastDue,
   onSubscribe,
 }: Readonly<PlanCardProps>) {
   const features = [
@@ -56,8 +62,14 @@ export function PlanCard({
 
   const footerBtnText = () => {
     if (isPurchasing) return "Processing…";
+    if (isPastDue) return "Make Payment";
     if (isCurrent) return "Current Plan";
     return "Subscribe";
+  };
+
+  const footerBtnVariant = () => {
+    if (isCurrent && !isPastDue) return "secondary";
+    return "default";
   };
 
   return (
@@ -65,14 +77,20 @@ export function PlanCard({
       className={cn(
         "border-border/50 transition-all duration-200 flex flex-col",
         isCurrent && "border-primary/50 ring-1 ring-primary/20",
+        isPastDue && "border-warning/50 ring-1 ring-warning/20",
       )}
     >
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">{plan.planName}</CardTitle>
-          {isCurrent && (
+          {isCurrent && !isPastDue && (
             <Badge className="bg-primary/15 text-primary border-primary/30 hover:bg-primary/20 text-xs">
               Current
+            </Badge>
+          )}
+          {isPastDue && (
+            <Badge className="bg-warning/15 text-warning border-warning/30 hover:bg-warning/20 text-xs">
+              Past Due
             </Badge>
           )}
         </div>
@@ -103,9 +121,9 @@ export function PlanCard({
         <CardFooter>
           <Button
             className="w-full"
-            variant={isCurrent ? "secondary" : "default"}
-            disabled={isCurrent || isPurchasing}
-            onClick={() => onSubscribe(plan.planId, plan.id)}
+            variant={footerBtnVariant()}
+            disabled={(isCurrent && !isPastDue) || isPurchasing}
+            onClick={() => onSubscribe(plan.planId, plan.id, isPastDue)}
           >
             {isPurchasing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             {footerBtnText()}
