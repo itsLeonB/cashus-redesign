@@ -47,7 +47,7 @@ function StatusBadge({
       </Badge>
     );
   }
-  if (subscription.status === "past_due") {
+  if (subscription.status === "past_due_payment") {
     return (
       <Badge variant="outline" className="text-xs border-warning text-warning">
         Past Due Payment
@@ -125,8 +125,53 @@ export function CurrentSubscriptionCard({
   const isCanceled =
     !!subscription.canceledAt || subscription.status === "canceled";
 
-  const isPastDue = subscription.status === "past_due";
+  const isPastDue = subscription.status === "past_due_payment";
   const uploads = currentSubscription?.limits?.uploads;
+  const paymentDueDays = subscription?.paymentDueDays;
+  const isNearingDueDate = paymentDueDays <= 3 && paymentDueDays >= 0;
+  const paymentDueMessage = () => {
+    switch (paymentDueDays) {
+      case 0:
+        return "Payment is due today.";
+      case 1:
+        return "Payment will be due tomorrow.";
+      default:
+        return `Payment will be due in ${paymentDueDays} days.`;
+    }
+  };
+
+  const warning = () => {
+    if (isNearingDueDate)
+      return (
+        <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/10 border border-warning/30">
+          <AlertTriangle className="h-4 w-4 text-warning mt-0.5 shrink-0" />
+          <p className="text-sm text-warning">
+            {paymentDueMessage()} Please make a payment soon.
+          </p>
+        </div>
+      );
+    if (isCanceled)
+      return (
+        <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/10 border border-warning/30">
+          <AlertTriangle className="h-4 w-4 text-warning mt-0.5 shrink-0" />
+          <p className="text-sm text-warning">
+            Your plan will downgrade at the end of this billing period
+            {subscription.endsAt ? ` (${formatDate(subscription.endsAt)})` : ""}
+            .
+          </p>
+        </div>
+      );
+    if (isPastDue)
+      return (
+        <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/10 border border-warning/30">
+          <AlertTriangle className="h-4 w-4 text-warning mt-0.5 shrink-0" />
+          <p className="text-sm text-warning">
+            Your limits are downgraded, please make a payment.
+          </p>
+        </div>
+      );
+    return <p className="text-sm">{paymentDueMessage()}</p>;
+  };
 
   return (
     <Card className="border-border/50">
@@ -142,28 +187,7 @@ export function CurrentSubscriptionCard({
         ) : null}
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Cancel warning */}
-        {isCanceled && (
-          <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/10 border border-warning/30">
-            <AlertTriangle className="h-4 w-4 text-warning mt-0.5 shrink-0" />
-            <p className="text-sm text-warning">
-              Your plan will downgrade at the end of this billing period
-              {subscription.endsAt
-                ? ` (${formatDate(subscription.endsAt)})`
-                : ""}
-              .
-            </p>
-          </div>
-        )}
-        {isPastDue && (
-          <div className="flex items-start gap-2 p-3 rounded-lg bg-warning/10 border border-warning/30">
-            <AlertTriangle className="h-4 w-4 text-warning mt-0.5 shrink-0" />
-            <p className="text-sm text-warning">
-              Your limits are downgraded, please make a payment.
-            </p>
-          </div>
-        )}
-
+        {warning()}
         {/* Usage info */}
         {uploads && (
           <div className="space-y-2">

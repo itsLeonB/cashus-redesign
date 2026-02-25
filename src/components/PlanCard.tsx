@@ -18,10 +18,12 @@ interface PlanCardProps {
   isCurrent: boolean;
   isPurchasing: boolean;
   isPastDue: boolean;
+  isNearingDueDate: boolean;
   onSubscribe: (
     planId: string,
     planVersionId: string,
     isPastDue: boolean,
+    isNearingDueDate: boolean,
   ) => void;
 }
 
@@ -41,6 +43,7 @@ export function PlanCard({
   isCurrent,
   isPurchasing,
   isPastDue,
+  isNearingDueDate,
   onSubscribe,
 }: Readonly<PlanCardProps>) {
   const features = [
@@ -62,13 +65,13 @@ export function PlanCard({
 
   const footerBtnText = () => {
     if (isPurchasing) return "Processing…";
-    if (isPastDue) return "Make Payment";
+    if (isPastDue || isNearingDueDate) return "Make Payment";
     if (isCurrent) return "Current Plan";
     return "Subscribe";
   };
 
   const footerBtnVariant = () => {
-    if (isCurrent && !isPastDue) return "secondary";
+    if (isCurrent && !isPastDue && !isNearingDueDate) return "secondary";
     return "default";
   };
 
@@ -122,8 +125,12 @@ export function PlanCard({
           <Button
             className="w-full"
             variant={footerBtnVariant()}
-            disabled={(isCurrent && !isPastDue) || isPurchasing}
-            onClick={() => onSubscribe(plan.planId, plan.id, isPastDue)}
+            disabled={
+              (isCurrent && !isPastDue && !isNearingDueDate) || isPurchasing
+            }
+            onClick={() =>
+              onSubscribe(plan.planId, plan.id, isPastDue, isNearingDueDate)
+            }
           >
             {isPurchasing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             {footerBtnText()}

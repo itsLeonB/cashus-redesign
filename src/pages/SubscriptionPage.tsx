@@ -35,6 +35,7 @@ export default function SubscriptionPage() {
     planId: string,
     planVersionId: string,
     isPastDue: boolean,
+    isNearingDueDate: boolean,
   ) => {
     if (purchasingPlanId) {
       toast({
@@ -48,7 +49,7 @@ export default function SubscriptionPage() {
     setPurchasingPlanId(planVersionId);
 
     let mutator: () => Promise<PaymentResponse>;
-    if (isPastDue) {
+    if (isPastDue || isNearingDueDate) {
       mutator = async () => paymentMutation.mutateAsync(subscription.id);
     } else {
       mutator = async () =>
@@ -151,8 +152,9 @@ export default function SubscriptionPage() {
             isPurchasing={purchasingPlanId === plan.id}
             isPastDue={
               subscription?.planVersionId === plan.id &&
-              subscription?.status === "past_due"
+              subscription?.status === "past_due_payment"
             }
+            isNearingDueDate={subscription?.paymentDueDays <= 3}
             onSubscribe={handleSubscribe}
           />
         ))}
