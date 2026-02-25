@@ -78,6 +78,7 @@ function WarningBanner({ children }: Readonly<{ children: React.ReactNode }>) {
 }
 
 function paymentDueMessage(days: number) {
+  if (days < 0) return "";
   if (days === 0) return "Payment is due today.";
   if (days === 1) return "Payment will be due tomorrow.";
   return `Payment will be due in ${days} days.`;
@@ -169,7 +170,10 @@ export function CurrentSubscriptionCard({
   const warningBar = () => {
     const content = warningContent();
     if (content) return <WarningBanner>{content}</WarningBanner>;
-    return <p className="text-sm">{paymentDueMessage(paymentDueDays)}</p>;
+    const paymentDueMsg = paymentDueMessage(paymentDueDays);
+    if (paymentDueMsg)
+      return <p className="text-sm">{paymentDueMessage(paymentDueDays)}</p>;
+    return null;
   };
 
   return (
