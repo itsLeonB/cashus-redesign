@@ -1,6 +1,4 @@
-import { useAuth } from "@/contexts/AuthContext";
 import { useActivePlans } from "@/hooks/useApi";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -12,7 +10,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Check } from "lucide-react";
-import { Link } from "react-router-dom";
 import { formatCurrency } from "@/lib/utils";
 
 function formatInterval(interval: string) {
@@ -27,7 +24,6 @@ function formatInterval(interval: string) {
 }
 
 export function PricingSection() {
-  const { isAuthenticated } = useAuth();
   const plansQuery = useActivePlans();
 
   return (
@@ -35,8 +31,8 @@ export function PricingSection() {
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="text-center mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold font-display">
-            Simple,{" "}
-            <span className="text-gradient-primary">transparent</span> pricing
+            Simple, <span className="text-gradient-primary">transparent</span>{" "}
+            pricing
           </h2>
           <p className="text-muted-foreground mt-3 max-w-md mx-auto">
             Start free. Upgrade when you need more.
@@ -76,7 +72,7 @@ export function PricingSection() {
         )}
 
         {plansQuery.data && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4 sm:gap-6 max-w-4xl mx-auto">
             {plansQuery.data.map((plan) => {
               const isDefault = plan.isDefault;
               const isPaid = !isDefault;
@@ -101,16 +97,12 @@ export function PricingSection() {
                 <Card
                   key={plan.id}
                   className={`border-border/50 flex flex-col transition-all duration-200 ${
-                    isPaid
-                      ? "border-primary/50 ring-1 ring-primary/20"
-                      : ""
+                    isPaid ? "border-primary/50 ring-1 ring-primary/20" : ""
                   }`}
                 >
                   <CardHeader>
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">
-                        {plan.planName}
-                      </CardTitle>
+                      <CardTitle className="text-lg">{plan.planName}</CardTitle>
                       {isPaid && (
                         <Badge className="bg-primary/15 text-primary border-primary/30 text-xs">
                           Popular
@@ -119,9 +111,7 @@ export function PricingSection() {
                     </div>
                     <CardDescription>
                       <span className="text-2xl font-bold font-display text-foreground">
-                        {isDefault
-                          ? "Free"
-                          : formatCurrency(plan.priceAmount)}
+                        {formatCurrency(plan.priceAmount)}
                       </span>{" "}
                       {!isDefault && (
                         <span className="text-muted-foreground">
@@ -149,30 +139,6 @@ export function PricingSection() {
                       ))}
                     </ul>
                   </CardContent>
-
-                  <CardFooter>
-                    <Button
-                      className="w-full"
-                      variant={isPaid ? "default" : "outline"}
-                      asChild
-                    >
-                      <Link
-                        to={
-                          isAuthenticated
-                            ? "/subscription"
-                            : "/register"
-                        }
-                      >
-                        {isDefault
-                          ? isAuthenticated
-                            ? "Your Plan"
-                            : "Start Free"
-                          : isAuthenticated
-                            ? "Upgrade"
-                            : "Get Started"}
-                      </Link>
-                    </Button>
-                  </CardFooter>
                 </Card>
               );
             })}
