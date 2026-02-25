@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Receipt, Users, TrendingUp } from "lucide-react";
 
 export function HeroSection() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
   return (
     <section className="relative overflow-hidden py-16 sm:py-24 lg:py-32">
@@ -26,19 +26,21 @@ export function HeroSection() {
               Track group expenses, know who owes who, and stay organized — all
               in one place.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-              <Button size="lg" variant="premium" asChild>
-                <Link to={isAuthenticated ? "/dashboard" : "/register"}>
-                  {isAuthenticated ? "Go to Dashboard" : "Get Started"}
-                  <ArrowRight className="h-5 w-5 ml-1" />
-                </Link>
-              </Button>
-              {!isAuthenticated && (
-                <Button size="lg" variant="outline" asChild>
-                  <Link to="/login">Login</Link>
+            {!isLoading && (
+              <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
+                <Button size="lg" variant="premium" asChild>
+                  <Link to={isAuthenticated ? "/dashboard" : "/register"}>
+                    {isAuthenticated ? "Go to Dashboard" : "Get Started"}
+                    <ArrowRight className="h-5 w-5 ml-1" />
+                  </Link>
                 </Button>
-              )}
-            </div>
+                {!isAuthenticated && (
+                  <Button size="lg" variant="outline" asChild>
+                    <Link to="/login">Login</Link>
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Visual — feature highlights */}
