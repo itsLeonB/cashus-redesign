@@ -13,104 +13,125 @@ const ASSETS_TO_CACHE = [
   "/screenshot-mobile.png",
 ];
 
+/**
+ * Checks if the current client is running as an installed PWA on a mobile device.
+ * We look at the user agent and the display-mode of the window clients.
+ */
+async function getIsMobileStandalonePWA() {
+  const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+  if (!isMobile) return false;
+
+  const clients = await globalThis.clients.matchAll({ type: 'window' });
+  return clients.some(client => client.displayMode === 'standalone');
+}
+
 // ------------------ Install ------------------
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches
-      .open(CACHE_NAME)
-      .then((cache) => cache.addAll(ASSETS_TO_CACHE))
-  );
+    (async () => {
+      const isMobilePWA = await getIsMobileStandalonePWA();
 
-  // Activate this worker immediately
-  self.skipWaiting();
+      // 🚀 Caching logic ONLY runs when the app is running as a mobile installed PWA
+      if (isMobilePWA) {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.addAll(ASSETS_TO_CACHE);
+      }
+
+      // Activate this worker immediately
+      globalThis.skipWaiting();
+    })()
+  );
 });
 
 // ------------------ Activate ------------------
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      )
-    ).then(() => self.clients.claim())
+    (async () => {
+      const isMobilePWA = await getIsMobileStandalonePWA();
+
+      // 🧹 Cleanup old caches ONLY if we are in PWA mode
+      if (isMobilePWA) {
+        const keys = await caches.keys();
+        await Promise.all(
+          keys
+            .filter((key) => key !== CACHE_NAME)
+            .map((key) => caches.delete(key))
+        );
+      }
+
+      await globalThis.clients.claim();
+    })()
   );
 });
 
 // ------------------ Fetch ------------------
 self.addEventListener("fetch", (event) => {
-  const url = new URL(event.request.url);
+  // ⚡️ Skip all caching logic if not a mobile standalone PWA
+  // This prevents stale SPA cache issues in normal browser tabs while
+  // maintaining full offline capabilities for installed users.
+  event.respondWith(
+    (async () => {
+      const isMobilePWA = await getIsMobileStandalonePWA();
 
-  // Always fetch non-GET requests from network
-  if (event.request.method !== "GET") {
-    event.respondWith(fetch(event.request));
-    return;
-  }
+      if (!isMobilePWA) {
+        return fetch(event.request);
+      }
 
-  // 🛑 Network only for API calls
-  if (url.pathname.startsWith("/api/")) {
-    event.respondWith(fetch(event.request));
-    return;
-  }
+      const url = new URL(event.request.url);
 
-  // 🧠 Network-first for navigation / HTML
-  if (
-    event.request.mode === "navigate" ||
-    event.request.destination === "document" ||
-    url.pathname.endsWith(".html")
-  ) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
+      // Always fetch non-GET requests from network
+      if (event.request.method !== "GET") {
+        return fetch(event.request);
+      }
+
+      // 🛑 Network only for API calls
+      if (url.pathname.startsWith("/api/")) {
+        return fetch(event.request);
+      }
+
+      // 🧠 Network-first for navigation / HTML
+      if (
+        event.request.mode === "navigate" ||
+        event.request.destination === "document" ||
+        url.pathname.endsWith(".html")
+      ) {
+        try {
+          const response = await fetch(event.request);
           // Cache HTML if successful
           if (response.ok) {
             const responseClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) =>
-              cache.put(event.request, responseClone)
-            );
+            const cache = await caches.open(CACHE_NAME);
+            await cache.put(event.request, responseClone);
           }
           return response;
-        })
-        .catch(() =>
-          caches.match(event.request).then(
-            (r) =>
-              r ||
-              new Response("You are offline and this page is not cached.", {
-                status: 503,
-                statusText: "Service Unavailable",
-                headers: { "Content-Type": "text/plain" },
-              })
-          )
-        )
-    );
-    return;
-  }
+        } catch (error) {
+          const cachedResponse = await caches.match(event.request);
+          return cachedResponse || new Response("You are offline and this page is not cached.", {
+            status: 503,
+            statusText: "Service Unavailable",
+            headers: { "Content-Type": "text/plain" },
+            errors: error
+          });
+        }
+      }
 
-  // 🖼 Cache-first ONLY for true static assets
-  if (
-    ["style", "script", "image", "font"].includes(
-      event.request.destination
-    )
-  ) {
-    event.respondWith(
-      caches.match(event.request).then((cached) => {
+      // 🖼 Cache-first ONLY for true static assets
+      if (["style", "script", "image", "font"].includes(event.request.destination)) {
+        const cached = await caches.match(event.request);
         if (cached) return cached;
-        return fetch(event.request).then((net) => {
-          if (net.ok) {
-            const clone = net.clone();
-            caches.open(CACHE_NAME).then((cache) =>
-              cache.put(event.request, clone)
-            );
-          }
-          return net;
-        });
-      })
-    );
-    return;
-  }
 
-  // Fallback: just network
-  event.respondWith(fetch(event.request));
+        const net = await fetch(event.request);
+        if (net.ok) {
+          const clone = net.clone();
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put(event.request, clone);
+        }
+        return net;
+      }
+
+      // Fallback: just network
+      return fetch(event.request);
+    })()
+  );
 });
 
