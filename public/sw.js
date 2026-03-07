@@ -14,28 +14,39 @@ const ASSETS_TO_CACHE = [
 ];
 
 /**
- * Checks if the current client is running as an installed PWA on a mobile device.
- * We look at the user agent and the display-mode of the window clients.
+ * Store standalone status per client ID
  */
-async function getIsMobileStandalonePWA() {
+const clientStandaloneState = new Map();
+
+/**
+ * Checks if the current client is running as an installed PWA on a mobile device.
+ * We rely on the client sending a message with its standalone status.
+ */
+function getIsMobileStandalonePWA(clientId) {
   const isMobile = /Mobi|Android/i.test(navigator.userAgent);
   if (!isMobile) return false;
 
-  const clients = await globalThis.clients.matchAll({ type: 'window' });
-  return clients.some(client => client.displayMode === 'standalone');
+  if (clientId && clientStandaloneState.has(clientId)) {
+    return clientStandaloneState.get(clientId);
+  }
+
+  return false;
 }
+
+// ------------------ Messages ------------------
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SET_STANDALONE") {
+    clientStandaloneState.set(event.source.id, event.data.value);
+  }
+});
 
 // ------------------ Install ------------------
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
-      const isMobilePWA = await getIsMobileStandalonePWA();
-
-      // 🚀 Caching logic ONLY runs when the app is running as a mobile installed PWA
-      if (isMobilePWA) {
-        const cache = await caches.open(CACHE_NAME);
-        await cache.addAll(ASSETS_TO_CACHE);
-      }
+      // 🚀 Caching logic always runs on install for deterministic behavior
+      const cache = await caches.open(CACHE_NAME);
+      await cache.addAll(ASSETS_TO_CACHE);
 
       // Activate this worker immediately
       globalThis.skipWaiting();
@@ -47,17 +58,13 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
-      const isMobilePWA = await getIsMobileStandalonePWA();
-
-      // 🧹 Cleanup old caches ONLY if we are in PWA mode
-      if (isMobilePWA) {
-        const keys = await caches.keys();
-        await Promise.all(
-          keys
-            .filter((key) => key !== CACHE_NAME)
-            .map((key) => caches.delete(key))
-        );
-      }
+      // 🧹 Cleanup old caches always runs on activate
+      const keys = await caches.keys();
+      await Promise.all(
+        keys
+          .filter((key) => key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
+      );
 
       await globalThis.clients.claim();
     })()
@@ -71,7 +78,7 @@ self.addEventListener("fetch", (event) => {
   // maintaining full offline capabilities for installed users.
   event.respondWith(
     (async () => {
-      const isMobilePWA = await getIsMobileStandalonePWA();
+      const isMobilePWA = getIsMobileStandalonePWA(event.clientId);
 
       if (!isMobilePWA) {
         return fetch(event.request);
@@ -105,12 +112,12 @@ self.addEventListener("fetch", (event) => {
           }
           return response;
         } catch (error) {
+          console.error("[SW] Fetch failed for navigation:", error);
           const cachedResponse = await caches.match(event.request);
           return cachedResponse || new Response("You are offline and this page is not cached.", {
             status: 503,
             statusText: "Service Unavailable",
-            headers: { "Content-Type": "text/plain" },
-            errors: error
+            headers: { "Content-Type": "text/plain" }
           });
         }
       }
