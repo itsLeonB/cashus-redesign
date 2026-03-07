@@ -37,16 +37,21 @@ export function ParticipantSelector({
   showSkip = false,
   onSkip,
 }: Readonly<ParticipantSelectorProps>) {
-  const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
-    () => currentParticipants.map((p) => p.profileId),
-  );
-  const [payerProfileId, setPayerProfileId] = useState<string | null>(
-    currentPayerId,
-  );
-  const [showAddForm, setShowAddForm] = useState(false);
-
   const { toast } = useToast();
   const { user } = useAuth();
+
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>(
+    () => {
+      if (currentParticipants.length > 0) {
+        return currentParticipants.map((p) => p.profileId);
+      }
+      return user?.id ? [user.id] : [];
+    },
+  );
+  const [payerProfileId, setPayerProfileId] = useState<string | null>(
+    () => currentPayerId ?? (user?.id || null),
+  );
+  const [showAddForm, setShowAddForm] = useState(false);
   const { data: friendships, isLoading, refetch } = useFriendships();
   const syncParticipants = useSyncParticipants(expenseId || "");
 
@@ -57,13 +62,19 @@ export function ParticipantSelector({
   };
 
   useEffect(() => {
-    setSelectedParticipants(currentParticipants.map((p) => p.profileId));
-    setPayerProfileId(currentPayerId);
-    // We intentionally only want to re-initialize when the expenseId changes.
+    if (expenseId) {
+      setSelectedParticipants(currentParticipants.map((p) => p.profileId));
+      setPayerProfileId(currentPayerId);
+    } else if (user?.id) {
+      // For new expenses, default to current user as participant and payer
+      setSelectedParticipants((prev) => (prev.length === 0 ? [user.id] : prev));
+      setPayerProfileId((prev) => prev ?? user.id);
+    }
+    // We intentionally only want to re-initialize when the expenseId or user changes.
     // currentParticipants and currentPayerId are omitted because they often
     // change references in the parent on every render, which would reset user selection.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expenseId]);
+  }, [expenseId, user?.id]);
 
   const toggleParticipant = (profileId: string) => {
     setSelectedParticipants((prev) => {
@@ -183,16 +194,24 @@ export function ParticipantSelector({
               <div
                 key={profile.profileId}
                 className={cn(
-                  "flex items-center justify-between p-3 rounded-lg border transition-all",
+                  "flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer",
                   isSelected
                     ? "border-primary bg-primary/5"
                     : "border-border hover:border-primary/50",
                 )}
+                onClick={() => toggleParticipant(profile.profileId)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    toggleParticipant(profile.profileId);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-pressed={isSelected}
               >
                 <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => toggleParticipant(profile.profileId)}
+                  <div
                     className={cn(
                       "h-5 w-5 rounded border flex items-center justify-center transition-colors",
                       isSelected
@@ -201,7 +220,7 @@ export function ParticipantSelector({
                     )}
                   >
                     {isSelected && <Check className="h-3 w-3" />}
-                  </button>
+                  </div>
                   <AvatarCircle
                     name={profile.profileName}
                     imageUrl={profile.profileAvatar}
@@ -223,8 +242,11 @@ export function ParticipantSelector({
                   type="button"
                   variant={isPayer ? "default" : "outline"}
                   size="sm"
-                  onClick={() => selectPayer(profile.profileId)}
-                  className="gap-1"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    selectPayer(profile.profileId);
+                  }}
+                  className="gap-1 relative z-10"
                 >
                   <CreditCard className="h-3 w-3" />
                   {isPayer ? "Payer" : "Set as Payer"}

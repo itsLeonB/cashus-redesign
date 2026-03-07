@@ -340,13 +340,13 @@ export default function ExpenseDetailPage() {
       <>
         <div className="border-t border-border/50 my-6" />
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-muted/50 flex items-center justify-center">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="h-10 w-10 shrink-0 rounded-lg bg-muted/50 flex items-center justify-center">
               <Image className="h-5 w-5 text-muted-foreground" />
             </div>
-            <div>
-              <p className="font-medium">Bill Image</p>
+            <div className="min-w-0">
+              <p className="font-medium truncate">Bill Image</p>
               {expense.billExists ? (
                 <Badge
                   variant={
@@ -364,7 +364,7 @@ export default function ExpenseDetailPage() {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {expense.billExists ? (
               <>
                 {expense.bill.imageUrl && (
