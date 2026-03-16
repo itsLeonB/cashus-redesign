@@ -3,10 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Camera, ImageIcon, X, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { useUploadExpenseBill } from "@/hooks/useApi";
+import {
+  useUploadExpenseBill,
+  useGetUploadUrl,
+  useTriggerBillParsing,
+} from "@/hooks/useApi";
 import { ApiError } from "@/lib/api/types";
 import { useUploadPermission } from "@/hooks/useUploadPermission";
 import { UploadLimitInfo } from "@/components/UploadLimitInfo";
+import { useFlags } from "@flagsmith/flagsmith/react";
 
 interface ImageUploadAreaProps {
   expenseId?: string;
@@ -28,6 +33,17 @@ export function ImageUploadArea({
   const { toast } = useToast();
   const uploadPermission = useUploadPermission();
   const uploadBill = useUploadExpenseBill(expenseId);
+  const getUploadUrl = useGetUploadUrl(expenseId);
+  const notifyPresignedUploaded = useTriggerBillParsing(expenseId);
+  const flags = useFlags(["use_presigned_bill_upload"]);
+  const usePresigned = flags.use_presigned_bill_upload;
+  const [isUploadingPresigned, setIsUploadingPresigned] = useState(false);
+
+  const isUploading =
+    uploadBill.isPending ||
+    getUploadUrl.isPending ||
+    notifyPresignedUploaded.isPending ||
+    isUploadingPresigned;
 
   useEffect(() => {
     return () => {
@@ -55,35 +71,85 @@ export function ImageUploadArea({
     setPreviewUrl(URL.createObjectURL(file));
 
     if (expenseId && uploadPermission.canUpload) {
-      uploadBill.mutate(
-        { file },
-        {
-          onSuccess: () => {
-            toast({ title: "Bill uploaded successfully" });
-            onUploadSuccess?.();
-          },
-          onError: (error: unknown) => {
-            const err = error as ApiError;
+      const handleUploadError = (error: unknown) => {
+        const err = error as ApiError;
 
-            if (err.statusCode === 422) {
-              setUploadError(
-                err.message ||
-                  "This image couldn't be processed. Please try another photo.",
-              );
-              if (err.errors) {
-                console.error("Backend validation failed:", err.errors);
-              }
-            } else {
-              toast({
-                variant: "destructive",
-                title: "Upload failed",
-                description: err.message || "Something went wrong",
-              });
-              clearInputs();
-            }
+        if (err.statusCode === 422) {
+          setUploadError(
+            err.message ||
+              "This image couldn't be processed. Please try another photo.",
+          );
+          if (err.errors) {
+            console.error("Backend validation failed:", err.errors);
+          }
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Upload failed",
+            description: err.message || "Something went wrong",
+          });
+          clearInputs();
+        }
+      };
+
+      const handleSuccess = () => {
+        toast({ title: "Bill uploaded successfully" });
+        onUploadSuccess?.();
+      };
+
+      if (usePresigned) {
+        getUploadUrl.mutate(
+          { file },
+          {
+            onSuccess: (response) => {
+              const runUpload = async () => {
+                setIsUploadingPresigned(true);
+                try {
+                  const res = await fetch(response.uploadUrl, {
+                    method: "PUT",
+                    body: file,
+                    headers: {
+                      "Content-Type": file.type,
+                    },
+                  });
+
+                  if (!res.ok) {
+                    throw new Error("Failed to upload image to storage");
+                  }
+
+                  notifyPresignedUploaded.mutate(response.billId, {
+                    onSuccess: handleSuccess,
+                    onError: handleUploadError,
+                  });
+                } catch (error) {
+                  toast({
+                    variant: "destructive",
+                    title: "Upload failed",
+                    description:
+                      error instanceof Error
+                        ? error.message
+                        : "Failed to upload image directly",
+                  });
+                  clearInputs();
+                } finally {
+                  setIsUploadingPresigned(false);
+                }
+              };
+
+              runUpload();
+            },
+            onError: handleUploadError,
           },
-        },
-      );
+        );
+      } else {
+        uploadBill.mutate(
+          { file },
+          {
+            onSuccess: handleSuccess,
+            onError: handleUploadError,
+          },
+        );
+      }
     }
   };
 
@@ -130,7 +196,7 @@ export function ImageUploadArea({
           alt="Preview"
           className="w-full max-h-64 object-contain bg-muted/30"
         />
-        {uploadBill.isPending && (
+        {isUploading && (
           <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
@@ -141,7 +207,7 @@ export function ImageUploadArea({
           variant="destructive"
           className="absolute top-2 right-2 h-8 w-8"
           onClick={clearInputs}
-          disabled={uploadBill.isPending}
+          disabled={isUploading}
         >
           <X className="h-4 w-4" />
         </Button>

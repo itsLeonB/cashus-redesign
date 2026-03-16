@@ -359,6 +359,11 @@ export interface ExpenseBillResponse {
   payerProfileName: string;
 }
 
+export interface PresignedExpenseBillResponse {
+  billId: string;
+  uploadUrl: string;
+}
+
 // API Response wrapper
 export interface ApiResponse<T> {
   data: T;

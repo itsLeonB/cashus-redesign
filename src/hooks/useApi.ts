@@ -284,6 +284,13 @@ export function useTriggerBillParsing(expenseId: string) {
   });
 }
 
+export function useGetUploadUrl(expenseId: string) {
+  return useMutation({
+    mutationFn: ({ file }: { file: File }) =>
+      groupExpensesApi.getUploadUrl(expenseId, file),
+  });
+}
+
 export function useConfirmGroupExpense(expenseId: string) {
   const queryClient = useQueryClient();
 

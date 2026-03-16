@@ -1,4 +1,4 @@
-const SW_VERSION = "1.0.2";
+const SW_VERSION = "1.0.3";
 const CACHE_NAME = `cashus-v${SW_VERSION}`;
 
 const ASSETS_TO_CACHE = [
@@ -76,26 +76,26 @@ self.addEventListener("fetch", (event) => {
   // ⚡️ Skip all caching logic if not a mobile standalone PWA
   // This prevents stale SPA cache issues in normal browser tabs while
   // maintaining full offline capabilities for installed users.
+  const isMobilePWA = getIsMobileStandalonePWA(event.clientId);
+
+  if (!isMobilePWA) {
+    return;
+  }
+
+  const url = new URL(event.request.url);
+
+  // Always fetch non-GET requests from network
+  if (event.request.method !== "GET") {
+    return;
+  }
+
+  // 🛑 Network only for API calls
+  if (url.pathname.startsWith("/api/")) {
+    return;
+  }
+
   event.respondWith(
     (async () => {
-      const isMobilePWA = getIsMobileStandalonePWA(event.clientId);
-
-      if (!isMobilePWA) {
-        return fetch(event.request);
-      }
-
-      const url = new URL(event.request.url);
-
-      // Always fetch non-GET requests from network
-      if (event.request.method !== "GET") {
-        return fetch(event.request);
-      }
-
-      // 🛑 Network only for API calls
-      if (url.pathname.startsWith("/api/")) {
-        return fetch(event.request);
-      }
-
       // 🧠 Network-first for navigation / HTML
       if (
         event.request.mode === "navigate" ||
