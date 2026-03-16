@@ -1,4 +1,6 @@
 import { lazy, Suspense } from "react";
+import flagsmith from "@flagsmith/flagsmith";
+import { FlagsmithProvider } from "@flagsmith/flagsmith/react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -73,45 +75,55 @@ const App = () => {
                 </div>
               }
             >
-              <Routes>
-                <Route element={<AuthLayout />}>
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/register" element={<RegisterPage />} />
+              <FlagsmithProvider
+                options={{
+                  environmentID: import.meta.env.VITE_FLAGSMITH_ENVIRONMENT_ID,
+                }}
+                flagsmith={flagsmith}
+              >
+                <Routes>
+                  <Route element={<AuthLayout />}>
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
+                    <Route
+                      path="/forgot-password"
+                      element={<ForgotPasswordPage />}
+                    />
+                    <Route
+                      path="/auth/verify-registration"
+                      element={<VerifyRegistrationPage />}
+                    />
+                    <Route
+                      path="/auth/:provider/callback"
+                      element={<OAuthCallbackPage />}
+                    />
+                  </Route>
                   <Route
-                    path="/forgot-password"
-                    element={<ForgotPasswordPage />}
+                    path="/auth/reset-password"
+                    element={<ResetPasswordPage />}
                   />
-                  <Route
-                    path="/auth/verify-registration"
-                    element={<VerifyRegistrationPage />}
-                  />
-                  <Route
-                    path="/auth/:provider/callback"
-                    element={<OAuthCallbackPage />}
-                  />
-                </Route>
-                <Route
-                  path="/auth/reset-password"
-                  element={<ResetPasswordPage />}
-                />
-                <Route element={<AppLayout />}>
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/friends" element={<FriendsPage />} />
-                  <Route
-                    path="/friends/:friendId"
-                    element={<FriendDetailPage />}
-                  />
-                  <Route path="/expenses" element={<ExpensesPage />} />
-                  <Route
-                    path="/expenses/:expenseId"
-                    element={<ExpenseDetailPage />}
-                  />
-                  <Route path="/profile" element={<ProfilePage />} />
-                  <Route path="/subscription" element={<SubscriptionPage />} />
-                </Route>
-                <Route path="/" element={<LandingPage />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+                  <Route element={<AppLayout />}>
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/friends" element={<FriendsPage />} />
+                    <Route
+                      path="/friends/:friendId"
+                      element={<FriendDetailPage />}
+                    />
+                    <Route path="/expenses" element={<ExpensesPage />} />
+                    <Route
+                      path="/expenses/:expenseId"
+                      element={<ExpenseDetailPage />}
+                    />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route
+                      path="/subscription"
+                      element={<SubscriptionPage />}
+                    />
+                  </Route>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </FlagsmithProvider>
             </Suspense>
             <Analytics />
             <SpeedInsights />

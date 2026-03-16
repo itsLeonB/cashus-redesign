@@ -13,6 +13,7 @@ import {
   UpdateOtherFeeRequest,
   SyncItemParticipantsRequest,
   ExpenseConfirmationResponse,
+  PresignedExpenseBillResponse,
 } from "./types";
 
 export const groupExpensesApi = {
@@ -53,6 +54,16 @@ export const groupExpensesApi = {
   },
 
   triggerBillParsing: (expenseId: string, billId: string) =>
+    apiClient.put(`/group-expenses/${expenseId}/bills/${billId}`, null),
+
+  getUploadUrl: (expenseId: string, file: File) => {
+    return apiClient.post<PresignedExpenseBillResponse>(
+      `/group-expenses/${expenseId}/bills`,
+      { fileName: file.name },
+    );
+  },
+
+  notifyPresignedUploaded: (expenseId: string, billId: string) =>
     apiClient.put(`/group-expenses/${expenseId}/bills/${billId}`, null),
 
   delete: (expenseId: string) =>
