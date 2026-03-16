@@ -6,12 +6,12 @@ import { useToast } from "@/hooks/use-toast";
 import {
   useUploadExpenseBill,
   useGetUploadUrl,
-  useNotifyPresignedUploaded,
+  useTriggerBillParsing,
 } from "@/hooks/useApi";
 import { ApiError } from "@/lib/api/types";
 import { useUploadPermission } from "@/hooks/useUploadPermission";
 import { UploadLimitInfo } from "@/components/UploadLimitInfo";
-import flagsmith from "@flagsmith/flagsmith";
+import { useFlags } from "@flagsmith/flagsmith/react";
 
 interface ImageUploadAreaProps {
   expenseId?: string;
@@ -34,8 +34,9 @@ export function ImageUploadArea({
   const uploadPermission = useUploadPermission();
   const uploadBill = useUploadExpenseBill(expenseId);
   const getUploadUrl = useGetUploadUrl(expenseId);
-  const notifyPresignedUploaded = useNotifyPresignedUploaded(expenseId);
-  const usePresigned = flagsmith.hasFeature("use_presigned_bill_upload");
+  const notifyPresignedUploaded = useTriggerBillParsing(expenseId);
+  const flags = useFlags(["use_presigned_bill_upload"]);
+  const usePresigned = flags.use_presigned_bill_upload;
   const [isUploadingPresigned, setIsUploadingPresigned] = useState(false);
 
   const isUploading =

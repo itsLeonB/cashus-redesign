@@ -285,31 +285,9 @@ export function useTriggerBillParsing(expenseId: string) {
 }
 
 export function useGetUploadUrl(expenseId: string) {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ file }: { file: File }) =>
       groupExpensesApi.getUploadUrl(expenseId, file),
-    onSuccess: () => {
-      // Invalidate only the specific group expense query
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.groupExpenses.detail(expenseId),
-      });
-    },
-  });
-}
-
-export function useNotifyPresignedUploaded(expenseId: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (billId: string) =>
-      groupExpensesApi.notifyPresignedUploaded(expenseId, billId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.groupExpenses.detail(expenseId),
-      });
-    },
   });
 }
 
