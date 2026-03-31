@@ -1,4 +1,4 @@
-import { useState, useEffect, SubmitEventHandler } from "react";
+import { useState, useEffect } from "react";
 import { Loader2, Users, Check, CreditCard, Plus, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AvatarCircle } from "./AvatarCircle";
@@ -31,6 +31,7 @@ interface ParticipantSelectorProps {
   submitLabel?: string;
   showSkip?: boolean;
   onSkip?: () => void;
+  enableProxySelection?: boolean;
 }
 
 const EMPTY_PARTICIPANTS: ParticipantProfile[] = [];
@@ -45,6 +46,7 @@ export function ParticipantSelector({
   submitLabel = "Continue",
   showSkip = false,
   onSkip,
+  enableProxySelection = false,
 }: Readonly<ParticipantSelectorProps>) {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -161,7 +163,7 @@ export function ParticipantSelector({
     })) || []),
   ];
 
-  const handleSubmit: SubmitEventHandler<HTMLFormElement> = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!payerProfileId) {
@@ -216,11 +218,6 @@ export function ParticipantSelector({
         description: err.message || "Something went wrong",
       });
     }
-  };
-
-  // Check if a participant is already a proxy target (someone else points to them)
-  const isProxyTarget = (profileId: string) => {
-    return Object.values(proxyMap).includes(profileId);
   };
 
   const participantsList = () => {
@@ -339,36 +336,39 @@ export function ParticipantSelector({
                 </div>
 
                 {/* Proxy selector - only show for selected participants */}
-                {isSelected && proxyOptions.length > 0 && (
-                  <div
-                    className="flex items-center gap-2 pl-11 pr-3 pb-1"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">
-                      Paid by:
-                    </span>
-                    <Select
-                      value={currentProxy || "self"}
-                      onValueChange={(value) =>
-                        handleProxyChange(profile.profileId, value)
-                      }
+                {enableProxySelection &&
+                  isSelected &&
+                  proxyOptions.length > 0 && (
+                    <div
+                      className="flex items-center gap-2 pl-11 pr-3 pb-1"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <SelectTrigger className="h-7 text-xs w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="self">
-                          Self
-                        </SelectItem>
-                        {proxyOptions.map((opt) => (
-                          <SelectItem key={opt.profileId} value={opt.profileId}>
-                            {opt.isUser ? "You" : opt.profileName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        Paid by:
+                      </span>
+                      <Select
+                        value={currentProxy || "self"}
+                        onValueChange={(value) =>
+                          handleProxyChange(profile.profileId, value)
+                        }
+                      >
+                        <SelectTrigger className="h-7 text-xs w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="self">Self</SelectItem>
+                          {proxyOptions.map((opt) => (
+                            <SelectItem
+                              key={opt.profileId}
+                              value={opt.profileId}
+                            >
+                              {opt.isUser ? "You" : opt.profileName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
               </div>
             );
           })}

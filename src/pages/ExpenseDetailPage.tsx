@@ -923,6 +923,7 @@ export default function ExpenseDetailPage() {
             }}
             onCancel={() => setParticipantModalOpen(false)}
             submitLabel="Save Participants"
+            enableProxySelection={true}
           />
         </DialogContent>
       </Dialog>
