@@ -910,6 +910,14 @@ export default function ExpenseDetailPage() {
               avatar: p.participantProfile.avatar,
             }))}
             currentPayerId={expense.payer?.id}
+            currentProxyMap={
+              expense.participants?.reduce<Record<string, string>>((acc, p) => {
+                if (p.hasProxy && p.proxyProfile) {
+                  acc[p.participantProfile.id] = p.proxyProfile.id;
+                }
+                return acc;
+              }, {}) || {}
+            }
             onSuccess={() => {
               setParticipantModalOpen(false);
             }}
