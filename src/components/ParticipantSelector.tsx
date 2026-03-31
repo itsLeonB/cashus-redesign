@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Loader2, Users, Check, CreditCard, Plus, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AvatarCircle } from "./AvatarCircle";
