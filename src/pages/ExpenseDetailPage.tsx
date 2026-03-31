@@ -148,7 +148,7 @@ export default function ExpenseDetailPage() {
   const [isDryRunLoading, setIsDryRunLoading] = useState(false);
 
   const participantProfiles = (expense?.participants || []).map(
-    (p) => p.profile,
+    (p) => p.participantProfile,
   );
 
   const calculateItemsTotal = () => {
@@ -905,9 +905,9 @@ export default function ExpenseDetailPage() {
           <ParticipantSelector
             expenseId={expense.id}
             currentParticipants={expense.participants?.map((p) => ({
-              profileId: p.profile.id,
-              name: p.profile.name,
-              avatar: p.profile.avatar,
+              profileId: p.participantProfile.id,
+              name: p.participantProfile.name,
+              avatar: p.participantProfile.avatar,
             }))}
             currentPayerId={expense.payer?.id}
             onSuccess={() => {

@@ -227,8 +227,10 @@ export interface OtherFeeResponse {
 }
 
 export interface ExpenseParticipantResponse {
-  profile: SimpleProfile;
+  participantProfile: SimpleProfile;
+  proxyProfile?: SimpleProfile;
   shareAmount: string;
+  hasProxy: boolean;
 }
 
 export interface ExpenseItem {
@@ -274,6 +276,7 @@ export interface FeeCalculationMethodInfo {
 
 export interface ExpenseParticipantsRequest {
   participantProfileIds: string[];
+  proxyByProfileIds: Map<string, string>;
   payerProfileId: string;
 }
 
@@ -308,11 +311,13 @@ export interface ExpenseConfirmationResponse {
 
 export interface ConfirmedExpenseParticipant {
   profile: SimpleProfile;
+  proxyProfile?: SimpleProfile;
   items: ConfirmedItemShare[];
   itemsTotal: string;
   fees: ConfirmedItemShare[];
   feesTotal: string;
   total: string;
+  hasProxy: boolean;
 }
 
 export interface ConfirmedItemShare {
