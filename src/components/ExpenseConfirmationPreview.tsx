@@ -1,5 +1,9 @@
 import { AvatarCircle } from "@/components/AvatarCircle";
-import type { ExpenseConfirmationResponse } from "@/lib/api/types";
+import { Shield } from "lucide-react";
+import type {
+  ExpenseConfirmationResponse,
+  ConfirmedExpenseParticipant,
+} from "@/lib/api/types";
 import { formatCurrency } from "@/lib/utils";
 
 interface ExpenseConfirmationPreviewProps {
@@ -7,10 +11,69 @@ interface ExpenseConfirmationPreviewProps {
   showHeader?: boolean;
 }
 
+function getStatusLine(
+  participant: ConfirmedExpenseParticipant,
+  payer: ExpenseConfirmationResponse["payer"],
+  coveredNames: string[],
+) {
+  const isPayer = participant.profile.id === payer.id;
+
+  if (isPayer) {
+    return (
+      <span className="text-primary font-medium">
+        Paid the bill
+        {coveredNames.length > 0 && (
+          <span className="text-muted-foreground font-normal">
+            {" "}
+            · Covers: {coveredNames.join(", ")}
+          </span>
+        )}
+      </span>
+    );
+  }
+
+  if (participant.hasProxy && participant.proxyProfile) {
+    return (
+      <span className="flex items-center gap-1 text-muted-foreground">
+        <Shield className="h-3 w-3" />
+        Covered by{" "}
+        <span className="font-medium text-foreground">
+          {participant.proxyProfile.isUser
+            ? "You"
+            : participant.proxyProfile.name}
+        </span>
+      </span>
+    );
+  }
+
+  return (
+    <>
+      Owes {payer.isUser ? "You" : payer.name}{" "}
+      <span className="font-medium text-foreground">
+        {formatCurrency(participant.total)}
+      </span>
+    </>
+  );
+}
+
 export function ExpenseConfirmationPreview({
   data,
   showHeader = false,
 }: Readonly<ExpenseConfirmationPreviewProps>) {
+  // Build a map of proxyId -> list of names they cover
+  const coveredByMap: Record<string, string[]> = {};
+  if (data.participants) {
+    for (const p of data.participants) {
+      if (p.hasProxy && p.proxyProfile) {
+        const proxyId = p.proxyProfile.id;
+        if (!coveredByMap[proxyId]) coveredByMap[proxyId] = [];
+        coveredByMap[proxyId].push(
+          p.profile.isUser ? "You" : p.profile.name,
+        );
+      }
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* Header Summary */}
@@ -32,8 +95,9 @@ export function ExpenseConfirmationPreview({
       {data.participants && data.participants.length > 0 ? (
         <div className="space-y-4">
           {data.participants.map((participant) => {
-            const isPayer = participant.profile.id === data.payer.id;
             const isCurrentUser = participant.profile.isUser;
+            const coveredNames =
+              coveredByMap[participant.profile.id] || [];
 
             return (
               <div
@@ -175,7 +239,7 @@ export function ExpenseConfirmationPreview({
                   </div>
                 )}
 
-                {/* Participant Total & Settlement */}
+                {/* Participant Total & Status */}
                 <div className="pt-2 border-t border-border/50 space-y-1">
                   <div className="flex justify-between font-semibold">
                     <span>Total</span>
@@ -184,18 +248,7 @@ export function ExpenseConfirmationPreview({
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    {isPayer ? (
-                      <span className="text-primary font-medium">
-                        Paid the bill
-                      </span>
-                    ) : (
-                      <>
-                        Owes {data.payer.name}{" "}
-                        <span className="font-medium text-foreground">
-                          {formatCurrency(participant.total)}
-                        </span>
-                      </>
-                    )}
+                    {getStatusLine(participant, data.payer, coveredNames)}
                   </p>
                 </div>
               </div>
