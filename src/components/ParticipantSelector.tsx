@@ -144,7 +144,7 @@ export function ParticipantSelector({
     });
   };
 
-  const selectableProfiles = [
+  const allProfiles = useMemo(() => [
     ...(user
       ? [
           {
@@ -161,7 +161,21 @@ export function ParticipantSelector({
       profileAvatar: f.profileAvatar,
       isUser: false,
     })) || []),
-  ];
+  ], [user, friendships]);
+
+  const selectableProfiles = useMemo(() => {
+    const selectedSet = new Set(selectedParticipants);
+    const selected: typeof allProfiles = [];
+    const unselected: typeof allProfiles = [];
+    for (const profile of allProfiles) {
+      if (selectedSet.has(profile.profileId)) {
+        selected.push(profile);
+      } else {
+        unselected.push(profile);
+      }
+    }
+    return [...selected, ...unselected];
+  }, [allProfiles, selectedParticipants]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
