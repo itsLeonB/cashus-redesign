@@ -123,16 +123,9 @@ export const groupExpensesApi = {
     ),
 
   syncParticipants: (expenseId: string, data: ExpenseParticipantsRequest) => {
-    // Convert Map to plain object for JSON serialization
-    const proxyObj: Record<string, string> = {};
-    if (data.proxyByProfileIds instanceof Map) {
-      data.proxyByProfileIds.forEach((value, key) => {
-        proxyObj[key] = value;
-      });
-    }
     return apiClient.put(`/group-expenses/${expenseId}/participants`, {
       participantProfileIds: data.participantProfileIds,
-      proxyByProfileIds: proxyObj,
+      proxyByProfileIds: data.proxyByProfileIds,
       payerProfileId: data.payerProfileId,
     });
   },

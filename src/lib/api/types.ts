@@ -276,7 +276,7 @@ export interface FeeCalculationMethodInfo {
 
 export interface ExpenseParticipantsRequest {
   participantProfileIds: string[];
-  proxyByProfileIds: Map<string, string>;
+  proxyByProfileIds: Record<string, string>;
   payerProfileId: string;
 }
 

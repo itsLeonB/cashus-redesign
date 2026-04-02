@@ -151,6 +151,27 @@ export default function ExpenseDetailPage() {
     (p) => p.participantProfile,
   );
 
+  const currentParticipants = useMemo(() => {
+    return (
+      expense?.participants?.map((p) => ({
+        profileId: p.participantProfile.id,
+        name: p.participantProfile.name,
+        avatar: p.participantProfile.avatar,
+      })) || []
+    );
+  }, [expense?.participants]);
+
+  const currentProxyMap = useMemo(() => {
+    return (
+      expense?.participants?.reduce<Record<string, string>>((acc, p) => {
+        if (p.hasProxy && p.proxyProfile) {
+          acc[p.participantProfile.id] = p.proxyProfile.id;
+        }
+        return acc;
+      }, {}) || {}
+    );
+  }, [expense?.participants]);
+
   const calculateItemsTotal = () => {
     if (!expense?.items) return 0;
     return expense.items?.reduce((total, item) => {
@@ -904,20 +925,9 @@ export default function ExpenseDetailPage() {
 
           <ParticipantSelector
             expenseId={expense.id}
-            currentParticipants={expense.participants?.map((p) => ({
-              profileId: p.participantProfile.id,
-              name: p.participantProfile.name,
-              avatar: p.participantProfile.avatar,
-            }))}
+            currentParticipants={currentParticipants}
             currentPayerId={expense.payer?.id}
-            currentProxyMap={
-              expense.participants?.reduce<Record<string, string>>((acc, p) => {
-                if (p.hasProxy && p.proxyProfile) {
-                  acc[p.participantProfile.id] = p.proxyProfile.id;
-                }
-                return acc;
-              }, {}) || {}
-            }
+            currentProxyMap={currentProxyMap}
             onSuccess={() => {
               setParticipantModalOpen(false);
             }}

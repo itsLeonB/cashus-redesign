@@ -35,12 +35,13 @@ interface ParticipantSelectorProps {
 }
 
 const EMPTY_PARTICIPANTS: ParticipantProfile[] = [];
+const EMPTY_PROXY_MAP: Record<string, string> = {};
 
 export function ParticipantSelector({
   expenseId,
   currentParticipants = EMPTY_PARTICIPANTS,
   currentPayerId = null,
-  currentProxyMap = {},
+  currentProxyMap = EMPTY_PROXY_MAP,
   onSuccess,
   onCancel,
   submitLabel = "Continue",
@@ -86,7 +87,13 @@ export function ParticipantSelector({
       setPayerProfileId((prev) => prev ?? user.id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expenseId, user?.id]);
+  }, [
+    expenseId,
+    user?.id,
+    currentParticipants,
+    currentPayerId,
+    currentProxyMap,
+  ]);
 
   const toggleParticipant = (profileId: string) => {
     setSelectedParticipants((prev) => {
@@ -121,6 +128,13 @@ export function ParticipantSelector({
     if (!selectedParticipants.includes(profileId)) {
       setSelectedParticipants((prev) => [...prev, profileId]);
     }
+
+    // Clear proxy assignment if this person becomes the payer
+    setProxyMap((prev) => {
+      const next = { ...prev };
+      delete next[profileId];
+      return next;
+    });
   };
 
   const handleProxyChange = (participantId: string, proxyId: string) => {
@@ -144,24 +158,27 @@ export function ParticipantSelector({
     });
   };
 
-  const allProfiles = useMemo(() => [
-    ...(user
-      ? [
-          {
-            profileId: user.id,
-            profileName: user.name,
-            profileAvatar: user.avatar,
-            isUser: true,
-          },
-        ]
-      : []),
-    ...(friendships?.map((f) => ({
-      profileId: f.profileId,
-      profileName: f.profileName,
-      profileAvatar: f.profileAvatar,
-      isUser: false,
-    })) || []),
-  ], [user, friendships]);
+  const allProfiles = useMemo(
+    () => [
+      ...(user
+        ? [
+            {
+              profileId: user.id,
+              profileName: user.name,
+              profileAvatar: user.avatar,
+              isUser: true,
+            },
+          ]
+        : []),
+      ...(friendships?.map((f) => ({
+        profileId: f.profileId,
+        profileName: f.profileName,
+        profileAvatar: f.profileAvatar,
+        isUser: false,
+      })) || []),
+    ],
+    [user, friendships],
+  );
 
   const selectableProfiles = useMemo(() => {
     const selectedSet = new Set(selectedParticipants);
@@ -180,11 +197,11 @@ export function ParticipantSelector({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!payerProfileId) {
+    if (!payerProfileId || !selectedParticipants.includes(payerProfileId)) {
       toast({
         variant: "destructive",
         title: "Missing payer",
-        description: "Please select who paid for this expense",
+        description: "Please select one of the participants as the payer",
       });
       return;
     }
@@ -204,7 +221,7 @@ export function ParticipantSelector({
     }
 
     // Build proxyByProfileIds: only entries with valid proxy
-    const proxyByProfileIds = new Map<string, string>();
+    const proxyByProfileIds: Record<string, string> = {};
     for (const [participantId, proxyId] of Object.entries(proxyMap)) {
       if (
         proxyId &&
@@ -212,7 +229,7 @@ export function ParticipantSelector({
         selectedParticipants.includes(participantId) &&
         selectedParticipants.includes(proxyId)
       ) {
-        proxyByProfileIds.set(participantId, proxyId);
+        proxyByProfileIds[participantId] = proxyId;
       }
     }
 
@@ -272,9 +289,12 @@ export function ParticipantSelector({
             const hasProxy = isSelected && !!currentProxy;
 
             // Proxy options: other selected participants who don't already have a proxy themselves
+            // AND are not the payer (proxying to the payer is technically redundant/invalid per requirement)
             const proxyOptions = selectedProfileDetails.filter(
               (p) =>
-                p.profileId !== profile.profileId && !proxyMap[p.profileId],
+                p.profileId !== profile.profileId &&
+                p.profileId !== payerProfileId &&
+                !proxyMap[p.profileId],
             );
 
             return (
@@ -349,9 +369,10 @@ export function ParticipantSelector({
                   </Button>
                 </div>
 
-                {/* Proxy selector - only show for selected participants */}
+                {/* Proxy selector - only show for selected participants who are not the payer */}
                 {enableProxySelection &&
                   isSelected &&
+                  !isPayer &&
                   proxyOptions.length > 0 && (
                     <div
                       className="flex items-center gap-2 pl-11 pr-3 pb-1"
@@ -388,16 +409,17 @@ export function ParticipantSelector({
           })}
         </div>
 
-        {selectedParticipants.length > 0 && (
-          <div className="text-sm text-muted-foreground">
+        {selectedParticipants.length > 0 && !payerProfileId && (
+          <div className="text-xs text-destructive font-medium px-1">
+            Please select which participant paid for this expense
+          </div>
+        )}
+
+        {selectedParticipants.length > 0 && payerProfileId && (
+          <div className="text-sm text-muted-foreground px-1">
             {selectedParticipants.length} participant
             {selectedParticipants.length !== 1 && "s"} selected
-            {payerName && (
-              <>
-                {" • "}
-                Payer: {payerName}
-              </>
-            )}
+            {payerName && ` • Payer: ${payerName}`}
           </div>
         )}
 
@@ -428,7 +450,8 @@ export function ParticipantSelector({
             disabled={
               syncParticipants.isPending ||
               selectedParticipants.length === 0 ||
-              !payerProfileId
+              !payerProfileId ||
+              !selectedParticipants.includes(payerProfileId)
             }
           >
             {syncParticipants.isPending && (
