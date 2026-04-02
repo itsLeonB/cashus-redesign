@@ -1,5 +1,5 @@
-import { useState, useEffect, SubmitEventHandler } from "react";
-import { Loader2, Users, Check, CreditCard, Plus } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Loader2, Users, Check, CreditCard, Plus, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AvatarCircle } from "./AvatarCircle";
 import { InlineAnonymousFriendForm } from "./InlineAnonymousFriendForm";
@@ -7,6 +7,13 @@ import { cn } from "@/lib/utils";
 import { useSyncParticipants, useFriendships } from "@/hooks/useApi";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export interface ParticipantProfile {
   profileId: string;
@@ -18,24 +25,29 @@ interface ParticipantSelectorProps {
   expenseId?: string;
   currentParticipants?: ParticipantProfile[];
   currentPayerId?: string | null;
+  currentProxyMap?: Record<string, string>;
   onSuccess?: () => void;
   onCancel?: () => void;
   submitLabel?: string;
   showSkip?: boolean;
   onSkip?: () => void;
+  enableProxySelection?: boolean;
 }
 
 const EMPTY_PARTICIPANTS: ParticipantProfile[] = [];
+const EMPTY_PROXY_MAP: Record<string, string> = {};
 
 export function ParticipantSelector({
   expenseId,
   currentParticipants = EMPTY_PARTICIPANTS,
   currentPayerId = null,
+  currentProxyMap = EMPTY_PROXY_MAP,
   onSuccess,
   onCancel,
   submitLabel = "Continue",
   showSkip = false,
   onSkip,
+  enableProxySelection = false,
 }: Readonly<ParticipantSelectorProps>) {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -51,6 +63,10 @@ export function ParticipantSelector({
   const [payerProfileId, setPayerProfileId] = useState<string | null>(
     () => currentPayerId ?? (user?.id || null),
   );
+  // proxyMap: participantId -> proxyProfileId
+  const [proxyMap, setProxyMap] = useState<Record<string, string>>(
+    () => currentProxyMap,
+  );
   const [showAddForm, setShowAddForm] = useState(false);
   const { data: friendships, isLoading, refetch } = useFriendships();
   const syncParticipants = useSyncParticipants(expenseId || "");
@@ -65,16 +81,19 @@ export function ParticipantSelector({
     if (expenseId) {
       setSelectedParticipants(currentParticipants.map((p) => p.profileId));
       setPayerProfileId(currentPayerId);
+      setProxyMap(currentProxyMap);
     } else if (user?.id) {
-      // For new expenses, default to current user as participant and payer
       setSelectedParticipants((prev) => (prev.length === 0 ? [user.id] : prev));
       setPayerProfileId((prev) => prev ?? user.id);
     }
-    // We intentionally only want to re-initialize when the expenseId or user changes.
-    // currentParticipants and currentPayerId are omitted because they often
-    // change references in the parent on every render, which would reset user selection.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [expenseId, user?.id]);
+  }, [
+    expenseId,
+    user?.id,
+    currentParticipants,
+    currentPayerId,
+    currentProxyMap,
+  ]);
 
   const toggleParticipant = (profileId: string) => {
     setSelectedParticipants((prev) => {
@@ -82,11 +101,24 @@ export function ParticipantSelector({
         ? prev.filter((id) => id !== profileId)
         : [...prev, profileId];
 
-      // If we just removed the payer from participants, clear the payer.
       if (payerProfileId === profileId && !next.includes(profileId)) {
         setPayerProfileId(null);
       }
 
+      return next;
+    });
+
+    // Clean up proxy references when removing a participant
+    setProxyMap((prev) => {
+      const next = { ...prev };
+      // Remove proxy assignment for this participant
+      delete next[profileId];
+      // Remove any proxy pointing to this participant
+      for (const [key, value] of Object.entries(next)) {
+        if (value === profileId) {
+          delete next[key];
+        }
+      }
       return next;
     });
   };
@@ -96,35 +128,80 @@ export function ParticipantSelector({
     if (!selectedParticipants.includes(profileId)) {
       setSelectedParticipants((prev) => [...prev, profileId]);
     }
+
+    // Clear proxy assignment if this person becomes the payer
+    setProxyMap((prev) => {
+      const next = { ...prev };
+      delete next[profileId];
+      return next;
+    });
   };
 
-  const selectableProfiles = [
-    ...(user
-      ? [
-          {
-            profileId: user.id,
-            profileName: user.name,
-            profileAvatar: user.avatar,
-            isUser: true,
-          },
-        ]
-      : []),
-    ...(friendships?.map((f) => ({
-      profileId: f.profileId,
-      profileName: f.profileName,
-      profileAvatar: f.profileAvatar,
-      isUser: false,
-    })) || []),
-  ];
+  const handleProxyChange = (participantId: string, proxyId: string) => {
+    setProxyMap((prev) => {
+      const next = { ...prev };
+      if (proxyId === "self" || proxyId === participantId) {
+        delete next[participantId];
+      } else {
+        // Validate: no proxy chains (the selected proxy must not itself have a proxy)
+        if (next[proxyId]) {
+          toast({
+            variant: "destructive",
+            title: "Invalid proxy",
+            description: "A proxy cannot have another proxy assigned to them.",
+          });
+          return prev;
+        }
+        next[participantId] = proxyId;
+      }
+      return next;
+    });
+  };
 
-  const handleSubmit: SubmitEventHandler<HTMLFormElement> = async (e) => {
+  const allProfiles = useMemo(
+    () => [
+      ...(user
+        ? [
+            {
+              profileId: user.id,
+              profileName: user.name,
+              profileAvatar: user.avatar,
+              isUser: true,
+            },
+          ]
+        : []),
+      ...(friendships?.map((f) => ({
+        profileId: f.profileId,
+        profileName: f.profileName,
+        profileAvatar: f.profileAvatar,
+        isUser: false,
+      })) || []),
+    ],
+    [user, friendships],
+  );
+
+  const selectableProfiles = useMemo(() => {
+    const selectedSet = new Set(selectedParticipants);
+    const selected: typeof allProfiles = [];
+    const unselected: typeof allProfiles = [];
+    for (const profile of allProfiles) {
+      if (selectedSet.has(profile.profileId)) {
+        selected.push(profile);
+      } else {
+        unselected.push(profile);
+      }
+    }
+    return [...selected, ...unselected];
+  }, [allProfiles, selectedParticipants]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!payerProfileId) {
+    if (!payerProfileId || !selectedParticipants.includes(payerProfileId)) {
       toast({
         variant: "destructive",
         title: "Missing payer",
-        description: "Please select who paid for this expense",
+        description: "Please select one of the participants as the payer",
       });
       return;
     }
@@ -143,9 +220,23 @@ export function ParticipantSelector({
       return;
     }
 
+    // Build proxyByProfileIds: only entries with valid proxy
+    const proxyByProfileIds: Record<string, string> = {};
+    for (const [participantId, proxyId] of Object.entries(proxyMap)) {
+      if (
+        proxyId &&
+        proxyId !== participantId &&
+        selectedParticipants.includes(participantId) &&
+        selectedParticipants.includes(proxyId)
+      ) {
+        proxyByProfileIds[participantId] = proxyId;
+      }
+    }
+
     try {
       await syncParticipants.mutateAsync({
         participantProfileIds: selectedParticipants,
+        proxyByProfileIds,
         payerProfileId,
       });
       toast({ title: "Participants updated successfully" });
@@ -183,89 +274,152 @@ export function ParticipantSelector({
       (p) => p.profileId === payerProfileId,
     )?.profileName;
 
+    // Get selected profile details for proxy options
+    const selectedProfileDetails = selectableProfiles.filter((p) =>
+      selectedParticipants.includes(p.profileId),
+    );
+
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2 max-h-64 overflow-y-auto">
           {selectableProfiles.map((profile) => {
             const isSelected = selectedParticipants.includes(profile.profileId);
             const isPayer = payerProfileId === profile.profileId;
+            const currentProxy = proxyMap[profile.profileId];
+            const hasProxy = isSelected && !!currentProxy;
+
+            // Proxy options: other selected participants who don't already have a proxy themselves
+            // AND are not the payer (proxying to the payer is technically redundant/invalid per requirement)
+            const proxyOptions = selectedProfileDetails.filter(
+              (p) =>
+                p.profileId !== profile.profileId &&
+                p.profileId !== payerProfileId &&
+                !proxyMap[p.profileId],
+            );
 
             return (
-              <div
-                key={profile.profileId}
-                className={cn(
-                  "flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer",
-                  isSelected
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50",
-                )}
-                onClick={() => toggleParticipant(profile.profileId)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    toggleParticipant(profile.profileId);
-                  }
-                }}
-                role="button"
-                tabIndex={0}
-                aria-pressed={isSelected}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={cn(
-                      "h-5 w-5 rounded border flex items-center justify-center transition-colors",
-                      isSelected
-                        ? "bg-primary border-primary text-primary-foreground"
-                        : "border-muted-foreground hover:border-primary",
-                    )}
-                  >
-                    {isSelected && <Check className="h-3 w-3" />}
-                  </div>
-                  <AvatarCircle
-                    name={profile.profileName}
-                    imageUrl={profile.profileAvatar}
-                    size="sm"
-                  />
-                  <div>
-                    <p className="text-sm font-medium">
-                      {profile.profileName}
-                      {profile.isUser && (
-                        <span className="text-muted-foreground ml-1">
-                          (You)
-                        </span>
+              <div key={profile.profileId} className="space-y-1">
+                <div
+                  className={cn(
+                    "flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer",
+                    isSelected
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/50",
+                  )}
+                  onClick={() => toggleParticipant(profile.profileId)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      toggleParticipant(profile.profileId);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={isSelected}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={cn(
+                        "h-5 w-5 rounded border flex items-center justify-center transition-colors",
+                        isSelected
+                          ? "bg-primary border-primary text-primary-foreground"
+                          : "border-muted-foreground hover:border-primary",
                       )}
-                    </p>
+                    >
+                      {isSelected && <Check className="h-3 w-3" />}
+                    </div>
+                    <AvatarCircle
+                      name={profile.profileName}
+                      imageUrl={profile.profileAvatar}
+                      size="sm"
+                    />
+                    <div>
+                      <p className="text-sm font-medium">
+                        {profile.profileName}
+                        {profile.isUser && (
+                          <span className="text-muted-foreground ml-1">
+                            (You)
+                          </span>
+                        )}
+                      </p>
+                      {hasProxy && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Shield className="h-3 w-3" />
+                          Covered by{" "}
+                          {selectedProfileDetails.find(
+                            (p) => p.profileId === currentProxy,
+                          )?.profileName || "unknown"}
+                        </p>
+                      )}
+                    </div>
                   </div>
+
+                  <Button
+                    type="button"
+                    variant={isPayer ? "default" : "outline"}
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      selectPayer(profile.profileId);
+                    }}
+                    className="gap-1 relative z-10"
+                  >
+                    <CreditCard className="h-3 w-3" />
+                    {isPayer ? "Payer" : "Set as Payer"}
+                  </Button>
                 </div>
 
-                <Button
-                  type="button"
-                  variant={isPayer ? "default" : "outline"}
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    selectPayer(profile.profileId);
-                  }}
-                  className="gap-1 relative z-10"
-                >
-                  <CreditCard className="h-3 w-3" />
-                  {isPayer ? "Payer" : "Set as Payer"}
-                </Button>
+                {/* Proxy selector - only show for selected participants who are not the payer */}
+                {enableProxySelection &&
+                  isSelected &&
+                  !isPayer &&
+                  proxyOptions.length > 0 && (
+                    <div
+                      className="flex items-center gap-2 pl-11 pr-3 pb-1"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        Paid by:
+                      </span>
+                      <Select
+                        value={currentProxy || "self"}
+                        onValueChange={(value) =>
+                          handleProxyChange(profile.profileId, value)
+                        }
+                      >
+                        <SelectTrigger className="h-7 text-xs w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="self">Self</SelectItem>
+                          {proxyOptions.map((opt) => (
+                            <SelectItem
+                              key={opt.profileId}
+                              value={opt.profileId}
+                            >
+                              {opt.isUser ? "You" : opt.profileName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
               </div>
             );
           })}
         </div>
 
-        {selectedParticipants.length > 0 && (
-          <div className="text-sm text-muted-foreground">
+        {selectedParticipants.length > 0 && !payerProfileId && (
+          <div className="text-xs text-destructive font-medium px-1">
+            Please select which participant paid for this expense
+          </div>
+        )}
+
+        {selectedParticipants.length > 0 && payerProfileId && (
+          <div className="text-sm text-muted-foreground px-1">
             {selectedParticipants.length} participant
             {selectedParticipants.length !== 1 && "s"} selected
-            {payerName && (
-              <>
-                {" • "}
-                Payer: {payerName}
-              </>
-            )}
+            {payerName && ` • Payer: ${payerName}`}
           </div>
         )}
 
@@ -296,7 +450,8 @@ export function ParticipantSelector({
             disabled={
               syncParticipants.isPending ||
               selectedParticipants.length === 0 ||
-              !payerProfileId
+              !payerProfileId ||
+              !selectedParticipants.includes(payerProfileId)
             }
           >
             {syncParticipants.isPending && (

@@ -148,8 +148,29 @@ export default function ExpenseDetailPage() {
   const [isDryRunLoading, setIsDryRunLoading] = useState(false);
 
   const participantProfiles = (expense?.participants || []).map(
-    (p) => p.profile,
+    (p) => p.participantProfile,
   );
+
+  const currentParticipants = useMemo(() => {
+    return (
+      expense?.participants?.map((p) => ({
+        profileId: p.participantProfile.id,
+        name: p.participantProfile.name,
+        avatar: p.participantProfile.avatar,
+      })) || []
+    );
+  }, [expense?.participants]);
+
+  const currentProxyMap = useMemo(() => {
+    return (
+      expense?.participants?.reduce<Record<string, string>>((acc, p) => {
+        if (p.hasProxy && p.proxyProfile) {
+          acc[p.participantProfile.id] = p.proxyProfile.id;
+        }
+        return acc;
+      }, {}) || {}
+    );
+  }, [expense?.participants]);
 
   const calculateItemsTotal = () => {
     if (!expense?.items) return 0;
@@ -904,17 +925,15 @@ export default function ExpenseDetailPage() {
 
           <ParticipantSelector
             expenseId={expense.id}
-            currentParticipants={expense.participants?.map((p) => ({
-              profileId: p.profile.id,
-              name: p.profile.name,
-              avatar: p.profile.avatar,
-            }))}
+            currentParticipants={currentParticipants}
             currentPayerId={expense.payer?.id}
+            currentProxyMap={currentProxyMap}
             onSuccess={() => {
               setParticipantModalOpen(false);
             }}
             onCancel={() => setParticipantModalOpen(false)}
             submitLabel="Save Participants"
+            enableProxySelection={true}
           />
         </DialogContent>
       </Dialog>

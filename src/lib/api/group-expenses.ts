@@ -122,6 +122,11 @@ export const groupExpensesApi = {
       "/group-expenses/fee-calculation-methods",
     ),
 
-  syncParticipants: (expenseId: string, data: ExpenseParticipantsRequest) =>
-    apiClient.put(`/group-expenses/${expenseId}/participants`, data),
+  syncParticipants: (expenseId: string, data: ExpenseParticipantsRequest) => {
+    return apiClient.put(`/group-expenses/${expenseId}/participants`, {
+      participantProfileIds: data.participantProfileIds,
+      proxyByProfileIds: data.proxyByProfileIds,
+      payerProfileId: data.payerProfileId,
+    });
+  },
 };
