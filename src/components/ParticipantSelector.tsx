@@ -86,7 +86,6 @@ export function ParticipantSelector({
       setSelectedParticipants((prev) => (prev.length === 0 ? [user.id] : prev));
       setPayerProfileId((prev) => prev ?? user.id);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     expenseId,
     user?.id,

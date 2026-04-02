@@ -12,6 +12,7 @@ import { ApiError } from "@/lib/api/types";
 import { useUploadPermission } from "@/hooks/useUploadPermission";
 import { UploadLimitInfo } from "@/components/UploadLimitInfo";
 import { useFlags } from "@flagsmith/flagsmith/react";
+import { compressImageForOCR } from "@/utils/compressImageForOCR";
 
 interface ImageUploadAreaProps {
   expenseId?: string;
@@ -51,7 +52,7 @@ export function ImageUploadArea({
     };
   }, [previewUrl]);
 
-  const handleFileSelect = (file: File) => {
+  const handleFileSelect = async (file: File) => {
     setUploadError(null);
     if (!file.type.startsWith("image/")) {
       toast({
@@ -62,13 +63,22 @@ export function ImageUploadArea({
       return;
     }
 
-    setSelectedFile(file);
+    // Apply compression before upload
+    let fileToUpload = file;
+    try {
+      fileToUpload = await compressImageForOCR(file);
+    } catch (error) {
+      console.error("Compression component error:", error);
+      // Fallback to original file is handled by initialization
+    }
+
+    setSelectedFile(fileToUpload);
 
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
     }
 
-    setPreviewUrl(URL.createObjectURL(file));
+    setPreviewUrl(URL.createObjectURL(fileToUpload));
 
     if (expenseId && uploadPermission.canUpload) {
       const handleUploadError = (error: unknown) => {
@@ -99,7 +109,7 @@ export function ImageUploadArea({
 
       if (usePresigned) {
         getUploadUrl.mutate(
-          { file },
+          { file: fileToUpload },
           {
             onSuccess: (response) => {
               const runUpload = async () => {
@@ -107,9 +117,9 @@ export function ImageUploadArea({
                 try {
                   const res = await fetch(response.uploadUrl, {
                     method: "PUT",
-                    body: file,
+                    body: fileToUpload,
                     headers: {
-                      "Content-Type": file.type,
+                      "Content-Type": fileToUpload.type,
                     },
                   });
 
@@ -143,7 +153,7 @@ export function ImageUploadArea({
         );
       } else {
         uploadBill.mutate(
-          { file },
+          { file: fileToUpload },
           {
             onSuccess: handleSuccess,
             onError: handleUploadError,
