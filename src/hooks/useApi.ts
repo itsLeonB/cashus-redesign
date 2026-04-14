@@ -259,21 +259,6 @@ export function useCreateDraftExpense() {
   });
 }
 
-export function useUploadExpenseBill(expenseId: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ file }: { file: File }) =>
-      groupExpensesApi.uploadBill(expenseId, file),
-    onSuccess: () => {
-      // Invalidate only the specific group expense query
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.groupExpenses.detail(expenseId),
-      });
-    },
-  });
-}
-
 export function useTriggerBillParsing(expenseId: string) {
   const queryClient = useQueryClient();
 
