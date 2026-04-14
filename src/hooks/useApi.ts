@@ -233,11 +233,15 @@ export function useRecentExpenses() {
   });
 }
 
-export function useGroupExpense(expenseId: string) {
+export function useGroupExpense(
+  expenseId: string,
+  options?: { refetchInterval?: number | false },
+) {
   return useQuery({
     queryKey: queryKeys.groupExpenses.detail(expenseId),
     queryFn: () => groupExpensesApi.getById(expenseId),
     enabled: !!expenseId,
+    refetchInterval: options?.refetchInterval,
   });
 }
 

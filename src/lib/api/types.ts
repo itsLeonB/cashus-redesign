@@ -354,7 +354,8 @@ export interface ExpenseBillResponse {
     | "FAILED_EXTRACTING"
     | "PARSED"
     | "FAILED_PARSING"
-    | "NOT_DETECTED";
+    | "NOT_DETECTED"
+    | "NOT_UPLOADED";
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;
