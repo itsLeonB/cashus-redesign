@@ -5,10 +5,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Route } from "react-router-dom";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { FaroRoutes } from "@grafana/faro-react";
 
 import { Spinner } from "@/components/ui/spinner";
 import { useUserJotTracker } from "@/hooks/useUserJotTracker";
@@ -81,7 +82,7 @@ const App = () => {
                 }}
                 flagsmith={flagsmith}
               >
-                <Routes>
+                <FaroRoutes>
                   <Route element={<AuthLayout />}>
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
@@ -122,7 +123,7 @@ const App = () => {
                   </Route>
                   <Route path="/" element={<LandingPage />} />
                   <Route path="*" element={<NotFound />} />
-                </Routes>
+                </FaroRoutes>
               </FlagsmithProvider>
             </Suspense>
             <Analytics />

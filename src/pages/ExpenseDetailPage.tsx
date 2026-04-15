@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   useGroupExpense,
@@ -115,7 +115,7 @@ export default function ExpenseDetailPage() {
   }, [expense?.creator.isUser, expense?.status]);
 
   // Update refetch interval based on bill status
-  useMemo(() => {
+  useEffect(() => {
     if (
       expense?.billExists &&
       (expense.bill.status === "PENDING" || expense.bill.status === "EXTRACTED")
