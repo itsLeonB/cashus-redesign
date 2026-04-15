@@ -1,4 +1,4 @@
-const SW_VERSION = "1.0.3";
+const SW_VERSION = "0.1.0";
 const CACHE_NAME = `cashus-v${SW_VERSION}`;
 
 const ASSETS_TO_CACHE = [

@@ -233,11 +233,15 @@ export function useRecentExpenses() {
   });
 }
 
-export function useGroupExpense(expenseId: string) {
+export function useGroupExpense(
+  expenseId: string,
+  options?: { refetchInterval?: number | false },
+) {
   return useQuery({
     queryKey: queryKeys.groupExpenses.detail(expenseId),
     queryFn: () => groupExpensesApi.getById(expenseId),
     enabled: !!expenseId,
+    refetchInterval: options?.refetchInterval,
   });
 }
 
@@ -250,21 +254,6 @@ export function useCreateDraftExpense() {
       queryClient.invalidateQueries({ queryKey: queryKeys.groupExpenses.all });
       queryClient.invalidateQueries({
         queryKey: queryKeys.groupExpenses.recent,
-      });
-    },
-  });
-}
-
-export function useUploadExpenseBill(expenseId: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ file }: { file: File }) =>
-      groupExpensesApi.uploadBill(expenseId, file),
-    onSuccess: () => {
-      // Invalidate only the specific group expense query
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.groupExpenses.detail(expenseId),
       });
     },
   });

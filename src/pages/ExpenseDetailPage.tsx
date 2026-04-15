@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   useGroupExpense,
@@ -89,7 +89,8 @@ const billStatusDisplay: Record<
   FAILED_EXTRACTING: { label: "Extraction Failed", variant: "destructive" },
   PARSED: { label: "Parsed", variant: "default" },
   FAILED_PARSING: { label: "Parsing Failed", variant: "destructive" },
-  NOT_DETECTED: { label: "Not Detected", variant: "outline" },
+  NOT_DETECTED: { label: "No Bill Image", variant: "outline" },
+  NOT_UPLOADED: { label: "Not Uploaded", variant: "outline" },
 };
 
 const isRetryableStatus = (status: string) => {
@@ -99,7 +100,31 @@ const isRetryableStatus = (status: string) => {
 export default function ExpenseDetailPage() {
   const { expenseId } = useParams<{ expenseId: string }>();
   const navigate = useNavigate();
-  const { data: expense, isLoading } = useGroupExpense(expenseId || "");
+
+  // Polling logic for bill processing
+  const [refetchInterval, setRefetchInterval] = useState<number | false>(false);
+
+  const { data: expense, isLoading } = useGroupExpense(expenseId || "", {
+    refetchInterval,
+  });
+
+  const canEdit = useMemo(() => {
+    const isOwner = expense?.creator.isUser;
+    const isConfirmed = expense?.status === "CONFIRMED";
+    return isOwner && !isConfirmed;
+  }, [expense?.creator.isUser, expense?.status]);
+
+  // Update refetch interval based on bill status
+  useEffect(() => {
+    if (
+      expense?.billExists &&
+      (expense.bill.status === "PENDING" || expense.bill.status === "EXTRACTED")
+    ) {
+      setRefetchInterval(3000);
+    } else {
+      setRefetchInterval(false);
+    }
+  }, [expense?.billExists, expense?.bill?.status]);
   const confirmExpense = useConfirmGroupExpense(expenseId);
   const deleteExpense = useDeleteGroupExpense();
   const triggerBillParsing = useTriggerBillParsing(expenseId || "");
@@ -352,7 +377,6 @@ export default function ExpenseDetailPage() {
   const isConfirmed = expense.status === "CONFIRMED";
   const isReady = expense.status === "READY";
   const isOwner = expense.creator.isUser;
-  const canEdit = isOwner && !isConfirmed;
 
   const billInformationSection = () => {
     if (isConfirmed && !expense.billExists) return null;
@@ -409,17 +433,19 @@ export default function ExpenseDetailPage() {
                     Retry
                   </Button>
                 )}
-                {expense.bill.status === "NOT_DETECTED" && canEdit && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setUploadBillModalOpen(true)}
-                    disabled={uploadDisabled}
-                  >
-                    <Upload className="h-4 w-4 mr-1" />
-                    Upload New
-                  </Button>
-                )}
+                {(expense.bill.status === "NOT_DETECTED" ||
+                  expense.bill.status === "NOT_UPLOADED") &&
+                  canEdit && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setUploadBillModalOpen(true)}
+                      disabled={uploadDisabled}
+                    >
+                      <Upload className="h-4 w-4 mr-1" />
+                      Upload Bill
+                    </Button>
+                  )}
               </>
             ) : (
               canEdit && (
@@ -900,12 +926,12 @@ export default function ExpenseDetailPage() {
           </AlertDialogHeader>
 
           <ImageUploadArea
-            expenseId={expenseId}
+            expenseId={expenseId || ""}
             onUploadSuccess={handleUploadSuccess}
           />
 
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Close</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

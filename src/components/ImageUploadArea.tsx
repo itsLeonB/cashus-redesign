@@ -3,15 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Camera, ImageIcon, X, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import {
-  useUploadExpenseBill,
-  useGetUploadUrl,
-  useTriggerBillParsing,
-} from "@/hooks/useApi";
+import { useGetUploadUrl, useTriggerBillParsing } from "@/hooks/useApi";
 import { ApiError } from "@/lib/api/types";
 import { useUploadPermission } from "@/hooks/useUploadPermission";
 import { UploadLimitInfo } from "@/components/UploadLimitInfo";
-import { useFlags } from "@flagsmith/flagsmith/react";
 import { compressImageForOCR } from "@/utils/compressImageForOCR";
 
 interface ImageUploadAreaProps {
@@ -33,15 +28,11 @@ export function ImageUploadArea({
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const uploadPermission = useUploadPermission();
-  const uploadBill = useUploadExpenseBill(expenseId);
   const getUploadUrl = useGetUploadUrl(expenseId);
   const notifyPresignedUploaded = useTriggerBillParsing(expenseId);
-  const flags = useFlags(["use_presigned_bill_upload"]);
-  const usePresigned = flags.use_presigned_bill_upload;
   const [isUploadingPresigned, setIsUploadingPresigned] = useState(false);
 
   const isUploading =
-    uploadBill.isPending ||
     getUploadUrl.isPending ||
     notifyPresignedUploaded.isPending ||
     isUploadingPresigned;
@@ -107,59 +98,49 @@ export function ImageUploadArea({
         onUploadSuccess?.();
       };
 
-      if (usePresigned) {
-        getUploadUrl.mutate(
-          { file: fileToUpload },
-          {
-            onSuccess: (response) => {
-              const runUpload = async () => {
-                setIsUploadingPresigned(true);
-                try {
-                  const res = await fetch(response.uploadUrl, {
-                    method: "PUT",
-                    body: fileToUpload,
-                    headers: {
-                      "Content-Type": fileToUpload.type,
-                    },
-                  });
+      getUploadUrl.mutate(
+        { file: fileToUpload },
+        {
+          onSuccess: (response) => {
+            const runUpload = async () => {
+              setIsUploadingPresigned(true);
+              try {
+                const res = await fetch(response.uploadUrl, {
+                  method: "PUT",
+                  body: fileToUpload,
+                  headers: {
+                    "Content-Type": fileToUpload.type,
+                  },
+                });
 
-                  if (!res.ok) {
-                    throw new Error("Failed to upload image to storage");
-                  }
-
-                  notifyPresignedUploaded.mutate(response.billId, {
-                    onSuccess: handleSuccess,
-                    onError: handleUploadError,
-                  });
-                } catch (error) {
-                  toast({
-                    variant: "destructive",
-                    title: "Upload failed",
-                    description:
-                      error instanceof Error
-                        ? error.message
-                        : "Failed to upload image directly",
-                  });
-                  clearInputs();
-                } finally {
-                  setIsUploadingPresigned(false);
+                if (!res.ok) {
+                  throw new Error("Failed to upload image to storage");
                 }
-              };
 
-              runUpload();
-            },
-            onError: handleUploadError,
+                notifyPresignedUploaded.mutate(response.billId, {
+                  onSuccess: handleSuccess,
+                  onError: handleUploadError,
+                });
+              } catch (error) {
+                toast({
+                  variant: "destructive",
+                  title: "Upload failed",
+                  description:
+                    error instanceof Error
+                      ? error.message
+                      : "Failed to upload image directly",
+                });
+                clearInputs();
+              } finally {
+                setIsUploadingPresigned(false);
+              }
+            };
+
+            runUpload();
           },
-        );
-      } else {
-        uploadBill.mutate(
-          { file: fileToUpload },
-          {
-            onSuccess: handleSuccess,
-            onError: handleUploadError,
-          },
-        );
-      }
+          onError: handleUploadError,
+        },
+      );
     }
   };
 
