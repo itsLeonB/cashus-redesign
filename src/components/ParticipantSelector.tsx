@@ -71,6 +71,18 @@ export function ParticipantSelector({
   const { data: friendships, isLoading, refetch } = useFriendships();
   const syncParticipants = useSyncParticipants(expenseId || "");
 
+  // Capture initial selection for stable sorting across renders while mounted
+  const initialSelectionAtOpen = useMemo(() => {
+    let ids: string[] = [];
+    if (currentParticipants.length > 0) {
+      ids = currentParticipants.map((p) => p.profileId);
+    } else if (user?.id) {
+      ids = [user.id];
+    }
+    return new Set(ids);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only capture once on mount to ensure stable ordering during interaction
+
   const handleAnonymousFriendCreated = async (profileId: string) => {
     await refetch();
     setSelectedParticipants((prev) => [...prev, profileId]);
@@ -180,18 +192,17 @@ export function ParticipantSelector({
   );
 
   const selectableProfiles = useMemo(() => {
-    const selectedSet = new Set(selectedParticipants);
     const selected: typeof allProfiles = [];
     const unselected: typeof allProfiles = [];
     for (const profile of allProfiles) {
-      if (selectedSet.has(profile.profileId)) {
+      if (initialSelectionAtOpen.has(profile.profileId)) {
         selected.push(profile);
       } else {
         unselected.push(profile);
       }
     }
     return [...selected, ...unselected];
-  }, [allProfiles, selectedParticipants]);
+  }, [allProfiles, initialSelectionAtOpen]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
