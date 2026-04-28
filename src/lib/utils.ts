@@ -13,13 +13,13 @@ export const sortByCreatedAtAsc = <T extends { createdAt: string }>(
   );
 };
 
-const numberFormat = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "IDR",
-  minimumFractionDigits: 2,
-});
+export const formatCurrency = (amount: number | string, currency = "IDR") => {
+  const numberFormat = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: currency === "IDR" ? 2 : 2,
+  });
 
-export const formatCurrency = (amount: number | string) => {
   if (typeof amount === "string") {
     return numberFormat.format(Number.parseFloat(amount));
   }
