@@ -9,6 +9,7 @@ type DebtSummaryProps = {
   isLoading: boolean;
   error?: Error | null;
   isError?: boolean;
+  currency?: string;
 };
 
 // Common card configuration
@@ -29,7 +30,13 @@ const cardConfigs = [
   },
 ];
 
-const DebtSummary = ({ data, isLoading, error, isError }: DebtSummaryProps) => {
+const DebtSummary = ({
+  data,
+  isLoading,
+  error,
+  isError,
+  currency,
+}: DebtSummaryProps) => {
   if (isLoading) {
     return (
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
@@ -64,7 +71,14 @@ const DebtSummary = ({ data, isLoading, error, isError }: DebtSummaryProps) => {
           <StatCard
             key={config.label}
             label={config.label}
-            value={<AmountDisplay amount={amount} showSign={false} size="lg" />}
+            value={
+              <AmountDisplay
+                amount={amount}
+                currency={currency || data?.currencyCode}
+                showSign={false}
+                size="lg"
+              />
+            }
             icon={config.icon}
             variant={config.variant}
           />
