@@ -1,4 +1,4 @@
-import { useState, useEffect, SubmitEventHandler } from "react";
+import { useState, useEffect, type FormEventHandler } from "react";
 import {
   Dialog,
   DialogContent,
@@ -50,7 +50,7 @@ export function ExpenseItemModal({
     }
   }, [item, open]);
 
-  const handleSubmit: SubmitEventHandler<HTMLFormElement> = (e) => {
+  const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
 
     if (!name.trim() || !amount) {

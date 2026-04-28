@@ -1,4 +1,4 @@
-import { SubmitEventHandler, useState } from "react";
+import { useState, type FormEventHandler } from "react";
 import {
   Dialog,
   DialogContent,
@@ -63,7 +63,7 @@ export function NewGroupExpenseModal({
     onOpenChange(open);
   };
 
-  const handleDetailsSubmit: SubmitEventHandler<HTMLFormElement> = async (
+  const handleDetailsSubmit: FormEventHandler<HTMLFormElement> = async (
     e,
   ) => {
     e.preventDefault();

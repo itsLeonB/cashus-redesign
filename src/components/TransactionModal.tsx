@@ -1,4 +1,4 @@
-import { SubmitEventHandler, useState } from "react";
+import { useState, type FormEventHandler } from "react";
 import { useFriendships, useCreateDebt } from "@/hooks/useApi";
 import { useFilteredTransferMethods } from "@/hooks/useMasterData";
 import { DebtDirection, TransferMethod } from "@/lib/api/types";
@@ -74,7 +74,7 @@ export function TransactionModal({
   const createDebt = useCreateDebt();
   const { toast } = useToast();
 
-  const handleSubmit: SubmitEventHandler<HTMLFormElement> = async (e) => {
+  const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
     if (!friendId || !amount || !selectedMethod?.id) return;
 
