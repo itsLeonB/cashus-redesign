@@ -140,9 +140,23 @@ export default function FriendDetailPage() {
   const [transactionOpen, setTransactionOpen] = useState(false);
   const [associateOpen, setAssociateOpen] = useState(false);
   const [transferMethodsOpen, setTransferMethodsOpen] = useState(false);
+  const [activeCurrencyTab, setActiveCurrencyTab] = useState("");
 
-  const friendDebts = friendship?.balance.transactionHistory || [];
-  const balance = Number.parseFloat(friendship?.balance.netBalance || "0");
+  const balancesPerCurrency = friendship?.balancesPerCurrency || {};
+  const hasCurrencyBalances = Object.keys(balancesPerCurrency).length > 0;
+  const balances = hasCurrencyBalances
+    ? balancesPerCurrency
+    : friendship?.balance
+      ? { [friendship.balance.currencyCode || "IDR"]: friendship.balance }
+      : {};
+  const currencies = Object.keys(balances);
+  const hasMultipleCurrencies = currencies.length > 1;
+  const activeCurrency =
+    activeCurrencyTab && balances[activeCurrencyTab]
+      ? activeCurrencyTab
+      : currencies[0] || "IDR";
+  const activeBalance = balances[activeCurrency] || friendship?.balance;
+  const balance = Number.parseFloat(activeBalance?.netBalance || "0");
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString("en-US", {
