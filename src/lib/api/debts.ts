@@ -19,7 +19,8 @@ export const debtsApi = {
       status: filter,
     }),
 
-  getSummary: () => apiClient.get<FriendBalance>("/debts/summary"),
+  getSummary: () =>
+    apiClient.get<Record<string, FriendBalance>>("/debts/summary"),
 
   getRecent: () => apiClient.get<DebtTransactionResponse[]>("/debts/recent"),
 };

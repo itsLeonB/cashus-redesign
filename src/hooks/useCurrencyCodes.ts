@@ -5,7 +5,7 @@ const currencyCodes = cc.codes();
 
 export const useCurrencyCodes = () => {
   const { user } = useAuth();
-  const { homeCurrency } = user;
+  const homeCurrency = user.homeCurrency || "IDR";
   const sortedCurrencyCodes = currencyCodes.filter(
     (code) => code !== homeCurrency,
   );

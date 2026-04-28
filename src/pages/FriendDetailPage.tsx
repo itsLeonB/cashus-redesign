@@ -20,12 +20,12 @@ import {
   Wallet,
   Link2,
   CreditCard,
-  ChevronRight,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import DebtSummary from "@/components/DebtSummary";
 import type { FriendBalance } from "@/lib/api";
-import { getCurrencyName } from "@/hooks/useCurrencyCodes";
+import CurrencyBalanceSummary from "@/components/CurrencyBalanceSummary";
+import { useAuth } from "@/contexts/AuthContext";
 
 const formatDate = (date: string) =>
   new Date(date).toLocaleDateString("en-US", {
@@ -135,64 +135,6 @@ function TransactionHistory({
   );
 }
 
-function CurrencyBalanceSummary({
-  balancesPerCurrency,
-  onCurrencySelect,
-}: Readonly<{
-  balancesPerCurrency: Record<string, FriendBalance>;
-  onCurrencySelect: (currency: string) => void;
-}>) {
-  const currencies = Object.keys(balancesPerCurrency);
-
-  return (
-    <Card className="border-border/50">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="font-display">Balances</CardTitle>
-        <span className="text-xs text-muted-foreground">
-          {currencies.length}{" "}
-          {currencies.length === 1 ? "currency" : "currencies"}
-        </span>
-      </CardHeader>
-      <CardContent className="p-0">
-        <div className="divide-y divide-border/50">
-          {currencies.map((currency) => {
-            const netBalance = Number.parseFloat(
-              balancesPerCurrency[currency]?.netBalance || "0",
-            );
-            const isPositive = netBalance >= 0;
-
-            return (
-              <button
-                key={currency}
-                className="w-full flex items-center justify-between px-6 py-3 hover:bg-muted/30 transition-colors text-left"
-                onClick={() => onCurrencySelect(currency)}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-md bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground flex-shrink-0">
-                    {currency}
-                  </div>
-                  <span className="text-sm">{getCurrencyName(currency)}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`text-sm font-semibold tabular-nums ${
-                      isPositive ? "text-success" : "text-warning"
-                    }`}
-                  >
-                    {isPositive ? "+" : ""}
-                    {formatCurrency(netBalance, currency)}
-                  </span>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 export default function FriendDetailPage() {
   const { friendId } = useParams<{ friendId: string }>();
   const navigate = useNavigate();
@@ -206,6 +148,7 @@ export default function FriendDetailPage() {
   const [associateOpen, setAssociateOpen] = useState(false);
   const [transferMethodsOpen, setTransferMethodsOpen] = useState(false);
   const [activeCurrencyTab, setActiveCurrencyTab] = useState("");
+  const { user } = useAuth();
 
   const balancesPerCurrency = friendship?.balancesPerCurrency || {};
   const currencies = Object.keys(balancesPerCurrency);
@@ -213,7 +156,7 @@ export default function FriendDetailPage() {
   const activeCurrency =
     activeCurrencyTab && balancesPerCurrency[activeCurrencyTab]
       ? activeCurrencyTab
-      : currencies[0] || "IDR";
+      : currencies[0] || user.homeCurrency || "IDR";
   const activeBalance =
     balancesPerCurrency[activeCurrency] || friendship?.balance;
   const balance = Number.parseFloat(activeBalance?.netBalance || "0");

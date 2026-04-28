@@ -7,13 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Plus, Users } from "lucide-react";
 import RecentTransactions from "@/components/RecentTransactions";
 import RecentExpenses from "@/components/RecentExpenses";
-import DebtSummary from "@/components/DebtSummary";
 import { MobileFAB } from "@/components/MobileFAB";
 import { useDebtSummary } from "@/hooks/useApi";
+import CurrencyBalanceSummary from "@/components/CurrencyBalanceSummary";
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { data: debtSummary, isLoading, error, isError } = useDebtSummary();
+  const { data: debtSummary, isLoading, isError } = useDebtSummary();
 
   const [transactionOpen, setTransactionOpen] = useState(false);
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
@@ -54,10 +54,9 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <DebtSummary
-        data={debtSummary}
+      <CurrencyBalanceSummary
+        balancesPerCurrency={debtSummary}
         isLoading={isLoading}
-        error={error}
         isError={isError}
       />
 

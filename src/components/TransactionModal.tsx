@@ -42,6 +42,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface TransactionModalProps {
   open: boolean;
@@ -79,10 +80,11 @@ export function TransactionModal({
   defaultFriendId,
   defaultDirection = "OUTGOING",
 }: Readonly<TransactionModalProps>) {
+  const { user } = useAuth();
   const [friendId, setFriendId] = useState(defaultFriendId || "");
   const [direction, setDirection] = useState<DebtDirection>(defaultDirection);
   const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState("IDR");
+  const [currency, setCurrency] = useState(user.homeCurrency || "IDR");
   const [description, setDescription] = useState("");
   const [selectedMethod, setSelectedMethod] = useState<TransferMethod>(null);
   const [transferMethodOpen, setTransferMethodOpen] = useState(false);
