@@ -25,6 +25,8 @@ import { ArrowUpRight, ArrowDownLeft, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import TransferMethodSelect from "./TransferMethodSelect";
 
+const currencyOptions = ["IDR", "SGD", "USD"] as const;
+
 interface TransactionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -64,6 +66,7 @@ export function TransactionModal({
   const [friendId, setFriendId] = useState(defaultFriendId || "");
   const [direction, setDirection] = useState<DebtDirection>(defaultDirection);
   const [amount, setAmount] = useState("");
+  const [currencyCode, setCurrencyCode] = useState<(typeof currencyOptions)[number]>("IDR");
   const [description, setDescription] = useState("");
   const [selectedMethod, setSelectedMethod] = useState<TransferMethod>(null);
   const [transferMethodOpen, setTransferMethodOpen] = useState(false);
@@ -83,6 +86,7 @@ export function TransactionModal({
         friendProfileId: friendId,
         direction,
         amount: Number.parseFloat(amount),
+        currencyCode,
         transferMethodId: selectedMethod.id,
         description: description || undefined,
       });
@@ -108,6 +112,7 @@ export function TransactionModal({
     setFriendId(defaultFriendId || "");
     setDirection(defaultDirection);
     setAmount("");
+    setCurrencyCode("IDR");
     setDescription("");
     setSelectedMethod(null);
   };
@@ -171,23 +176,40 @@ export function TransactionModal({
             </Select>
           </div>
 
-          {/* Amount */}
-          <div className="space-y-2">
-            <Label htmlFor="amount">Amount</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                Rp
-              </span>
+          {/* Amount and Currency */}
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_8rem] gap-3">
+            <div className="space-y-2 min-w-0">
+              <Label htmlFor="amount">Amount</Label>
               <Input
                 id="amount"
                 type="number"
                 step="0.01"
                 min="0"
                 placeholder="0.00"
-                className="pl-10 text-lg tabular-nums"
+                className="text-lg tabular-nums"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Currency</Label>
+              <Select
+                value={currencyCode}
+                onValueChange={(value) =>
+                  setCurrencyCode(value as (typeof currencyOptions)[number])
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {currencyOptions.map((currency) => (
+                    <SelectItem key={currency} value={currency}>
+                      {currency}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
