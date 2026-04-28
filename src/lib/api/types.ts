@@ -33,6 +33,7 @@ export interface UserProfile {
   name: string;
   avatar?: string;
   email?: string;
+  homeCurrency: string;
   createdAt: string;
   currentSubscription: CurrentSubscription;
 }
@@ -100,7 +101,6 @@ export interface FriendBalance {
   totalLentToFriend: string;
   totalBorrowedFromFriend: string;
   transactionHistory: FriendTransaction[];
-  currencyCode: string;
 }
 
 export interface FriendTransaction {

@@ -74,7 +74,7 @@ const DebtSummary = ({
             value={
               <AmountDisplay
                 amount={amount}
-                currency={currency || data?.currencyCode}
+                currency={currency}
                 showSign={false}
                 size="lg"
               />

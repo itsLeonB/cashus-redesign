@@ -21,11 +21,27 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { AvatarCircle } from "@/components/AvatarCircle";
-import { ArrowUpRight, ArrowDownLeft, Loader2 } from "lucide-react";
+import {
+  ArrowUpRight,
+  ArrowDownLeft,
+  Loader2,
+  ChevronsUpDown,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import TransferMethodSelect from "./TransferMethodSelect";
-
-const currencyOptions = ["IDR", "SGD", "USD"] as const;
+import TransferMethodSelect from "@/components/TransferMethodSelect";
+import { useCurrencyCodes } from "@/hooks/useCurrencyCodes";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
 interface TransactionModalProps {
   open: boolean;
@@ -66,11 +82,13 @@ export function TransactionModal({
   const [friendId, setFriendId] = useState(defaultFriendId || "");
   const [direction, setDirection] = useState<DebtDirection>(defaultDirection);
   const [amount, setAmount] = useState("");
-  const [currency, setCurrency] =
-    useState<(typeof currencyOptions)[number]>("IDR");
+  const [currency, setCurrency] = useState("IDR");
   const [description, setDescription] = useState("");
   const [selectedMethod, setSelectedMethod] = useState<TransferMethod>(null);
   const [transferMethodOpen, setTransferMethodOpen] = useState(false);
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+
+  const currencyCodes = useCurrencyCodes();
 
   const { data: friendships } = useFriendships();
   const { data: transferMethods, isLoading: isLoadingMethods } =
@@ -194,23 +212,38 @@ export function TransactionModal({
             </div>
             <div className="space-y-2">
               <Label>Currency</Label>
-              <Select
-                value={currency}
-                onValueChange={(value) =>
-                  setCurrency(value as (typeof currencyOptions)[number])
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {currencyOptions.map((currency) => (
-                    <SelectItem key={currency} value={currency}>
-                      {currency}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between font-normal"
+                  >
+                    {currency || "Select currency..."}
+                    <ChevronsUpDown className="opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                  <Command>
+                    <CommandInput placeholder="Search currency..." />
+                    <CommandList>
+                      <CommandEmpty>No currency found.</CommandEmpty>
+                      {currencyCodes.map((code) => (
+                        <CommandItem
+                          key={code}
+                          value={code}
+                          onSelect={(value) => {
+                            setCurrency(value);
+                            setCurrencyOpen(false);
+                          }}
+                        >
+                          {code}
+                        </CommandItem>
+                      ))}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 

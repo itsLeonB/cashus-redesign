@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import {
   ArrowLeft,
   Plus,
@@ -20,23 +20,30 @@ import {
   Wallet,
   Link2,
   CreditCard,
+  ChevronRight,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import DebtSummary from "@/components/DebtSummary";
 import type { FriendBalance } from "@/lib/api";
+import { getCurrencyName } from "@/hooks/useCurrencyCodes";
+
+const formatDate = (date: string) =>
+  new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 
 function TransactionHistory({
   debts,
   friendName,
   currency,
   onRecordTransaction,
-  formatDate,
 }: Readonly<{
   debts: FriendBalance["transactionHistory"];
   friendName: string;
   currency: string;
   onRecordTransaction: () => void;
-  formatDate: (date: string) => string;
 }>) {
   return (
     <Card className="border-border/50">
@@ -128,6 +135,64 @@ function TransactionHistory({
   );
 }
 
+function CurrencyBalanceSummary({
+  balancesPerCurrency,
+  onCurrencySelect,
+}: Readonly<{
+  balancesPerCurrency: Record<string, FriendBalance>;
+  onCurrencySelect: (currency: string) => void;
+}>) {
+  const currencies = Object.keys(balancesPerCurrency);
+
+  return (
+    <Card className="border-border/50">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="font-display">Balances</CardTitle>
+        <span className="text-xs text-muted-foreground">
+          {currencies.length}{" "}
+          {currencies.length === 1 ? "currency" : "currencies"}
+        </span>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="divide-y divide-border/50">
+          {currencies.map((currency) => {
+            const netBalance = Number.parseFloat(
+              balancesPerCurrency[currency]?.netBalance || "0",
+            );
+            const isPositive = netBalance >= 0;
+
+            return (
+              <button
+                key={currency}
+                className="w-full flex items-center justify-between px-6 py-3 hover:bg-muted/30 transition-colors text-left"
+                onClick={() => onCurrencySelect(currency)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-md bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground flex-shrink-0">
+                    {currency}
+                  </div>
+                  <span className="text-sm">{getCurrencyName(currency)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-sm font-semibold tabular-nums ${
+                      isPositive ? "text-success" : "text-warning"
+                    }`}
+                  >
+                    {isPositive ? "+" : ""}
+                    {formatCurrency(netBalance, currency)}
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function FriendDetailPage() {
   const { friendId } = useParams<{ friendId: string }>();
   const navigate = useNavigate();
@@ -152,14 +217,6 @@ export default function FriendDetailPage() {
   const activeBalance =
     balancesPerCurrency[activeCurrency] || friendship?.balance;
   const balance = Number.parseFloat(activeBalance?.netBalance || "0");
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
 
   if (isLoading) {
     return (
@@ -226,14 +283,36 @@ export default function FriendDetailPage() {
                 </Button>
               )}
             </div>
-            <div className="flex flex-col sm:items-end gap-2 w-full sm:w-auto">
-              <AmountDisplay
-                amount={balance}
-                currency={activeCurrency}
-                size="lg"
-                showLabel
-              />
-              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            {/* Only show a single balance in the header when there's one currency */}
+            {!hasMultipleCurrencies && (
+              <div className="flex flex-col sm:items-end gap-2 w-full sm:w-auto">
+                <AmountDisplay
+                  amount={balance}
+                  currency={activeCurrency}
+                  size="lg"
+                  showLabel
+                />
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <Button
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                    onClick={() => setTransferMethodsOpen(true)}
+                  >
+                    <CreditCard className="h-4 w-4 mr-2" />
+                    Transfer Methods
+                  </Button>
+                  <Button
+                    className="w-full sm:w-auto"
+                    onClick={() => setTransactionOpen(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Record Transaction
+                  </Button>
+                </div>
+              </div>
+            )}
+            {hasMultipleCurrencies && (
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto sm:items-center">
                 <Button
                   variant="outline"
                   className="w-full sm:w-auto"
@@ -250,53 +329,24 @@ export default function FriendDetailPage() {
                   Record Transaction
                 </Button>
               </div>
-            </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
       {hasMultipleCurrencies ? (
         <>
-          <Card className="border-border/50">
-            <CardHeader>
-              <CardTitle className="font-display">
-                Balance by Currency
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {currencies.map((currency) => (
-                  <div key={currency} className="rounded-lg bg-muted/30 p-4">
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {currency}
-                    </p>
-                    <AmountDisplay
-                      amount={Number.parseFloat(
-                        balancesPerCurrency[currency]?.netBalance || "0",
-                      )}
-                      currency={currency}
-                      size="lg"
-                    />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Concise multi-currency summary — net balance per currency, tappable to jump to tab */}
+          <CurrencyBalanceSummary
+            balancesPerCurrency={balancesPerCurrency}
+            onCurrencySelect={setActiveCurrencyTab}
+          />
 
           <Tabs
             value={activeCurrency}
             onValueChange={setActiveCurrencyTab}
             className="space-y-4"
           >
-            <div className="overflow-x-auto pb-1">
-              <TabsList className="w-max min-w-full justify-start sm:min-w-0">
-                {currencies.map((currency) => (
-                  <TabsTrigger key={currency} value={currency}>
-                    {currency}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-            </div>
             {currencies.map((currency) => (
               <TabsContent
                 key={currency}
@@ -317,7 +367,6 @@ export default function FriendDetailPage() {
                   friendName={friendship.friend.name}
                   currency={currency}
                   onRecordTransaction={() => setTransactionOpen(true)}
-                  formatDate={formatDate}
                 />
               </TabsContent>
             ))}
@@ -337,30 +386,24 @@ export default function FriendDetailPage() {
             friendName={friendship.friend.name}
             currency={activeCurrency}
             onRecordTransaction={() => setTransactionOpen(true)}
-            formatDate={formatDate}
           />
         </>
       )}
 
-      {/* Transaction Modal */}
       <TransactionModal
         open={transactionOpen}
         onOpenChange={setTransactionOpen}
         defaultFriendId={friendship.friend.profileId}
       />
 
-      {/* Associate Profile Modal */}
       <AssociateProfileModal
         open={associateOpen}
         onOpenChange={setAssociateOpen}
         anonProfileId={friendship.friend.profileId}
         anonProfileName={friendship.friend.name}
-        onSuccess={() => {
-          navigate(`/friends`);
-        }}
+        onSuccess={() => navigate(`/friends`)}
       />
 
-      {/* Transfer Methods Modal */}
       <TransferMethodsModal
         open={transferMethodsOpen}
         onOpenChange={setTransferMethodsOpen}
