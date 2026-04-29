@@ -63,6 +63,14 @@ export default function ProfilePage() {
   const { mutate: forgotPassword, isPending: isResetting } =
     useForgotPassword();
 
+  useEffect(() => {
+    if (!isEditing) {
+      setName(user?.name || "");
+      setHomeCurrency(user?.homeCurrency || "");
+      setHomeCurrencyError("");
+    }
+  }, [isEditing, user?.homeCurrency, user?.name]);
+
   const handleResetPassword = () => {
     if (!user?.email) return;
 
@@ -87,8 +95,12 @@ export default function ProfilePage() {
 
   const handleSave = () => {
     if (!name.trim()) return;
+    if (!homeCurrency) {
+      setHomeCurrencyError("Home Currency is required");
+      return;
+    }
 
-    updateProfile(name, {
+    updateProfile({ name: name.trim(), homeCurrency }, {
       onSuccess: () => {
         refreshUser().then(() => {
           setIsEditing(false);
