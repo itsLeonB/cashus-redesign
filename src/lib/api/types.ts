@@ -34,6 +34,7 @@ export interface UserProfile {
   avatar?: string;
   email?: string;
   homeCurrency: string;
+  isOnboarded: boolean;
   createdAt: string;
   currentSubscription: CurrentSubscription;
 }
