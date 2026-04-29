@@ -36,12 +36,7 @@ import {
 } from "lucide-react";
 import { getCurrencyName } from "@/hooks/useCurrencyCodes";
 import { CurrencySelect } from "@/components/CurrencySelect";
-import { z } from "zod";
-
-const profileSchema = z.object({
-  name: z.string().trim().min(3, "Display Name must be at least 3 characters"),
-  homeCurrency: z.string().trim().nonempty("Home Currency is required"),
-});
+import { profileSchema } from "@/lib/validations/profile";
 
 export default function ProfilePage() {
   const { user, logout, refreshUser } = useAuth();
