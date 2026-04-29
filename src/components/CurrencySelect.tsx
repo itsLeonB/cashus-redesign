@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 type CurrencyDisplayFormat = "code" | "code+name";
 
 interface CurrencySelectProps {
+  id?: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
@@ -35,6 +36,7 @@ interface CurrencySelectProps {
 }
 
 export function CurrencySelect({
+  id,
   value,
   onChange,
   placeholder = "Select currency",
@@ -60,7 +62,7 @@ export function CurrencySelect({
         onValueChange={onChange}
         disabled={disabled || isLoading}
       >
-        <SelectTrigger>
+        <SelectTrigger id={id}>
           <SelectValue placeholder={isLoading ? "Loading currencies..." : placeholder} />
         </SelectTrigger>
         <SelectContent>
@@ -78,6 +80,7 @@ export function CurrencySelect({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           variant="outline"
           role="combobox"
           aria-expanded={open}
