@@ -42,6 +42,12 @@ import {
   CircleDollarSign,
 } from "lucide-react";
 import { getCurrencyName, useCurrencyCodes } from "@/hooks/useCurrencyCodes";
+import { z } from "zod";
+
+const profileSchema = z.object({
+  name: z.string().trim().min(3, "Display Name must be at least 3 characters"),
+  homeCurrency: z.string().trim().nonempty("Home Currency is required"),
+});
 
 export default function ProfilePage() {
   const { user, logout, refreshUser } = useAuth();
@@ -94,19 +100,23 @@ export default function ProfilePage() {
   };
 
   const handleSave = () => {
-    if (!name.trim()) return;
-    if (!homeCurrency) {
-      setHomeCurrencyError("Home Currency is required");
+    const result = profileSchema.safeParse({ name, homeCurrency });
+
+    if (!result.success) {
+      const homeCurrencyIssue = result.error.issues.find(
+        (issue) => issue.path[0] === "homeCurrency",
+      );
+      setHomeCurrencyError(homeCurrencyIssue?.message || "");
       return;
     }
 
-    updateProfile({ name: name.trim(), homeCurrency }, {
+    updateProfile(result.data, {
       onSuccess: () => {
         refreshUser().then(() => {
           setIsEditing(false);
           toast({
             title: "Profile updated",
-            description: "Your name has been updated successfully",
+            description: "Your profile has been updated successfully",
           });
         });
       },
