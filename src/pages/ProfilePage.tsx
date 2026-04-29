@@ -250,6 +250,7 @@ export default function ProfilePage() {
               {isEditing ? (
                 <>
                   <CurrencySelect
+                    id="home-currency"
                     value={homeCurrency}
                     onChange={(value) => {
                       setHomeCurrency(value);
