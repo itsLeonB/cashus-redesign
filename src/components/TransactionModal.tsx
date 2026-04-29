@@ -1,4 +1,4 @@
-import { SubmitEventHandler, useState } from "react";
+import { useState, type FormEventHandler } from "react";
 import { useFriendships, useCreateDebt } from "@/hooks/useApi";
 import { useFilteredTransferMethods } from "@/hooks/useMasterData";
 import { DebtDirection, TransferMethod } from "@/lib/api/types";
@@ -21,9 +21,28 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { AvatarCircle } from "@/components/AvatarCircle";
-import { ArrowUpRight, ArrowDownLeft, Loader2 } from "lucide-react";
+import {
+  ArrowUpRight,
+  ArrowDownLeft,
+  Loader2,
+  ChevronsUpDown,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
-import TransferMethodSelect from "./TransferMethodSelect";
+import TransferMethodSelect from "@/components/TransferMethodSelect";
+import { useCurrencyCodes } from "@/hooks/useCurrencyCodes";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface TransactionModalProps {
   open: boolean;
@@ -61,12 +80,17 @@ export function TransactionModal({
   defaultFriendId,
   defaultDirection = "OUTGOING",
 }: Readonly<TransactionModalProps>) {
+  const { user } = useAuth();
   const [friendId, setFriendId] = useState(defaultFriendId || "");
   const [direction, setDirection] = useState<DebtDirection>(defaultDirection);
   const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState(user.homeCurrency || "IDR");
   const [description, setDescription] = useState("");
   const [selectedMethod, setSelectedMethod] = useState<TransferMethod>(null);
   const [transferMethodOpen, setTransferMethodOpen] = useState(false);
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+
+  const currencyCodes = useCurrencyCodes();
 
   const { data: friendships } = useFriendships();
   const { data: transferMethods, isLoading: isLoadingMethods } =
@@ -74,7 +98,7 @@ export function TransactionModal({
   const createDebt = useCreateDebt();
   const { toast } = useToast();
 
-  const handleSubmit: SubmitEventHandler<HTMLFormElement> = async (e) => {
+  const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
     if (!friendId || !amount || !selectedMethod?.id) return;
 
@@ -83,6 +107,7 @@ export function TransactionModal({
         friendProfileId: friendId,
         direction,
         amount: Number.parseFloat(amount),
+        currency,
         transferMethodId: selectedMethod.id,
         description: description || undefined,
       });
@@ -108,6 +133,7 @@ export function TransactionModal({
     setFriendId(defaultFriendId || "");
     setDirection(defaultDirection);
     setAmount("");
+    setCurrency("IDR");
     setDescription("");
     setSelectedMethod(null);
   };
@@ -171,23 +197,55 @@ export function TransactionModal({
             </Select>
           </div>
 
-          {/* Amount */}
-          <div className="space-y-2">
-            <Label htmlFor="amount">Amount</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                Rp
-              </span>
+          {/* Amount and Currency */}
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_8rem] gap-3">
+            <div className="space-y-2 min-w-0">
+              <Label htmlFor="amount">Amount</Label>
               <Input
                 id="amount"
                 type="number"
                 step="0.01"
                 min="0"
                 placeholder="0.00"
-                className="pl-10 text-lg tabular-nums"
+                className="text-lg tabular-nums"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Currency</Label>
+              <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between font-normal"
+                  >
+                    {currency || "Select currency..."}
+                    <ChevronsUpDown className="opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                  <Command>
+                    <CommandInput placeholder="Search currency..." />
+                    <CommandList>
+                      <CommandEmpty>No currency found.</CommandEmpty>
+                      {currencyCodes.map((code) => (
+                        <CommandItem
+                          key={code}
+                          value={code}
+                          onSelect={(value) => {
+                            setCurrency(value);
+                            setCurrencyOpen(false);
+                          }}
+                        >
+                          {code}
+                        </CommandItem>
+                      ))}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 

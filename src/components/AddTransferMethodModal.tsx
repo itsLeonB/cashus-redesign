@@ -1,4 +1,4 @@
-import { SubmitEventHandler, useState } from "react";
+import { useState, type FormEventHandler } from "react";
 import {
   Dialog,
   DialogContent,
@@ -37,7 +37,7 @@ export function AddTransferMethodModal({
   const { mutate: addTransferMethod, isPending: isAdding } =
     useAddTransferMethod();
 
-  const handleSubmit: SubmitEventHandler<HTMLFormElement> = (e) => {
+  const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
 
     if (!selectedMethod?.id || !accountName.trim() || !accountNumber.trim()) {

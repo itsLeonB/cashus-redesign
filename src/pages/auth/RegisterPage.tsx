@@ -1,4 +1,4 @@
-import { SubmitEventHandler, useState } from "react";
+import { useState, type FormEventHandler } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleSubmit: SubmitEventHandler<HTMLFormElement> = async (e) => {
+  const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
 
     if (password !== passwordConfirmation) {

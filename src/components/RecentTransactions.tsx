@@ -75,6 +75,7 @@ const RecentTransactions = () => {
                 }
                 size="sm"
                 showSign={false}
+                currency={transaction.currency}
               />
             </div>
           </div>

@@ -33,6 +33,7 @@ export interface UserProfile {
   name: string;
   avatar?: string;
   email?: string;
+  homeCurrency: string;
   createdAt: string;
   currentSubscription: CurrentSubscription;
 }
@@ -78,6 +79,7 @@ export interface FriendProfile {
 export interface FriendDetailsResponse {
   friend: FriendDetails;
   balance: FriendBalance;
+  balancesPerCurrency?: Record<string, FriendBalance>;
   redirectToRealFriendship?: string;
 }
 
@@ -99,7 +101,6 @@ export interface FriendBalance {
   totalLentToFriend: string;
   totalBorrowedFromFriend: string;
   transactionHistory: FriendTransaction[];
-  currencyCode: string;
 }
 
 export interface FriendTransaction {
@@ -124,6 +125,7 @@ export interface DebtTransactionResponse {
   profile: SimpleProfile;
   type: "LENT" | "BORROWED";
   amount: string;
+  currency: string;
   transferMethod: string;
   description: string;
   createdAt: string;
@@ -133,6 +135,7 @@ export interface NewDebtTransactionRequest {
   friendProfileId: string;
   direction: DebtDirection;
   amount: number;
+  currency: string;
   transferMethodId: string;
   description?: string;
 }
