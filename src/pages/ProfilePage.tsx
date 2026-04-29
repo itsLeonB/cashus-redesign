@@ -1,9 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -32,15 +39,26 @@ import {
   KeyRound,
   Plus,
   Bell,
+  CircleDollarSign,
 } from "lucide-react";
+import { getCurrencyName, useCurrencyCodes } from "@/hooks/useCurrencyCodes";
+import { z } from "zod";
+
+const profileSchema = z.object({
+  name: z.string().trim().min(3, "Display Name must be at least 3 characters"),
+  homeCurrency: z.string().trim().nonempty("Home Currency is required"),
+});
 
 export default function ProfilePage() {
   const { user, logout, refreshUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || "");
+  const [homeCurrency, setHomeCurrency] = useState(user?.homeCurrency || "");
+  const [homeCurrencyError, setHomeCurrencyError] = useState("");
   const [addMethodModalOpen, setAddMethodModalOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const { toast } = useToast();
+  const currencyCodes = useCurrencyCodes();
 
   const { permission, isSupported, enableNotifications, isLoading } =
     usePushNotifications();
@@ -50,6 +68,14 @@ export default function ProfilePage() {
   const { mutate: updateProfile, isPending: isUpdating } = useUpdateProfile();
   const { mutate: forgotPassword, isPending: isResetting } =
     useForgotPassword();
+
+  useEffect(() => {
+    if (!isEditing) {
+      setName(user?.name || "");
+      setHomeCurrency(user?.homeCurrency || "");
+      setHomeCurrencyError("");
+    }
+  }, [isEditing, user?.homeCurrency, user?.name]);
 
   const handleResetPassword = () => {
     if (!user?.email) return;
@@ -74,15 +100,23 @@ export default function ProfilePage() {
   };
 
   const handleSave = () => {
-    if (!name.trim()) return;
+    const result = profileSchema.safeParse({ name, homeCurrency });
 
-    updateProfile(name, {
+    if (!result.success) {
+      const homeCurrencyIssue = result.error.issues.find(
+        (issue) => issue.path[0] === "homeCurrency",
+      );
+      setHomeCurrencyError(homeCurrencyIssue?.message || "");
+      return;
+    }
+
+    updateProfile(result.data, {
       onSuccess: () => {
         refreshUser().then(() => {
           setIsEditing(false);
           toast({
             title: "Profile updated",
-            description: "Your name has been updated successfully",
+            description: "Your profile has been updated successfully",
           });
         });
       },
@@ -110,6 +144,7 @@ export default function ProfilePage() {
     denied: "Notifications are blocked",
     default: "Enable notifications for this device",
   };
+  const isCurrencyLoading = currencyCodes.length === 0;
 
   const desktopEditButton = () => {
     if (isUpdating) return <Loader2 className="h-4 w-4 animate-spin" />;
@@ -213,6 +248,53 @@ export default function ProfilePage() {
               <p className="text-xs text-muted-foreground">
                 Email cannot be changed
               </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="home-currency" className="flex items-center gap-2">
+                <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
+                Home Currency
+              </Label>
+              {isEditing ? (
+                <>
+                  <Select
+                    value={homeCurrency}
+                    onValueChange={(value) => {
+                      setHomeCurrency(value);
+                      setHomeCurrencyError("");
+                    }}
+                    disabled={isCurrencyLoading}
+                  >
+                    <SelectTrigger id="home-currency">
+                      <SelectValue
+                        placeholder={
+                          isCurrencyLoading
+                            ? "Loading currencies..."
+                            : "Select home currency"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currencyCodes.map((code) => (
+                        <SelectItem key={code} value={code}>
+                          {code} — {getCurrencyName(code)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {homeCurrencyError && (
+                    <p className="text-xs text-destructive">
+                      {homeCurrencyError}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm py-2 px-3 bg-muted/30 rounded-lg">
+                  {user?.homeCurrency
+                    ? `${user.homeCurrency} — ${getCurrencyName(user.homeCurrency)}`
+                    : "Not set"}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">

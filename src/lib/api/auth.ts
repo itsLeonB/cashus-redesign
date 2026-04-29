@@ -8,6 +8,11 @@ import {
   RefreshTokenRequest,
 } from "./types";
 
+export interface UpdateProfileRequest {
+  name: string;
+  homeCurrency: string;
+}
+
 export const authApi = {
   login: (data: LoginRequest) =>
     apiClient.post<TokenResponse>("/auth/login", data),
@@ -31,8 +36,8 @@ export const authApi = {
 
   getProfile: () => apiClient.get<UserProfile>("/profile"),
 
-  updateProfile: (name: string) =>
-    apiClient.patch<UserProfile>("/profile", { name }),
+  updateProfile: (data: UpdateProfileRequest) =>
+    apiClient.patch<UserProfile>("/profile", data),
 
   logout: () => apiClient.delete("/auth/logout"),
 
