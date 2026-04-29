@@ -1,9 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Card,
   CardContent,
@@ -32,15 +39,20 @@ import {
   KeyRound,
   Plus,
   Bell,
+  CircleDollarSign,
 } from "lucide-react";
+import { getCurrencyName, useCurrencyCodes } from "@/hooks/useCurrencyCodes";
 
 export default function ProfilePage() {
   const { user, logout, refreshUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || "");
+  const [homeCurrency, setHomeCurrency] = useState(user?.homeCurrency || "");
+  const [homeCurrencyError, setHomeCurrencyError] = useState("");
   const [addMethodModalOpen, setAddMethodModalOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const { toast } = useToast();
+  const currencyCodes = useCurrencyCodes();
 
   const { permission, isSupported, enableNotifications, isLoading } =
     usePushNotifications();
