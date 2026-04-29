@@ -21,11 +21,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { AvatarCircle } from "@/components/AvatarCircle";
-import {
-  ArrowUpRight,
-  ArrowDownLeft,
-  Loader2,
-} from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import TransferMethodSelect from "@/components/TransferMethodSelect";
 import { useAuth } from "@/contexts/AuthContext";
@@ -181,29 +177,29 @@ export function TransactionModal({
             </Select>
           </div>
 
-          {/* Amount and Currency */}
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_8rem] gap-3">
-            <div className="space-y-2 min-w-0">
-              <Label htmlFor="amount">Amount</Label>
-              <Input
-                id="amount"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                className="text-lg tabular-nums"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Currency</Label>
-              <CurrencySelect
-                value={currency}
-                onChange={setCurrency}
-                placeholder="Select currency"
-              />
-            </div>
+          {/* Amount */}
+          <div className="space-y-2">
+            <Label htmlFor="amount">Amount</Label>
+            <Input
+              id="amount"
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              className="text-lg tabular-nums"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+          </div>
+
+          {/* Currency */}
+          <div className="space-y-2">
+            <Label>Currency</Label>
+            <CurrencySelect
+              value={currency}
+              onChange={setCurrency}
+              placeholder="Select currency"
+            />
           </div>
 
           {/* Transfer Method */}

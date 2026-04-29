@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,12 +45,23 @@ export function CurrencySelect({
   disabled = false,
 }: Readonly<CurrencySelectProps>) {
   const [open, setOpen] = useState(false);
+  const [cmdValue, setCmdValue] = useState("");
+
   const currencyCodes = useCurrencyCodes();
   const options = useMemo(
-    () => Array.from(new Set(value ? [value, ...currencyCodes] : currencyCodes)),
+    () =>
+      Array.from(new Set(value ? [value, ...currencyCodes] : currencyCodes)),
     [currencyCodes, value],
   );
   const isLoading = options.length === 0;
+
+  useEffect(() => {
+    if (open && value) {
+      setCmdValue(`${value} ${getCurrencyName(value)}`);
+    } else if (!open) {
+      setCmdValue("");
+    }
+  }, [open, value]);
 
   const formatCurrencyOption = (code: string) =>
     displayFormat === "code" ? code : `${code} — ${getCurrencyName(code)}`;
@@ -63,7 +74,9 @@ export function CurrencySelect({
         disabled={disabled || isLoading}
       >
         <SelectTrigger id={id}>
-          <SelectValue placeholder={isLoading ? "Loading currencies..." : placeholder} />
+          <SelectValue
+            placeholder={isLoading ? "Loading currencies..." : placeholder}
+          />
         </SelectTrigger>
         <SelectContent>
           {options.map((code) => (
@@ -76,8 +89,14 @@ export function CurrencySelect({
     );
   }
 
+  const getDisplayText = () => {
+    if (value) return formatCurrencyOption(value);
+    if (isLoading) return "Loading currencies...";
+    return placeholder;
+  };
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal={true}>
       <PopoverTrigger asChild>
         <Button
           id={id}
@@ -88,15 +107,22 @@ export function CurrencySelect({
           disabled={disabled || isLoading}
           className="w-full justify-between font-normal"
         >
-          <span className="truncate">
-            {value ? formatCurrencyOption(value) : isLoading ? "Loading currencies..." : placeholder}
-          </span>
+          <span className="truncate">{getDisplayText()}</span>
           <ChevronsUpDown className="h-4 w-4 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-        <Command>
-          <CommandInput placeholder="Search currency..." />
+      <PopoverContent
+        className="w-[var(--radix-popover-trigger-width)] p-0"
+        align="start"
+      >
+        <Command value={cmdValue} onValueChange={setCmdValue}>
+          <CommandInput
+            placeholder="Search currency..."
+            onValueChange={() => {
+              // Reset the highlighted value so cmdk auto-focuses the top matched item
+              setCmdValue("");
+            }}
+          />
           <CommandList>
             <CommandEmpty>No currency found.</CommandEmpty>
             {options.map((code) => (
