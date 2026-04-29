@@ -82,10 +82,6 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
       // Clear React Query cache
       queryClient.clear();
-
-      // Force a hard reload to ensure clean state
-      // This prevents any stale data or state from persisting
-      globalThis.location.href = "/dashboard";
     },
     [queryClient],
   );
@@ -129,8 +125,6 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
       });
     } finally {
       await cleanup();
-      // Force a hard navigation to login page to ensure clean state
-      globalThis.location.href = "/login";
     }
   }, [queryClient, toast]);
 
