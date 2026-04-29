@@ -125,7 +125,7 @@ export interface DebtTransactionResponse {
   profile: SimpleProfile;
   type: "LENT" | "BORROWED";
   amount: string;
-  currencyCode?: string;
+  currency: string;
   transferMethod: string;
   description: string;
   createdAt: string;
