@@ -91,10 +91,20 @@ export default function ProfilePage() {
     const result = profileSchema.safeParse({ name, homeCurrency });
 
     if (!result.success) {
+      const nameIssue = result.error.issues.find(
+        (issue) => issue.path[0] === "name",
+      );
       const homeCurrencyIssue = result.error.issues.find(
         (issue) => issue.path[0] === "homeCurrency",
       );
       setHomeCurrencyError(homeCurrencyIssue?.message || "");
+      if (nameIssue) {
+        toast({
+          variant: "destructive",
+          title: "Invalid profile data",
+          description: nameIssue.message,
+        });
+      }
       return;
     }
 
@@ -238,7 +248,10 @@ export default function ProfilePage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="home-currency" className="flex items-center gap-2">
+              <Label
+                htmlFor="home-currency"
+                className="flex items-center gap-2"
+              >
                 <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
                 Home Currency
               </Label>

@@ -18,9 +18,11 @@ function CurrencyBalanceSummary({
   isError?: boolean;
 }>) {
   const { user } = useAuth();
-  const currencies = balancesPerCurrency
-    ? Object.keys(balancesPerCurrency)
-    : [user.homeCurrency || "IDR"];
+
+  const balanceCurrencies = Object.keys(balancesPerCurrency ?? {});
+  const fallbackHomeCurrency = user?.homeCurrency ? [user.homeCurrency] : [];
+  const currencies =
+    balanceCurrencies.length > 0 ? balanceCurrencies : fallbackHomeCurrency;
 
   const content = () => {
     if (isLoading)
@@ -53,7 +55,7 @@ function CurrencyBalanceSummary({
       <div className="divide-y divide-border/50">
         {currencies.map((currency) => {
           const netBalance = Number.parseFloat(
-            balancesPerCurrency[currency]?.netBalance || "0",
+            balancesPerCurrency?.[currency]?.netBalance || "0",
           );
           const isPositive = netBalance >= 0;
           const isClickable = !!onCurrencySelect;

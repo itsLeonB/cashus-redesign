@@ -5,6 +5,8 @@ import { apiClient } from "@/lib/api/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useQueryClient } from "@tanstack/react-query";
+import { clearServiceWorkerCache } from "@/lib/sw-utils";
 
 export default function OAuthCallbackPage() {
   const { provider } = useParams<{ provider: string }>();
@@ -13,6 +15,7 @@ export default function OAuthCallbackPage() {
 
   const [error, setError] = useState<string | null>(null);
   const submittedRef = useRef(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!provider) return;
@@ -41,6 +44,11 @@ export default function OAuthCallbackPage() {
       {
         onSuccess: (response) => {
           apiClient.setTokens(response.token, response.refreshToken);
+          // Clear caches to prevent stale data from previous user
+          clearServiceWorkerCache().catch((error) => {
+            console.error("Failed to clear service worker cache:", error);
+          });
+          queryClient.clear();
           globalThis.location.replace("/dashboard");
         },
         onError: (err: unknown) => {
