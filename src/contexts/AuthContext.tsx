@@ -10,7 +10,6 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { UserProfile, authApi, apiClient, ApiError } from "@/lib/api";
 import { clearNotificationContext } from "@/lib/notificationPersistence";
-import { useToast } from "@/hooks/use-toast";
 import { clearServiceWorkerCache } from "@/lib/sw-utils";
 
 interface AuthContextType {
@@ -35,7 +34,6 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshFailed, setIsRefreshFailed] = useState(false);
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   const refreshUser = useCallback(async () => {
     try {
@@ -70,9 +68,6 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     async (email: string, password: string) => {
       const response = await authApi.login({ email, password });
       apiClient.setTokens(response.token, response.refreshToken);
-      setIsRefreshFailed(false);
-      const profile = await authApi.getProfile();
-      setUser(profile);
 
       // Clear all caches to prevent stale data from previous user
       // Fire-and-forget clearing of SW cache to prevent blocking navigation
@@ -82,6 +77,12 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
       // Clear React Query cache
       queryClient.clear();
+
+      // Hard reload to isolate memory state and prevent cross-user back button navigation
+      globalThis.location.replace("/dashboard");
+
+      // Block React from returning, preventing any SPA navigation before browser reloads
+      await new Promise(() => {});
     },
     [queryClient],
   );
@@ -96,13 +97,13 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const logout = useCallback(async () => {
     // 1. Local cleanup must occur unconditionally
     const cleanup = async () => {
-      setUser(null);
-      setIsRefreshFailed(false);
+      // Explicitly NOT doing setUser(null) here to prevent React Router from
+      // navigating before the actual browser reload takes effect, which causes the double refresh.
       apiClient.setTokens(null, null);
       clearNotificationContext();
       queryClient.clear();
 
-      // Clear service worker cache - fire and forget to avoid delaying navigation
+      // Clear service worker cache
       clearServiceWorkerCache().catch((error) => {
         console.error("Failed to clear service worker cache:", error);
       });
@@ -111,22 +112,18 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     try {
       // 2. Best-effort backend call
       await authApi.logout();
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out",
-      });
     } catch (error) {
       console.error("Logout API failed (swallowed):", error);
-      // We don't re-throw or show destructive toast if cleanup succeeded
-      // but we might want to notify that session was cleared locally.
-      toast({
-        title: "Logged out",
-        description: "Local session cleared. Could not notify server.",
-      });
     } finally {
       await cleanup();
+
+      // Force a hard navigation to ensure clean state
+      globalThis.location.replace("/login");
+
+      // Block React from executing further (which would trigger router unmounts)
+      await new Promise(() => {});
     }
-  }, [queryClient, toast]);
+  }, [queryClient]);
 
   const value = useMemo(
     () => ({

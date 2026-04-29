@@ -1,11 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import {
-  useSearchParams,
-  useNavigate,
-  useParams,
-  Link,
-} from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useSearchParams, useParams, Link } from "react-router-dom";
 import { useOAuthCallback } from "@/hooks/useApi";
 import { apiClient } from "@/lib/api/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,8 +9,6 @@ import { Button } from "@/components/ui/button";
 export default function OAuthCallbackPage() {
   const { provider } = useParams<{ provider: string }>();
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const { refreshUser } = useAuth();
   const { mutate: handleOAuth, isPending } = useOAuthCallback();
 
   const [error, setError] = useState<string | null>(null);
@@ -49,9 +41,7 @@ export default function OAuthCallbackPage() {
       {
         onSuccess: (response) => {
           apiClient.setTokens(response.token, response.refreshToken);
-          refreshUser().then(() => {
-            navigate("/dashboard", { replace: true });
-          });
+          globalThis.location.replace("/dashboard");
         },
         onError: (err: unknown) => {
           const error = err as { message?: string };
@@ -60,7 +50,7 @@ export default function OAuthCallbackPage() {
       },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [provider, searchParams, navigate, refreshUser, handleOAuth]);
+  }, [provider, searchParams, handleOAuth]);
 
   if (error) {
     return (
