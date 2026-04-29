@@ -5,13 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Card,
   CardContent,
   CardDescription,
@@ -41,7 +34,8 @@ import {
   Bell,
   CircleDollarSign,
 } from "lucide-react";
-import { getCurrencyName, useCurrencyCodes } from "@/hooks/useCurrencyCodes";
+import { getCurrencyName } from "@/hooks/useCurrencyCodes";
+import { CurrencySelect } from "@/components/CurrencySelect";
 import { z } from "zod";
 
 const profileSchema = z.object({
@@ -58,7 +52,6 @@ export default function ProfilePage() {
   const [addMethodModalOpen, setAddMethodModalOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const { toast } = useToast();
-  const currencyCodes = useCurrencyCodes();
 
   const { permission, isSupported, enableNotifications, isLoading } =
     usePushNotifications();
@@ -144,7 +137,6 @@ export default function ProfilePage() {
     denied: "Notifications are blocked",
     default: "Enable notifications for this device",
   };
-  const isCurrencyLoading = currencyCodes.length === 0;
 
   const desktopEditButton = () => {
     if (isUpdating) return <Loader2 className="h-4 w-4 animate-spin" />;
@@ -257,31 +249,15 @@ export default function ProfilePage() {
               </Label>
               {isEditing ? (
                 <>
-                  <Select
+                  <CurrencySelect
+                    id="home-currency"
                     value={homeCurrency}
-                    onValueChange={(value) => {
+                    onChange={(value) => {
                       setHomeCurrency(value);
                       setHomeCurrencyError("");
                     }}
-                    disabled={isCurrencyLoading}
-                  >
-                    <SelectTrigger id="home-currency">
-                      <SelectValue
-                        placeholder={
-                          isCurrencyLoading
-                            ? "Loading currencies..."
-                            : "Select home currency"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {currencyCodes.map((code) => (
-                        <SelectItem key={code} value={code}>
-                          {code} — {getCurrencyName(code)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select home currency"
+                  />
                   {homeCurrencyError && (
                     <p className="text-xs text-destructive">
                       {homeCurrencyError}
