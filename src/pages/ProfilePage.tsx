@@ -134,6 +134,7 @@ export default function ProfilePage() {
     denied: "Notifications are blocked",
     default: "Enable notifications for this device",
   };
+  const isCurrencyLoading = currencyCodes.length === 0;
 
   const desktopEditButton = () => {
     if (isUpdating) return <Loader2 className="h-4 w-4 animate-spin" />;
@@ -237,6 +238,53 @@ export default function ProfilePage() {
               <p className="text-xs text-muted-foreground">
                 Email cannot be changed
               </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="home-currency" className="flex items-center gap-2">
+                <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
+                Home Currency
+              </Label>
+              {isEditing ? (
+                <>
+                  <Select
+                    value={homeCurrency}
+                    onValueChange={(value) => {
+                      setHomeCurrency(value);
+                      setHomeCurrencyError("");
+                    }}
+                    disabled={isCurrencyLoading}
+                  >
+                    <SelectTrigger id="home-currency">
+                      <SelectValue
+                        placeholder={
+                          isCurrencyLoading
+                            ? "Loading currencies..."
+                            : "Select home currency"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {currencyCodes.map((code) => (
+                        <SelectItem key={code} value={code}>
+                          {code} — {getCurrencyName(code)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {homeCurrencyError && (
+                    <p className="text-xs text-destructive">
+                      {homeCurrencyError}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm py-2 px-3 bg-muted/30 rounded-lg">
+                  {user?.homeCurrency
+                    ? `${user.homeCurrency} — ${getCurrencyName(user.homeCurrency)}`
+                    : "Not set"}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
