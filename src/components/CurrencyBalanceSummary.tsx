@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/utils";
 import type { FriendBalance } from "@/lib/api";
 import { getCurrencyName } from "@/hooks/useCurrencyCodes";
+import { useAuth } from "@/contexts/AuthContext";
 
 function CurrencyBalanceSummary({
   balancesPerCurrency,
@@ -16,9 +17,10 @@ function CurrencyBalanceSummary({
   isLoading?: boolean;
   isError?: boolean;
 }>) {
+  const { user } = useAuth();
   const currencies = balancesPerCurrency
     ? Object.keys(balancesPerCurrency)
-    : [];
+    : [user.homeCurrency || "IDR"];
 
   const content = () => {
     if (isLoading)
