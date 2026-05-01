@@ -359,7 +359,8 @@ export function useUpdateProfile() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (name: string) => authApi.updateProfile(name),
+    mutationFn: (data: Parameters<typeof authApi.updateProfile>[0]) =>
+      authApi.updateProfile(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.profile.current });
     },

@@ -17,6 +17,7 @@ import { useNotificationIntent } from "@/hooks/useNotificationIntent";
 
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { AppLayout } from "@/layouts/AppLayout";
+import { OnboardingGuard } from "@/components/OnboardingGuard";
 
 import LoginPage from "@/pages/auth/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
@@ -37,6 +38,7 @@ const ExpensesPage = lazy(() => import("@/pages/ExpensesPage"));
 const ExpenseDetailPage = lazy(() => import("@/pages/ExpenseDetailPage"));
 const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
 const SubscriptionPage = lazy(() => import("@/pages/SubscriptionPage"));
+const OnboardingPage = lazy(() => import("@/pages/OnboardingPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const LandingPage = lazy(() => import("@/pages/LandingPage"));
 
@@ -103,23 +105,26 @@ const App = () => {
                     path="/auth/reset-password"
                     element={<ResetPasswordPage />}
                   />
-                  <Route element={<AppLayout />}>
-                    <Route path="/dashboard" element={<DashboardPage />} />
-                    <Route path="/friends" element={<FriendsPage />} />
-                    <Route
-                      path="/friends/:friendId"
-                      element={<FriendDetailPage />}
-                    />
-                    <Route path="/expenses" element={<ExpensesPage />} />
-                    <Route
-                      path="/expenses/:expenseId"
-                      element={<ExpenseDetailPage />}
-                    />
-                    <Route path="/profile" element={<ProfilePage />} />
-                    <Route
-                      path="/subscription"
-                      element={<SubscriptionPage />}
-                    />
+                  <Route path="/onboarding" element={<OnboardingPage />} />
+                  <Route element={<OnboardingGuard />}>
+                    <Route element={<AppLayout />}>
+                      <Route path="/dashboard" element={<DashboardPage />} />
+                      <Route path="/friends" element={<FriendsPage />} />
+                      <Route
+                        path="/friends/:friendId"
+                        element={<FriendDetailPage />}
+                      />
+                      <Route path="/expenses" element={<ExpensesPage />} />
+                      <Route
+                        path="/expenses/:expenseId"
+                        element={<ExpenseDetailPage />}
+                      />
+                      <Route path="/profile" element={<ProfilePage />} />
+                      <Route
+                        path="/subscription"
+                        element={<SubscriptionPage />}
+                      />
+                    </Route>
                   </Route>
                   <Route path="/" element={<LandingPage />} />
                   <Route path="*" element={<NotFound />} />

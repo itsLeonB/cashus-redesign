@@ -21,28 +21,11 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { AvatarCircle } from "@/components/AvatarCircle";
-import {
-  ArrowUpRight,
-  ArrowDownLeft,
-  Loader2,
-  ChevronsUpDown,
-} from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import TransferMethodSelect from "@/components/TransferMethodSelect";
-import { useCurrencyCodes } from "@/hooks/useCurrencyCodes";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import { useAuth } from "@/contexts/AuthContext";
+import { CurrencySelect } from "@/components/CurrencySelect";
 
 interface TransactionModalProps {
   open: boolean;
@@ -88,9 +71,6 @@ export function TransactionModal({
   const [description, setDescription] = useState("");
   const [selectedMethod, setSelectedMethod] = useState<TransferMethod>(null);
   const [transferMethodOpen, setTransferMethodOpen] = useState(false);
-  const [currencyOpen, setCurrencyOpen] = useState(false);
-
-  const currencyCodes = useCurrencyCodes();
 
   const { data: friendships } = useFriendships();
   const { data: transferMethods, isLoading: isLoadingMethods } =
@@ -197,56 +177,29 @@ export function TransactionModal({
             </Select>
           </div>
 
-          {/* Amount and Currency */}
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_8rem] gap-3">
-            <div className="space-y-2 min-w-0">
-              <Label htmlFor="amount">Amount</Label>
-              <Input
-                id="amount"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0.00"
-                className="text-lg tabular-nums"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Currency</Label>
-              <Popover open={currencyOpen} onOpenChange={setCurrencyOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    className="w-full justify-between font-normal"
-                  >
-                    {currency || "Select currency..."}
-                    <ChevronsUpDown className="opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0">
-                  <Command>
-                    <CommandInput placeholder="Search currency..." />
-                    <CommandList>
-                      <CommandEmpty>No currency found.</CommandEmpty>
-                      {currencyCodes.map((code) => (
-                        <CommandItem
-                          key={code}
-                          value={code}
-                          onSelect={(value) => {
-                            setCurrency(value);
-                            setCurrencyOpen(false);
-                          }}
-                        >
-                          {code}
-                        </CommandItem>
-                      ))}
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
+          {/* Amount */}
+          <div className="space-y-2">
+            <Label htmlFor="amount">Amount</Label>
+            <Input
+              id="amount"
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="0.00"
+              className="text-lg tabular-nums"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+          </div>
+
+          {/* Currency */}
+          <div className="space-y-2">
+            <Label>Currency</Label>
+            <CurrencySelect
+              value={currency}
+              onChange={setCurrency}
+              placeholder="Select currency"
+            />
           </div>
 
           {/* Transfer Method */}

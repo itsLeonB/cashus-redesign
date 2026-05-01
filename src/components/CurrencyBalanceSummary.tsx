@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/utils";
 import type { FriendBalance } from "@/lib/api";
 import { getCurrencyName } from "@/hooks/useCurrencyCodes";
+import { useAuth } from "@/contexts/AuthContext";
 
 function CurrencyBalanceSummary({
   balancesPerCurrency,
@@ -16,9 +17,12 @@ function CurrencyBalanceSummary({
   isLoading?: boolean;
   isError?: boolean;
 }>) {
-  const currencies = balancesPerCurrency
-    ? Object.keys(balancesPerCurrency)
-    : [];
+  const { user } = useAuth();
+
+  const balanceCurrencies = Object.keys(balancesPerCurrency ?? {});
+  const fallbackHomeCurrency = user?.homeCurrency ? [user.homeCurrency] : [];
+  const currencies =
+    balanceCurrencies.length > 0 ? balanceCurrencies : fallbackHomeCurrency;
 
   const content = () => {
     if (isLoading)
@@ -51,7 +55,7 @@ function CurrencyBalanceSummary({
       <div className="divide-y divide-border/50">
         {currencies.map((currency) => {
           const netBalance = Number.parseFloat(
-            balancesPerCurrency[currency]?.netBalance || "0",
+            balancesPerCurrency?.[currency]?.netBalance || "0",
           );
           const isPositive = netBalance >= 0;
           const isClickable = !!onCurrencySelect;

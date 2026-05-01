@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { Button } from "@/components/ui/button";
@@ -32,12 +32,18 @@ import {
   KeyRound,
   Plus,
   Bell,
+  CircleDollarSign,
 } from "lucide-react";
+import { getCurrencyName } from "@/hooks/useCurrencyCodes";
+import { CurrencySelect } from "@/components/CurrencySelect";
+import { profileSchema } from "@/lib/validations/profile";
 
 export default function ProfilePage() {
   const { user, logout, refreshUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || "");
+  const [homeCurrency, setHomeCurrency] = useState(user?.homeCurrency || "");
+  const [homeCurrencyError, setHomeCurrencyError] = useState("");
   const [addMethodModalOpen, setAddMethodModalOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -50,6 +56,14 @@ export default function ProfilePage() {
   const { mutate: updateProfile, isPending: isUpdating } = useUpdateProfile();
   const { mutate: forgotPassword, isPending: isResetting } =
     useForgotPassword();
+
+  useEffect(() => {
+    if (!isEditing) {
+      setName(user?.name || "");
+      setHomeCurrency(user?.homeCurrency || "");
+      setHomeCurrencyError("");
+    }
+  }, [isEditing, user?.homeCurrency, user?.name]);
 
   const handleResetPassword = () => {
     if (!user?.email) return;
@@ -74,15 +88,33 @@ export default function ProfilePage() {
   };
 
   const handleSave = () => {
-    if (!name.trim()) return;
+    const result = profileSchema.safeParse({ name, homeCurrency });
 
-    updateProfile(name, {
+    if (!result.success) {
+      const nameIssue = result.error.issues.find(
+        (issue) => issue.path[0] === "name",
+      );
+      const homeCurrencyIssue = result.error.issues.find(
+        (issue) => issue.path[0] === "homeCurrency",
+      );
+      setHomeCurrencyError(homeCurrencyIssue?.message || "");
+      if (nameIssue) {
+        toast({
+          variant: "destructive",
+          title: "Invalid profile data",
+          description: nameIssue.message,
+        });
+      }
+      return;
+    }
+
+    updateProfile(result.data, {
       onSuccess: () => {
         refreshUser().then(() => {
           setIsEditing(false);
           toast({
             title: "Profile updated",
-            description: "Your name has been updated successfully",
+            description: "Your profile has been updated successfully",
           });
         });
       },
@@ -213,6 +245,40 @@ export default function ProfilePage() {
               <p className="text-xs text-muted-foreground">
                 Email cannot be changed
               </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label
+                htmlFor="home-currency"
+                className="flex items-center gap-2"
+              >
+                <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
+                Home Currency
+              </Label>
+              {isEditing ? (
+                <>
+                  <CurrencySelect
+                    id="home-currency"
+                    value={homeCurrency}
+                    onChange={(value) => {
+                      setHomeCurrency(value);
+                      setHomeCurrencyError("");
+                    }}
+                    placeholder="Select home currency"
+                  />
+                  {homeCurrencyError && (
+                    <p className="text-xs text-destructive">
+                      {homeCurrencyError}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm py-2 px-3 bg-muted/30 rounded-lg">
+                  {user?.homeCurrency
+                    ? `${user.homeCurrency} — ${getCurrencyName(user.homeCurrency)}`
+                    : "Not set"}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">

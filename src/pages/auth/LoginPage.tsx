@@ -1,5 +1,5 @@
 import { useState, type FormEventHandler } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
-  const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
@@ -29,7 +28,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      navigate("/dashboard");
+      // Hard reload is triggered inside login(), we just wait.
     } catch (error: unknown) {
       const err = error as Error;
       toast({
