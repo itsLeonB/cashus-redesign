@@ -193,6 +193,17 @@ export function NewGroupExpenseModal({
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="currency">
+                Currency <span className="text-destructive">*</span>
+              </Label>
+              <CurrencySelect
+                id="currency"
+                value={currency}
+                onChange={setCurrency}
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label>Input Method</Label>
               <div className="grid grid-cols-2 gap-3">
                 <button
