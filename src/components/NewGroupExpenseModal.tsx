@@ -40,7 +40,10 @@ export function NewGroupExpenseModal({
   open,
   onOpenChange,
 }: Readonly<NewGroupExpenseModalProps>) {
+  const { user } = useAuth();
+  const defaultCurrency = user?.homeCurrency || "IDR";
   const [description, setDescription] = useState("");
+  const [currency, setCurrency] = useState<string>(defaultCurrency);
   const [inputType, setInputType] = useState<InputType>("upload");
   const [step, setStep] = useState<Step>("details");
   const [expenseId, setExpenseId] = useState<string | null>(null);
@@ -53,6 +56,7 @@ export function NewGroupExpenseModal({
 
   const resetModal = () => {
     setDescription("");
+    setCurrency(defaultCurrency);
     setInputType("upload");
     setStep("details");
     setExpenseId(null);
@@ -70,8 +74,20 @@ export function NewGroupExpenseModal({
   ) => {
     e.preventDefault();
 
+    if (!currency) {
+      toast({
+        variant: "destructive",
+        title: "Currency is required",
+        description: "Please select a currency for this expense.",
+      });
+      return;
+    }
+
     try {
-      const expense = await createDraft.mutateAsync(description || "");
+      const expense = await createDraft.mutateAsync({
+        description: description || "",
+        currency,
+      });
       setExpenseId(expense.id);
 
       if (inputType === "upload") {
