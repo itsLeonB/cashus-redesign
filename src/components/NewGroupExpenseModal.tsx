@@ -242,7 +242,7 @@ export function NewGroupExpenseModal({
             <Button
               type="submit"
               className="w-full"
-              disabled={createDraft.isPending || uploadBlocked}
+              disabled={createDraft.isPending || uploadBlocked || !currency}
             >
               {createDraft.isPending && (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
