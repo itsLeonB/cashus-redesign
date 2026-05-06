@@ -21,8 +21,10 @@ import {
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { ParticipantSelector } from "./ParticipantSelector";
 import { ImageUploadArea } from "./ImageUploadArea";
+import { CurrencySelect } from "./CurrencySelect";
 import { useUploadPermission } from "@/hooks/useUploadPermission";
 import { UploadLimitInfo } from "./UploadLimitInfo";
 
@@ -38,7 +40,10 @@ export function NewGroupExpenseModal({
   open,
   onOpenChange,
 }: Readonly<NewGroupExpenseModalProps>) {
+  const { user } = useAuth();
+  const defaultCurrency = user?.homeCurrency || "IDR";
   const [description, setDescription] = useState("");
+  const [currency, setCurrency] = useState<string>(defaultCurrency);
   const [inputType, setInputType] = useState<InputType>("upload");
   const [step, setStep] = useState<Step>("details");
   const [expenseId, setExpenseId] = useState<string | null>(null);
@@ -51,6 +56,7 @@ export function NewGroupExpenseModal({
 
   const resetModal = () => {
     setDescription("");
+    setCurrency(defaultCurrency);
     setInputType("upload");
     setStep("details");
     setExpenseId(null);
@@ -68,8 +74,20 @@ export function NewGroupExpenseModal({
   ) => {
     e.preventDefault();
 
+    if (!currency) {
+      toast({
+        variant: "destructive",
+        title: "Currency is required",
+        description: "Please select a currency for this expense.",
+      });
+      return;
+    }
+
     try {
-      const expense = await createDraft.mutateAsync(description || "");
+      const expense = await createDraft.mutateAsync({
+        description: description || "",
+        currency,
+      });
       setExpenseId(expense.id);
 
       if (inputType === "upload") {
@@ -175,6 +193,17 @@ export function NewGroupExpenseModal({
             </div>
 
             <div className="space-y-2">
+              <Label htmlFor="currency">
+                Currency <span className="text-destructive">*</span>
+              </Label>
+              <CurrencySelect
+                id="currency"
+                value={currency}
+                onChange={setCurrency}
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label>Input Method</Label>
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -213,7 +242,7 @@ export function NewGroupExpenseModal({
             <Button
               type="submit"
               className="w-full"
-              disabled={createDraft.isPending || uploadBlocked}
+              disabled={createDraft.isPending || uploadBlocked || !currency}
             >
               {createDraft.isPending && (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

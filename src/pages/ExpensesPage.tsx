@@ -81,7 +81,7 @@ function ExpenseCard({ expense, ownership }: Readonly<ExpenseCardProps>) {
               {/* Amount on mobile - below description */}
               <div className="flex items-center justify-between mt-2 sm:hidden">
                 <p className="text-sm font-semibold tabular-nums">
-                  {formatCurrency(expense.totalAmount)}
+                  {formatCurrency(expense.totalAmount, expense.currency)}
                 </p>
                 {expense.payer.name && (
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -99,7 +99,7 @@ function ExpenseCard({ expense, ownership }: Readonly<ExpenseCardProps>) {
             <div className="hidden sm:flex items-center gap-3 flex-shrink-0">
               <div className="text-right">
                 <p className="text-lg font-semibold tabular-nums">
-                  {formatCurrency(expense.totalAmount)}
+                  {formatCurrency(expense.totalAmount, expense.currency)}
                 </p>
                 {expense.payer.name && (
                   <p className="text-xs text-muted-foreground">Paid by</p>

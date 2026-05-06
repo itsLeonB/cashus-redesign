@@ -496,7 +496,7 @@ export default function ExpenseDetailPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="font-semibold tabular-nums">
-                      {formatCurrency(fee.amount)}
+                      {formatCurrency(fee.amount, expense.currency)}
                     </span>
                     {canEdit && (
                       <div className="flex gap-1">
@@ -575,7 +575,7 @@ export default function ExpenseDetailPage() {
             </div>
             <div className="flex flex-col items-end gap-2">
               <p className="text-3xl font-bold tabular-nums">
-                {formatCurrency(expense.totalAmount)}
+                {formatCurrency(expense.totalAmount, expense.currency)}
               </p>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 {expense.payer.name ? (
@@ -645,13 +645,15 @@ export default function ExpenseDetailPage() {
                 <div>
                   <p className="font-medium">{item.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    Qty: {item.quantity} × {formatCurrency(item.amount)}
+                    Qty: {item.quantity} ×{" "}
+                    {formatCurrency(item.amount, expense.currency)}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <p className="text-lg font-semibold tabular-nums">
                     {formatCurrency(
                       Number.parseFloat(item.amount) * item.quantity,
+                      expense.currency,
                     )}
                   </p>
                   {canEdit && (
@@ -688,6 +690,7 @@ export default function ExpenseDetailPage() {
                   expenseId={expense.id}
                   availableParticipants={participantProfiles}
                   isConfirmed={isConfirmed}
+                  currency={expense.currency}
                   isReadOnly={!isOwner}
                 />
               </div>
@@ -721,21 +724,21 @@ export default function ExpenseDetailPage() {
             <div className="flex justify-between text-muted-foreground">
               <span>Subtotal</span>
               <span className="tabular-nums">
-                {formatCurrency(calculateItemsTotal())}
+                {formatCurrency(calculateItemsTotal(), expense.currency)}
               </span>
             </div>
             {expense.otherFees?.length > 0 && (
               <div className="flex justify-between text-muted-foreground">
                 <span>Fees</span>
                 <span className="tabular-nums">
-                  {formatCurrency(calculateFeesTotal())}
+                  {formatCurrency(calculateFeesTotal(), expense.currency)}
                 </span>
               </div>
             )}
             <div className="flex justify-between text-xl font-bold pt-2 border-t border-border/50">
               <span>Total</span>
               <span className="tabular-nums">
-                {formatCurrency(expense.totalAmount)}
+                {formatCurrency(expense.totalAmount, expense.currency)}
               </span>
             </div>
           </div>
@@ -847,6 +850,7 @@ export default function ExpenseDetailPage() {
         onOpenChange={setItemModalOpen}
         expenseId={expenseId || ""}
         item={editingItem}
+        currency={expense.currency}
       />
 
       {/* Fee Modal */}
@@ -855,6 +859,7 @@ export default function ExpenseDetailPage() {
         onOpenChange={setFeeModalOpen}
         expenseId={expenseId || ""}
         fee={editingFee}
+        currency={expense.currency}
       />
 
       {/* View Bill Image Modal */}
