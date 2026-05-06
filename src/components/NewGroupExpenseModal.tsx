@@ -21,8 +21,10 @@ import {
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 import { ParticipantSelector } from "./ParticipantSelector";
 import { ImageUploadArea } from "./ImageUploadArea";
+import { CurrencySelect } from "./CurrencySelect";
 import { useUploadPermission } from "@/hooks/useUploadPermission";
 import { UploadLimitInfo } from "./UploadLimitInfo";
 
