@@ -66,7 +66,12 @@ export default function OnboardingPage() {
 
     updateProfile(result.data, {
       onSuccess: () => {
-        refreshUser().then(() => navigate("/dashboard", { replace: true }));
+        refreshUser()
+          .catch(() => {
+            // Even if refresh fails, the profile was saved; let the guard
+            // re-evaluate on next navigation.
+          })
+          .finally(() => navigate("/dashboard", { replace: true }));
       },
       onError: (error: unknown) => {
         const err = error as { message?: string };
@@ -95,7 +100,10 @@ export default function OnboardingPage() {
           <CardContent>
             <form className="space-y-5" onSubmit={handleSubmit}>
               <div className="space-y-2">
-                <Label htmlFor="onboarding-name" className="flex items-center gap-2">
+                <Label
+                  htmlFor="onboarding-name"
+                  className="flex items-center gap-2"
+                >
                   <User className="h-4 w-4 text-muted-foreground" />
                   Display Name
                 </Label>

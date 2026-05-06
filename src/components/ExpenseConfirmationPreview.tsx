@@ -142,7 +142,8 @@ function LineItemRow({
         ) : (
           <>
             <span className="text-xs text-muted-foreground">
-              {formatCurrency(item.baseAmount)} × {item.shareRate} ={" "}
+              {formatCurrency(item.baseAmount, currency)} × {item.shareRate}{" "}
+              ={" "}
             </span>
             {formatCurrency(item.shareAmount, currency)}
           </>

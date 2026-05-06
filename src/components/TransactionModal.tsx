@@ -67,7 +67,7 @@ export function TransactionModal({
   const [friendId, setFriendId] = useState(defaultFriendId || "");
   const [direction, setDirection] = useState<DebtDirection>(defaultDirection);
   const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState(user.homeCurrency || "IDR");
+  const [currency, setCurrency] = useState(user?.homeCurrency || "IDR");
   const [description, setDescription] = useState("");
   const [selectedMethod, setSelectedMethod] = useState<TransferMethod>(null);
   const [transferMethodOpen, setTransferMethodOpen] = useState(false);
