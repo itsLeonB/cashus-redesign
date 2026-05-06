@@ -26,6 +26,7 @@ interface ExpenseFeeModalProps {
   onOpenChange: (open: boolean) => void;
   expenseId: string;
   fee?: OtherFeeResponse | null;
+  currency: string;
 }
 
 export function ExpenseFeeModal({
@@ -33,6 +34,7 @@ export function ExpenseFeeModal({
   onOpenChange,
   expenseId,
   fee,
+  currency,
 }: Readonly<ExpenseFeeModalProps>) {
   const { toast } = useToast();
   const { data: calculationMethods } = useCalculationMethods();
@@ -144,7 +146,7 @@ export function ExpenseFeeModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="feeAmount">Amount</Label>
+              <Label htmlFor="feeAmount">Amount ({currency})</Label>
               <Input
                 id="feeAmount"
                 type="number"

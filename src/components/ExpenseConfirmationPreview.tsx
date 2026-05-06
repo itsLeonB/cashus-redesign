@@ -64,15 +64,17 @@ function ProxyStatusLine({
 function OwesStatusLine({
   payer,
   total,
+  currency,
 }: Readonly<{
   payer: ExpenseConfirmationResponse["payer"];
   total: ConfirmedExpenseParticipant["total"];
+  currency: string;
 }>) {
   return (
     <>
       Owes {payer.isUser ? "You" : payer.name}{" "}
       <span className="font-medium text-foreground">
-        {formatCurrency(total)}
+        {formatCurrency(total, currency)}
       </span>
     </>
   );
@@ -82,10 +84,12 @@ function StatusLine({
   participant,
   payer,
   coveredNames,
+  currency,
 }: Readonly<{
   participant: ConfirmedExpenseParticipant;
   payer: ExpenseConfirmationResponse["payer"];
   coveredNames: string[];
+  currency: string;
 }>) {
   if (participant.profile.id === payer.id) {
     return <PayerStatusLine coveredNames={coveredNames} />;
@@ -93,7 +97,13 @@ function StatusLine({
   if (participant.hasProxy && participant.proxyProfile) {
     return <ProxyStatusLine proxyProfile={participant.proxyProfile} />;
   }
-  return <OwesStatusLine payer={payer} total={participant.total} />;
+  return (
+    <OwesStatusLine
+      payer={payer}
+      total={participant.total}
+      currency={currency}
+    />
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -116,7 +126,10 @@ function isFullShare(item: LineItem): boolean {
   );
 }
 
-function LineItemRow({ item }: Readonly<{ item: LineItem }>) {
+function LineItemRow({
+  item,
+  currency,
+}: Readonly<{ item: LineItem; currency: string }>) {
   const negative = Number.parseFloat(item.shareAmount) < 0;
   const amountClass = `tabular-nums text-right ${negative ? "text-green-600 dark:text-green-400" : ""}`;
 
@@ -125,13 +138,13 @@ function LineItemRow({ item }: Readonly<{ item: LineItem }>) {
       <span className="text-muted-foreground">{item.name}</span>
       <span className={amountClass}>
         {isFullShare(item) ? (
-          formatCurrency(item.shareAmount)
+          formatCurrency(item.shareAmount, currency)
         ) : (
           <>
             <span className="text-xs text-muted-foreground">
               {formatCurrency(item.baseAmount)} × {item.shareRate} ={" "}
             </span>
-            {formatCurrency(item.shareAmount)}
+            {formatCurrency(item.shareAmount, currency)}
           </>
         )}
       </span>
@@ -147,10 +160,12 @@ function LineItemSection({
   label,
   items,
   subtotal,
+  currency,
 }: Readonly<{
   label: string;
   items: LineItem[];
   subtotal: string | number;
+  currency: string;
 }>) {
   if (!items || items.length === 0) return null;
 
@@ -161,13 +176,13 @@ function LineItemSection({
       </p>
       <div className="space-y-1 text-sm">
         {items.map((item) => (
-          <LineItemRow key={item.id} item={item} />
+          <LineItemRow key={item.id} item={item} currency={currency} />
         ))}
       </div>
       <div className="flex justify-between pt-1 border-t border-border/30 text-sm">
         <span className="text-muted-foreground">{label} subtotal</span>
         <span className="tabular-nums font-medium">
-          {formatCurrency(subtotal)}
+          {formatCurrency(subtotal, currency)}
         </span>
       </div>
     </div>
@@ -182,10 +197,12 @@ function ParticipantCard({
   participant,
   payer,
   coveredNames,
+  currency,
 }: Readonly<{
   participant: ConfirmedExpenseParticipant;
   payer: ExpenseConfirmationResponse["payer"];
   coveredNames: string[];
+  currency: string;
 }>) {
   const isCurrentUser = participant.profile.isUser;
 
@@ -216,12 +233,14 @@ function ParticipantCard({
         label="Items"
         items={participant.items ?? []}
         subtotal={participant.itemsTotal}
+        currency={currency}
       />
 
       <LineItemSection
         label="Fees"
         items={participant.fees ?? []}
         subtotal={participant.feesTotal}
+        currency={currency}
       />
 
       {/* Participant Total & Status */}
@@ -229,7 +248,7 @@ function ParticipantCard({
         <div className="flex justify-between font-semibold">
           <span>Total</span>
           <span className="tabular-nums">
-            {formatCurrency(participant.total)}
+            {formatCurrency(participant.total, currency)}
           </span>
         </div>
         <p className="text-sm text-muted-foreground">
@@ -237,6 +256,7 @@ function ParticipantCard({
             participant={participant}
             payer={payer}
             coveredNames={coveredNames}
+            currency={currency}
           />
         </p>
       </div>
@@ -255,7 +275,7 @@ function ExpenseHeader({
     <div className="space-y-1 pb-3 border-b border-border/50">
       <p className="font-semibold text-lg">{data.description || "Expense"}</p>
       <p className="text-sm text-muted-foreground">
-        Total: {formatCurrency(data.totalAmount || 0)}
+        Total: {formatCurrency(data.totalAmount || 0, data.currency)}
       </p>
       <p className="text-sm text-muted-foreground">Paid by {data.payer.name}</p>
     </div>
@@ -266,10 +286,12 @@ function ParticipantList({
   participants,
   payer,
   coveredByMap,
+  currency,
 }: Readonly<{
   participants: ExpenseConfirmationResponse["participants"];
   payer: ExpenseConfirmationResponse["payer"];
   coveredByMap: Record<string, string[]>;
+  currency: string;
 }>) {
   if (!participants || participants.length === 0) {
     return (
@@ -287,6 +309,7 @@ function ParticipantList({
           participant={participant}
           payer={payer}
           coveredNames={coveredByMap[participant.profile.id] ?? []}
+          currency={currency}
         />
       ))}
     </div>
@@ -296,9 +319,11 @@ function ParticipantList({
 function SummaryFooter({
   participants,
   totalAmount,
+  currency,
 }: Readonly<{
   participants: ExpenseConfirmationResponse["participants"];
   totalAmount: number | undefined;
+  currency: string;
 }>) {
   if (!participants || participants.length === 0) return null;
 
@@ -311,13 +336,17 @@ function SummaryFooter({
         {participants.map((p) => (
           <div key={p.profile.id} className="flex justify-between">
             <span className="text-muted-foreground">{p.profile.name}</span>
-            <span className="tabular-nums">{formatCurrency(p.total)}</span>
+            <span className="tabular-nums">
+              {formatCurrency(p.total, currency)}
+            </span>
           </div>
         ))}
       </div>
       <div className="flex justify-between pt-2 border-t border-border/50 font-semibold">
         <span>Total</span>
-        <span className="tabular-nums">{formatCurrency(totalAmount || 0)}</span>
+        <span className="tabular-nums">
+          {formatCurrency(totalAmount || 0, currency)}
+        </span>
       </div>
     </div>
   );
@@ -341,6 +370,7 @@ export function ExpenseConfirmationPreview({
         participants={data.participants}
         payer={data.payer}
         coveredByMap={coveredByMap}
+        currency={data.currency}
       />
 
       <SummaryFooter
@@ -348,6 +378,7 @@ export function ExpenseConfirmationPreview({
         totalAmount={
           data.totalAmount === "" ? 0 : Number.parseFloat(data.totalAmount)
         }
+        currency={data.currency}
       />
     </div>
   );

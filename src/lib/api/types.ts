@@ -183,6 +183,7 @@ export interface GroupExpenseResponse {
   description?: string;
   status: "DRAFT" | "READY" | "CONFIRMED";
   isPreviewable: boolean;
+  currency: string;
 
   // Relationships
   payer: SimpleProfile;
@@ -309,6 +310,7 @@ export interface ExpenseConfirmationResponse {
   id: string;
   description: string;
   totalAmount: string;
+  currency: string;
   payer: SimpleProfile;
   participants: ConfirmedExpenseParticipant[];
 }

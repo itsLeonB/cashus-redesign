@@ -14,6 +14,7 @@ interface ItemParticipantManagerProps {
   expenseId: string;
   availableParticipants: SimpleProfile[];
   isConfirmed: boolean;
+  currency: string;
   isReadOnly?: boolean;
 }
 
@@ -50,6 +51,7 @@ export function ItemParticipantManager({
   expenseId,
   availableParticipants,
   isConfirmed,
+  currency,
   isReadOnly = false,
 }: Readonly<ItemParticipantManagerProps>) {
   const canEdit = !isConfirmed && !isReadOnly;
@@ -315,7 +317,7 @@ export function ItemParticipantManager({
               {/* Share amount preview */}
               {isSelected && totalWeight > 0 && (
                 <span className="text-xs text-muted-foreground">
-                  {formatCurrency(shareAmount)}
+                  {formatCurrency(shareAmount, currency)}
                 </span>
               )}
             </div>
