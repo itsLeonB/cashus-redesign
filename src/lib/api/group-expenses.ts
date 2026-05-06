@@ -38,10 +38,8 @@ export const groupExpensesApi = {
     };
   },
 
-  createDraft(description: string) {
-    return apiClient.post<GroupExpenseResponse>("/group-expenses", {
-      description,
-    });
+  createDraft(data: { description: string; currency: string }) {
+    return apiClient.post<GroupExpenseResponse>("/group-expenses", data);
   },
 
   uploadBill: (expenseId: string, file: File) => {
