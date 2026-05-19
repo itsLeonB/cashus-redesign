@@ -38,6 +38,9 @@ const ExpensesPage = lazy(() => import("@/pages/ExpensesPage"));
 const ExpenseDetailPage = lazy(() => import("@/pages/ExpenseDetailPage"));
 const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
 const SubscriptionPage = lazy(() => import("@/pages/SubscriptionPage"));
+const SubscriptionSuccessPage = lazy(
+  () => import("@/pages/SubscriptionSuccessPage"),
+);
 const OnboardingPage = lazy(() => import("@/pages/OnboardingPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const LandingPage = lazy(() => import("@/pages/LandingPage"));
@@ -123,6 +126,10 @@ const App = () => {
                       <Route
                         path="/subscription"
                         element={<SubscriptionPage />}
+                      />
+                      <Route
+                        path="/subscription/success"
+                        element={<SubscriptionSuccessPage />}
                       />
                     </Route>
                   </Route>

@@ -17,16 +17,7 @@ interface PlanCardProps {
   plan: PlanVersionResponse;
   isCurrent: boolean;
   isPurchasing: boolean;
-  isPastDue: boolean;
-  isNearingDueDate: boolean;
-  isIncomplete: boolean;
-  onSubscribe: (
-    planId: string,
-    planVersionId: string,
-    isPastDue: boolean,
-    isNearingDueDate: boolean,
-    isIncomplete: boolean,
-  ) => void;
+  onSubscribe: (planId: string, planVersionId: string) => void;
 }
 
 const INTERVAL_LABELS: Record<string, string> = {
@@ -46,14 +37,8 @@ export function PlanCard({
   plan,
   isCurrent,
   isPurchasing,
-  isPastDue,
-  isNearingDueDate,
-  isIncomplete,
   onSubscribe,
 }: Readonly<PlanCardProps>) {
-  const hasIssue = isPastDue || isNearingDueDate || isIncomplete;
-  const isCurrentAndClean = isCurrent && !hasIssue;
-
   const features = [
     {
       label: "Daily uploads",
@@ -67,31 +52,8 @@ export function PlanCard({
 
   const footerBtnText = () => {
     if (isPurchasing) return "Processing…";
-    if (hasIssue) return "Make Payment";
     if (isCurrent) return "Current Plan";
     return "Subscribe";
-  };
-
-  const statusBadge = () => {
-    if (isPastDue)
-      return (
-        <Badge className="bg-warning/15 text-warning border-warning/30 hover:bg-warning/20 text-xs">
-          Past Due
-        </Badge>
-      );
-    if (isIncomplete)
-      return (
-        <Badge className="bg-warning/15 text-warning border-warning/30 hover:bg-warning/20 text-xs">
-          Incomplete
-        </Badge>
-      );
-    if (isCurrentAndClean)
-      return (
-        <Badge className="bg-primary/15 text-primary border-primary/30 hover:bg-primary/20 text-xs">
-          Current
-        </Badge>
-      );
-    return null;
   };
 
   return (
@@ -99,14 +61,16 @@ export function PlanCard({
       className={cn(
         "border-border/50 transition-all duration-200 flex flex-col",
         isCurrent && "border-primary/50 ring-1 ring-primary/20",
-        (isPastDue || isIncomplete) &&
-          "border-warning/50 ring-1 ring-warning/20",
       )}
     >
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">{plan.planName}</CardTitle>
-          {statusBadge()}
+          {isCurrent && (
+            <Badge className="bg-primary/15 text-primary border-primary/30 hover:bg-primary/20 text-xs">
+              Current
+            </Badge>
+          )}
         </div>
         <CardDescription>
           <span className="text-2xl font-bold font-display text-foreground">
@@ -136,17 +100,9 @@ export function PlanCard({
         <CardFooter>
           <Button
             className="w-full"
-            variant={isCurrentAndClean ? "secondary" : "default"}
-            disabled={isCurrentAndClean || isPurchasing}
-            onClick={() =>
-              onSubscribe(
-                plan.planId,
-                plan.id,
-                isPastDue,
-                isNearingDueDate,
-                isIncomplete,
-              )
-            }
+            variant={isCurrent ? "secondary" : "default"}
+            disabled={isCurrent || isPurchasing}
+            onClick={() => onSubscribe(plan.planId, plan.id)}
           >
             {isPurchasing && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             {footerBtnText()}
