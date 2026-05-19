@@ -23,15 +23,12 @@ export interface PaymentResponse {
   subscriptionId: string;
   amount: string;
   currency: string;
-  gateway: string;
-  gatewayTransactionId?: string;
-  gatewaySubscriptionId?: string;
   status: string;
   failureReason?: string;
   startsAt?: string;
   endsAt?: string;
-  gatewayEventId?: string;
   paidAt?: string;
+  checkoutUrl?: string;
 }
 
 export const planApi = {

@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { planApi } from "@/lib/api/plan";
-import { queryKeys } from "@/lib/queryKeys";
 import { subscriptionApi } from "@/lib/api/subscription";
+import { queryKeys } from "@/lib/queryKeys";
 
 export function usePurchasePlan() {
   const queryClient = useQueryClient();
@@ -23,16 +23,11 @@ export function usePurchasePlan() {
   });
 }
 
-export function useMakePayment() {
-  const queryClient = useQueryClient();
-
+export function useManageSubscription() {
   return useMutation({
-    mutationFn: subscriptionApi.makePayment,
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.profile.subscription,
-      });
-      queryClient.invalidateQueries({ queryKey: queryKeys.profile.current });
+    mutationFn: async () => {
+      const { portalUrl } = await subscriptionApi.getPortalUrl();
+      window.location.href = portalUrl;
     },
   });
 }
