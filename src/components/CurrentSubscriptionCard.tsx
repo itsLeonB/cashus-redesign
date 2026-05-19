@@ -2,14 +2,17 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, CheckCircle, Clock, Upload } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, Loader2, Upload } from "lucide-react";
 import { SubscriptionDetails } from "@/lib/api/profile";
 import { CurrentSubscription } from "@/lib/api/types";
+import { useManageSubscription } from "@/hooks/useSubscription";
 
 interface CurrentSubscriptionCardProps {
   subscription: SubscriptionDetails | null | undefined;
@@ -226,6 +229,27 @@ export function CurrentSubscriptionCard({
           </div>
         )}
       </CardContent>
+
+      <CardFooter>
+        <ManageSubscriptionButton />
+      </CardFooter>
     </Card>
+  );
+}
+
+function ManageSubscriptionButton() {
+  const manageMutation = useManageSubscription();
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => manageMutation.mutate()}
+      disabled={manageMutation.isPending}
+    >
+      {manageMutation.isPending && (
+        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+      )}
+      Manage Subscription
+    </Button>
   );
 }
