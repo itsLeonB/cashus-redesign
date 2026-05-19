@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 import { planApi } from "@/lib/api/plan";
 import { subscriptionApi } from "@/lib/api/subscription";
 import { queryKeys } from "@/lib/queryKeys";
@@ -24,10 +25,21 @@ export function usePurchasePlan() {
 }
 
 export function useManageSubscription() {
+  const { toast } = useToast();
+
   return useMutation({
     mutationFn: async () => {
-      const { portalUrl } = await subscriptionApi.getPortalUrl();
-      window.location.href = portalUrl;
+      try {
+        const { portalUrl } = await subscriptionApi.getPortalUrl();
+        globalThis.location.href = portalUrl;
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to open subscription portal. Please try again.",
+          variant: "destructive",
+        });
+        throw error;
+      }
     },
   });
 }
