@@ -31,7 +31,14 @@ export function useManageSubscription() {
     mutationFn: async () => {
       try {
         const { portalUrl } = await subscriptionApi.getPortalUrl();
-        globalThis.location.href = portalUrl;
+        if (!portalUrl) {
+          throw new Error("Missing portal URL");
+        }
+        const parsed = new URL(portalUrl, globalThis.location.origin);
+        if (!["http:", "https:"].includes(parsed.protocol)) {
+          throw new Error("Invalid portal URL protocol");
+        }
+        globalThis.location.href = parsed.toString();
       } catch (error) {
         toast({
           title: "Error",
