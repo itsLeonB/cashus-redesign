@@ -21,6 +21,7 @@ interface AuthContextType {
     email: string,
     password: string,
     passwordConfirmation: string,
+    slug?: string,
   ) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -88,8 +89,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   );
 
   const register = useCallback(
-    async (email: string, password: string, passwordConfirmation: string) => {
-      await authApi.register({ email, password, passwordConfirmation });
+    async (email: string, password: string, passwordConfirmation: string, slug?: string) => {
+      await authApi.register({ email, password, passwordConfirmation, slug });
     },
     [],
   );

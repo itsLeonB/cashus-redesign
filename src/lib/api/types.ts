@@ -8,6 +8,7 @@ export interface RegisterRequest {
   email: string;
   password: string;
   passwordConfirmation: string;
+  slug?: string;
 }
 
 export interface ResetPasswordRequest {
@@ -92,6 +93,7 @@ export interface FriendDetails {
   email?: string; // Only for registered friends
   phone?: string;
   avatar?: string;
+  slug?: string;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;
