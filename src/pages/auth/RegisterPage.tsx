@@ -1,5 +1,5 @@
 import { useState, type FormEventHandler } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,8 @@ export default function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const slug = searchParams.get("slug") || undefined;
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
@@ -39,7 +41,7 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      await register(email, password, passwordConfirmation);
+      await register(email, password, passwordConfirmation, slug);
       setIsSuccess(true);
     } catch (error: unknown) {
       const err = error as { message?: string };
