@@ -9,10 +9,17 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, CheckCircle, Clock, Loader2, Upload } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Loader2,
+  Upload,
+} from "lucide-react";
 import { SubscriptionDetails } from "@/lib/api/profile";
 import { CurrentSubscription } from "@/lib/api/types";
 import { useManageSubscription } from "@/hooks/useSubscription";
+import { Activity } from "react";
 
 interface CurrentSubscriptionCardProps {
   subscription: SubscriptionDetails | null | undefined;
@@ -230,9 +237,11 @@ export function CurrentSubscriptionCard({
         )}
       </CardContent>
 
-      <CardFooter>
-        <ManageSubscriptionButton />
-      </CardFooter>
+      <Activity mode={subscription.planName === "Free" ? "hidden" : "visible"}>
+        <CardFooter>
+          <ManageSubscriptionButton />
+        </CardFooter>
+      </Activity>
     </Card>
   );
 }
