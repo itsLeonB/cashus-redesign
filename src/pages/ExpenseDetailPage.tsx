@@ -183,7 +183,10 @@ export default function ExpenseDetailPage() {
       toast({
         title: result === "shared" ? "Shared!" : "PDF downloaded",
       });
-    } catch {
+    } catch (error: unknown) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
       toast({ title: "Failed to export PDF", variant: "destructive" });
     } finally {
       setIsExportingPdf(false);
