@@ -55,9 +55,11 @@ import {
   AlertTriangle,
   Upload,
   UserPlus,
+  Download,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { NewExpenseItemRequest, statusDisplay } from "@/lib/api";
+import { shareExpensePdf } from "@/utils/exportExpensePdf";
 import type {
   ExpenseItemResponse,
   OtherFeeResponse,
@@ -171,6 +173,22 @@ export default function ExpenseDetailPage() {
   const [dryRunResult, setDryRunResult] =
     useState<ExpenseConfirmationResponse | null>(null);
   const [isDryRunLoading, setIsDryRunLoading] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+
+  const handleSharePdf = async () => {
+    if (!expense?.confirmationPreview) return;
+    setIsExportingPdf(true);
+    try {
+      const result = await shareExpensePdf(expense.confirmationPreview);
+      toast({
+        title: result === "shared" ? "Shared!" : "PDF downloaded",
+      });
+    } catch {
+      toast({ title: "Failed to export PDF", variant: "destructive" });
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
 
   const participantProfiles = (expense?.participants || []).map(
     (p) => p.participantProfile,
@@ -615,8 +633,21 @@ export default function ExpenseDetailPage() {
       {/* Split Preview (when isPreviewable) */}
       {expense.isPreviewable && expense.confirmationPreview && (
         <Card className="border-border/50">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="font-display">Confirmed Splits</CardTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleSharePdf}
+              disabled={isExportingPdf}
+            >
+              {isExportingPdf ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4 mr-1" />
+              )}
+              Share PDF
+            </Button>
           </CardHeader>
           <CardContent>
             <ExpenseConfirmationPreview data={expense.confirmationPreview} />
