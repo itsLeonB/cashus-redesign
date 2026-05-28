@@ -50,7 +50,7 @@ export async function shareFriendProfile(
   friendName: string,
   slug: string,
   balancesPerCurrency: Record<string, FriendBalance>,
-): Promise<"shared" | "copied"> {
+): Promise<"shared" | "copied" | "cancelled"> {
   const text = buildShareMessage(friendName, slug, balancesPerCurrency);
 
   if (navigator.share) {
@@ -58,6 +58,9 @@ export async function shareFriendProfile(
       await navigator.share({ text });
       return "shared";
     } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return "cancelled";
+      }
       console.error("Share failed, falling back to clipboard", err);
     }
   }

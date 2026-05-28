@@ -137,6 +137,9 @@ export default function FriendDetailPage() {
                       if (result === "copied") {
                         toast({ title: "Copied to clipboard" });
                       }
+                      if (result === "cancelled") {
+                        return;
+                      }
                     } catch {
                       toast({
                         title: "Failed to share",

@@ -68,7 +68,7 @@ class ApiClient {
 
         if (!refreshResponse.ok) {
           if (refreshResponse.status < 500) {
-            this.refreshFailed = true;
+            this.setTokens(null, null);
           }
           throw new Error("Refresh failed");
         }
