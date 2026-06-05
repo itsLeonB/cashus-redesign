@@ -27,6 +27,8 @@ import {
   ShieldOff,
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { AmountDisplay } from "@/components/AmountDisplay";
 
 export default function FriendsPage() {
   const [searchQuery, setSearchQuery] = useState("");
