@@ -157,11 +157,18 @@ export default function FriendsPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {filteredFriends.map((friendship) => {
             const balances = friendship.balancesPerCurrency ?? {};
-            const homeAmount = parseFloat(balances[homeCurrency] || "0");
-            const otherCount = Object.keys(balances).filter(
-              (c) => c !== homeCurrency,
+            const currencyKeys = Object.keys(balances);
+            const hasHome = homeCurrency in balances;
+            // If only one currency exists and it's not home, display it as the primary
+            const displayCurrency =
+              !hasHome && currencyKeys.length === 1
+                ? currencyKeys[0]
+                : homeCurrency;
+            const displayAmount = parseFloat(balances[displayCurrency] || "0");
+            const otherCount = currencyKeys.filter(
+              (c) => c !== displayCurrency,
             ).length;
-            const showBalance = homeAmount !== 0 || otherCount > 0;
+            const showBalance = displayAmount !== 0 || otherCount > 0;
 
             return (
               <Link key={friendship.id} to={`/friends/${friendship.id}`}>
@@ -192,10 +199,10 @@ export default function FriendsPage() {
                       </div>
                       {showBalance && (
                         <div className="shrink-0 flex flex-col items-end gap-0.5">
-                          {homeAmount !== 0 && (
+                          {displayAmount !== 0 && (
                             <AmountDisplay
-                              amount={homeAmount}
-                              currency={homeCurrency}
+                              amount={displayAmount}
+                              currency={displayCurrency}
                               size="sm"
                             />
                           )}
