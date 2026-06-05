@@ -34,6 +34,8 @@ export default function FriendsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuth();
+  const homeCurrency = user?.homeCurrency || "IDR";
 
   const activeTab = searchParams.get("tab") || "all";
 
