@@ -199,10 +199,10 @@ export default function FriendsPage() {
                       </div>
                       {showBalance && (
                         <div className="shrink-0 flex flex-col items-end gap-0.5">
-                          {homeAmount !== 0 && (
+                          {displayAmount !== 0 && (
                             <AmountDisplay
-                              amount={homeAmount}
-                              currency={homeCurrency}
+                              amount={displayAmount}
+                              currency={displayCurrency}
                               size="sm"
                             />
                           )}
