@@ -1,21 +1,21 @@
-## Plan: Add Currency to New Group Expense Draft
+## Display Net Balance per Friend on FriendsPage
 
-### Changes
+### 1. `src/lib/api/types.ts`
+Add optional `balancesPerCurrency?: Record<string, string>` to `FriendshipResponse`.
 
-1. **`src/lib/api/group-expenses.ts`**
-   - Update `createDraft` signature: `createDraft(data: { description: string; currency: string })` and POST that body to `/group-expenses`.
-
-2. **`src/hooks/useApi.ts`**
-   - `useCreateDraftExpense` already passes through to `createDraft`; no logic change, but the mutation argument type now becomes the new object shape.
-
-3. **`src/components/NewGroupExpenseModal.tsx`**
-   - Add local state `currency`, default to `user?.homeCurrency || "IDR"` (via `useAuth`).
-   - Render a new required `Currency` field on the **details** step, using the existing `<CurrencySelect>` component (searchable, `code+name` format), placed above or beside the Description input.
-   - Block submission when `currency` is empty; disable the "Next" button accordingly.
-   - Pass `{ description, currency }` to `createDraft.mutateAsync(...)`.
-   - Reset `currency` back to default in `resetModal()`.
+### 2. `src/pages/FriendsPage.tsx`
+- Import `useAuth` from `@/contexts/AuthContext` and `AmountDisplay` from `@/components/AmountDisplay`.
+- Read `user?.homeCurrency` (fallback `"IDR"`).
+- Inside the friend card (`filteredFriends.map`), after the name/status block, render a right-aligned `shrink-0` container:
+  - Compute `balances = friendship.balancesPerCurrency ?? {}`.
+  - `homeAmount = parseFloat(balances[homeCurrency] || "0")`.
+  - `otherCount = Object.keys(balances).filter(c => c !== homeCurrency).length`.
+  - If `homeAmount === 0 && otherCount === 0` → render nothing.
+  - Else render `<AmountDisplay amount={homeAmount} currency={homeCurrency} size="sm" />` (only when `homeAmount !== 0`; if zero but others exist, skip amount and just show hint).
+  - If `otherCount > 0`, render `<span className="text-xs text-muted-foreground">& {otherCount} more</span>` below, right-aligned.
+- Ensure name container keeps `min-w-0` (already present), balance container uses `shrink-0 text-right`.
 
 ### Notes
-- No backend type changes beyond the request payload — response shape (`GroupExpenseResponse`) already exposes `currency`.
-- Reuses `CurrencySelect` for full UX consistency with TransactionModal & Profile.
-- No breaking changes to other callers (only one caller of `createDraft`).
+- No business-logic changes; presentation only.
+- Field is optional → safe with current backend until rollout.
+- Verification: typecheck/build; visually verify on narrow viewport.
