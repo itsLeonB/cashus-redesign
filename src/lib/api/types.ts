@@ -67,6 +67,7 @@ export interface FriendshipResponse {
   profileName: string; // Used to be friendProfile.name
   profileAvatar?: string;
   balance?: number; // Calculated on frontend or separate? Legacy has no balance in FriendshipResponse
+  balancesPerCurrency?: Record<string, string>; // currency -> netBalance as string
   createdAt: string;
 }
 

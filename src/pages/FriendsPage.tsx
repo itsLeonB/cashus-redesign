@@ -27,11 +27,15 @@ import {
   ShieldOff,
 } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { AmountDisplay } from "@/components/AmountDisplay";
 
 export default function FriendsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuth();
+  const homeCurrency = user?.homeCurrency || "IDR";
 
   const activeTab = searchParams.get("tab") || "all";
 
@@ -151,38 +155,69 @@ export default function FriendsPage() {
     if (filteredFriends?.length > 0)
       return (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {filteredFriends.map((friendship) => (
-            <Link key={friendship.id} to={`/friends/${friendship.id}`}>
-              <Card className="border-border/50 hover:border-border transition-colors h-full">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <AvatarCircle
-                      name={friendship.profileName}
-                      imageUrl={friendship.profileAvatar}
-                      size="lg"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">
-                        {friendship.profileName}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        {friendship.type === "ANON" ? (
-                          <span className="text-xs bg-muted px-2 py-0.5 rounded">
-                            Anonymous
-                          </span>
-                        ) : (
-                          <span className="text-xs text-success flex items-center gap-1">
-                            <UserCheck className="h-3 w-3" />
-                            Connected
-                          </span>
-                        )}
+          {filteredFriends.map((friendship) => {
+            const balances = friendship.balancesPerCurrency ?? {};
+            const currencyKeys = Object.keys(balances);
+            const hasHome = homeCurrency in balances;
+            const displayCurrency = hasHome
+              ? homeCurrency
+              : (currencyKeys[0] ?? homeCurrency);
+            const parsed = Number.parseFloat(balances[displayCurrency] ?? "0");
+            const displayAmount = Number.isFinite(parsed) ? parsed : 0;
+            const otherCount = currencyKeys.filter(
+              (c) => c !== displayCurrency,
+            ).length;
+            const showBalance = displayAmount !== 0 || otherCount > 0;
+
+            return (
+              <Link key={friendship.id} to={`/friends/${friendship.id}`}>
+                <Card className="border-border/50 hover:border-border transition-colors h-full">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <AvatarCircle
+                        name={friendship.profileName}
+                        imageUrl={friendship.profileAvatar}
+                        size="lg"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">
+                          {friendship.profileName}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {friendship.type === "ANON" ? (
+                            <span className="text-xs bg-muted px-2 py-0.5 rounded">
+                              Anonymous
+                            </span>
+                          ) : (
+                            <span className="text-xs text-success flex items-center gap-1">
+                              <UserCheck className="h-3 w-3" />
+                              Connected
+                            </span>
+                          )}
+                        </div>
                       </div>
+                      {showBalance && (
+                        <div className="shrink-0 flex flex-col items-end gap-0.5">
+                          {displayAmount !== 0 && (
+                            <AmountDisplay
+                              amount={displayAmount}
+                              currency={displayCurrency}
+                              size="sm"
+                            />
+                          )}
+                          {otherCount > 0 && (
+                            <span className="text-xs text-muted-foreground">
+                              & {otherCount} more
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       );
 
@@ -427,7 +462,10 @@ export default function FriendsPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(value) => setSearchParams({ tab: value })}>
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setSearchParams({ tab: value })}
+      >
         <TabsList>
           <TabsTrigger value="all" className="gap-2">
             <Users className="h-4 w-4" />
