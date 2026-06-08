@@ -153,7 +153,6 @@ export function ExpenseFeeModal({
                 placeholder="0"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                min="0"
                 step="0.01"
                 required
               />
