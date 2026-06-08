@@ -159,12 +159,11 @@ export default function FriendsPage() {
             const balances = friendship.balancesPerCurrency ?? {};
             const currencyKeys = Object.keys(balances);
             const hasHome = homeCurrency in balances;
-            // If only one currency exists and it's not home, display it as the primary
-            const displayCurrency =
-              !hasHome && currencyKeys.length === 1
-                ? currencyKeys[0]
-                : homeCurrency;
-            const displayAmount = parseFloat(balances[displayCurrency] || "0");
+            const displayCurrency = hasHome
+              ? homeCurrency
+              : (currencyKeys[0] ?? homeCurrency);
+            const parsed = Number.parseFloat(balances[displayCurrency] ?? "0");
+            const displayAmount = Number.isFinite(parsed) ? parsed : 0;
             const otherCount = currencyKeys.filter(
               (c) => c !== displayCurrency,
             ).length;
@@ -463,7 +462,10 @@ export default function FriendsPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(value) => setSearchParams({ tab: value })}>
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setSearchParams({ tab: value })}
+      >
         <TabsList>
           <TabsTrigger value="all" className="gap-2">
             <Users className="h-4 w-4" />
