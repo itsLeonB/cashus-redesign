@@ -20,12 +20,15 @@ import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { NotificationHandler } from "@/components/NotificationHandler";
 import { Separator } from "@/components/ui/separator";
+import { subscriptionPurchaseEnabled } from "@/lib/flags";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Expenses", href: "/expenses", icon: Receipt },
   { name: "Friends", href: "/friends", icon: Users },
-  { name: "Your Plan", href: "/subscription", icon: CreditCard },
+  ...(subscriptionPurchaseEnabled
+    ? [{ name: "Your Plan", href: "/subscription", icon: CreditCard }]
+    : []),
 ];
 
 export function AppLayout() {
