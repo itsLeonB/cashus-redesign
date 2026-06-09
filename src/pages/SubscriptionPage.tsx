@@ -14,7 +14,6 @@ import { useToast } from "@/hooks/use-toast";
 import { queryKeys } from "@/lib/queryKeys";
 import { CreditCard } from "lucide-react";
 import { PaymentResponse } from "@/lib/api/plan";
-import { subscriptionPurchaseEnabled } from "@/lib/flags";
 
 export default function SubscriptionPage() {
   const { user } = useAuth();
@@ -39,14 +38,6 @@ export default function SubscriptionPage() {
     isNearingDueDate: boolean,
     isIncomplete: boolean,
   ) => {
-    if (!subscriptionPurchaseEnabled) {
-      toast({
-        title: "This feature is not supported yet",
-        variant: "destructive",
-      });
-      return;
-    }
-
     if (purchasingPlanId) {
       toast({
         title: "Payment already in progress",
@@ -212,14 +203,12 @@ export default function SubscriptionPage() {
       </section>
 
       {/* Section B — Available Plans */}
-      {subscriptionPurchaseEnabled && (
-        <section>
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">
-            Available Plans
-          </h2>
-          {plansSection()}
-        </section>
-      )}
+      <section>
+        <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">
+          Available Plans
+        </h2>
+        {plansSection()}
+      </section>
     </div>
   );
 }

@@ -18,6 +18,7 @@ import { useNotificationIntent } from "@/hooks/useNotificationIntent";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { AppLayout } from "@/layouts/AppLayout";
 import { OnboardingGuard } from "@/components/OnboardingGuard";
+import { subscriptionPurchaseEnabled } from "@/lib/flags";
 
 import LoginPage from "@/pages/auth/LoginPage";
 import DashboardPage from "@/pages/DashboardPage";
@@ -37,7 +38,9 @@ const FriendDetailPage = lazy(() => import("@/pages/FriendDetailPage"));
 const ExpensesPage = lazy(() => import("@/pages/ExpensesPage"));
 const ExpenseDetailPage = lazy(() => import("@/pages/ExpenseDetailPage"));
 const ProfilePage = lazy(() => import("@/pages/ProfilePage"));
-const SubscriptionPage = lazy(() => import("@/pages/SubscriptionPage"));
+const SubscriptionPage = subscriptionPurchaseEnabled
+  ? lazy(() => import("@/pages/SubscriptionPage"))
+  : () => null;
 const OnboardingPage = lazy(() => import("@/pages/OnboardingPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const LandingPage = lazy(() => import("@/pages/LandingPage"));
@@ -121,10 +124,12 @@ const App = () => {
                         element={<ExpenseDetailPage />}
                       />
                       <Route path="/profile" element={<ProfilePage />} />
-                      <Route
-                        path="/subscription"
-                        element={<SubscriptionPage />}
-                      />
+                      {subscriptionPurchaseEnabled && (
+                        <Route
+                          path="/subscription"
+                          element={<SubscriptionPage />}
+                        />
+                      )}
                     </Route>
                   </Route>
                   <Route path="/" element={<LandingPage />} />
