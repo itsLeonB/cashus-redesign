@@ -1,4 +1,7 @@
 import { Logo } from "@/components/Logo";
+import { Link } from "react-router-dom";
+import { SUPPORT_EMAIL } from "@/lib/constants";
+import { subscriptionPurchaseEnabled } from "@/lib/flags";
 
 export function FooterSection() {
   const year = new Date().getFullYear();
@@ -21,20 +24,38 @@ export function FooterSection() {
             <h4 className="text-sm font-semibold">Links</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <a
-                  href="#features"
+                <Link
+                  to="/#features"
                   className="hover:text-foreground transition-colors"
                 >
                   Features
-                </a>
+                </Link>
               </li>
+              {subscriptionPurchaseEnabled && (
+                <li>
+                  <Link
+                    to="/#pricing"
+                    className="hover:text-foreground transition-colors"
+                  >
+                    Pricing
+                  </Link>
+                </li>
+              )}
               <li>
-                <a
-                  href="#pricing"
+                <Link
+                  to="/privacy-policy"
                   className="hover:text-foreground transition-colors"
                 >
-                  Pricing
-                </a>
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/terms-of-service"
+                  className="hover:text-foreground transition-colors"
+                >
+                  Terms of Service
+                </Link>
               </li>
             </ul>
           </div>
@@ -42,9 +63,7 @@ export function FooterSection() {
           {/* Contact */}
           <div className="space-y-3">
             <h4 className="text-sm font-semibold">Contact</h4>
-            <p className="text-sm text-muted-foreground">
-              {import.meta.env.VITE_SUPPORT_EMAIL || "support@cashus.app"}
-            </p>
+            <p className="text-sm text-muted-foreground">{SUPPORT_EMAIL}</p>
           </div>
         </div>
 

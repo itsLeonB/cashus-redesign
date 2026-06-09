@@ -45,6 +45,8 @@ const OnboardingPage = lazy(() => import("@/pages/OnboardingPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const LandingPage = lazy(() => import("@/pages/LandingPage"));
 const PublicFriendPage = lazy(() => import("@/pages/PublicFriendPage"));
+const PrivacyPolicyPage = lazy(() => import("@/pages/PrivacyPolicyPage"));
+const TermsOfServicePage = lazy(() => import("@/pages/TermsOfServicePage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -134,6 +136,8 @@ const App = () => {
                   </Route>
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/f/:slug" element={<PublicFriendPage />} />
+                  <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                  <Route path="/terms-of-service" element={<TermsOfServicePage />} />
                   <Route path="*" element={<NotFound />} />
                 </FaroRoutes>
               </FlagsmithProvider>

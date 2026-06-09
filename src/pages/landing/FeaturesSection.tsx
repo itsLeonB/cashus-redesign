@@ -7,8 +7,9 @@ import {
   Clock,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { subscriptionPurchaseEnabled } from "@/lib/flags";
 
-const features = [
+const baseFeatures = [
   {
     icon: Receipt,
     title: "Split Expenses",
@@ -17,12 +18,12 @@ const features = [
   {
     icon: TrendingUp,
     title: "Real-Time Balances",
-    description: "Instantly see who owes who across all your groups.",
+    description: "Instantly see who owes who across all your friends.",
   },
   {
     icon: Users,
-    title: "Group Management",
-    description: "Create groups and track shared expenses effortlessly.",
+    title: "Friend Management",
+    description: "Add friends and track shared expenses effortlessly.",
   },
   {
     icon: Camera,
@@ -32,14 +33,20 @@ const features = [
   {
     icon: Clock,
     title: "Expense History",
-    description: "Full timeline of all transactions and settlements.",
-  },
-  {
-    icon: CreditCard,
-    title: "Flexible Plans",
-    description: "Start free and upgrade as your needs grow.",
+    description: "Full timeline of all expenses and debt transactions.",
   },
 ];
+
+const features = subscriptionPurchaseEnabled
+  ? [
+      ...baseFeatures,
+      {
+        icon: CreditCard,
+        title: "Flexible Plans",
+        description: "Start free and upgrade as your needs grow.",
+      },
+    ]
+  : baseFeatures;
 
 export function FeaturesSection() {
   return (
@@ -55,11 +62,11 @@ export function FeaturesSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
           {features.map((feature) => (
             <Card
               key={feature.title}
-              className="border-border/50 bg-card/50 hover:border-primary/30 transition-colors duration-200"
+              className="border-border/50 bg-card/50 hover:border-primary/30 transition-colors duration-200 w-full sm:w-[calc(50%-0.75rem)] lg:w-[calc(33.333%-1rem)]"
             >
               <CardContent className="p-6 space-y-3">
                 <div className="gradient-primary rounded-lg p-2.5 w-fit">
