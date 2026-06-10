@@ -57,8 +57,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   }, []);
 
   useEffect(() => {
-    const token = apiClient.getToken();
-    if (token) {
+    if (apiClient.hasCsrfCookie()) {
       refreshUser().finally(() => setIsLoading(false));
     } else {
       setIsLoading(false);
@@ -67,22 +66,17 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const response = await authApi.login({ email, password });
-      apiClient.setTokens(response.token, response.refreshToken);
+      await authApi.login({ email, password });
+      apiClient.resetRefreshState();
 
-      // Clear all caches to prevent stale data from previous user
-      // Fire-and-forget clearing of SW cache to prevent blocking navigation
       clearServiceWorkerCache().catch((error) => {
         console.error("Failed to clear service worker cache:", error);
       });
 
-      // Clear React Query cache
       queryClient.clear();
 
-      // Hard reload to isolate memory state and prevent cross-user back button navigation
       globalThis.location.replace("/dashboard");
-
-      // Block React from returning, preventing any SPA navigation before browser reloads
+      // Block React from returning — prevents SPA navigation before browser reloads
       await new Promise(() => {});
     },
     [queryClient],
@@ -96,32 +90,20 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   );
 
   const logout = useCallback(async () => {
-    // 1. Local cleanup must occur unconditionally
-    const cleanup = async () => {
-      // Explicitly NOT doing setUser(null) here to prevent React Router from
-      // navigating before the actual browser reload takes effect, which causes the double refresh.
-      apiClient.setTokens(null, null);
-      clearNotificationContext();
-      queryClient.clear();
-
-      // Clear service worker cache
-      clearServiceWorkerCache().catch((error) => {
-        console.error("Failed to clear service worker cache:", error);
-      });
-    };
-
     try {
-      // 2. Best-effort backend call
       await authApi.logout();
     } catch (error) {
       console.error("Logout API failed (swallowed):", error);
     } finally {
-      await cleanup();
+      clearNotificationContext();
+      queryClient.clear();
 
-      // Force a hard navigation to ensure clean state
+      clearServiceWorkerCache().catch((error) => {
+        console.error("Failed to clear service worker cache:", error);
+      });
+
       globalThis.location.replace("/login");
-
-      // Block React from executing further (which would trigger router unmounts)
+      // Block React from returning — prevents SPA navigation before browser reloads
       await new Promise(() => {});
     }
   }, [queryClient]);

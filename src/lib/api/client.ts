@@ -3,55 +3,75 @@ import { ApiError } from "./types";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api";
 
+// One-time migration: remove old tokens from localStorage
+if (typeof localStorage !== "undefined") {
+  localStorage.removeItem("authToken");
+  localStorage.removeItem("refreshToken");
+}
+
+const SESSION_EXPIRED_ERROR: ApiError = {
+  message: "Session expired",
+  statusCode: 401,
+  isRefreshFailure: true,
+};
+
+async function parseErrorResponse(response: Response): Promise<ApiError> {
+  const error: ApiError = await response.json().catch(() => ({
+    message: "An unexpected error occurred",
+    statusCode: response.status,
+  }));
+
+  if (!error.message && error.errors?.[0]?.detail) {
+    error.message = error.errors[0].detail;
+  }
+  if (!error.statusCode) {
+    error.statusCode = response.status;
+  }
+
+  return error;
+}
+
 class ApiClient {
   private readonly baseUrl: string;
-  private token: string | null = null;
-  private refreshToken: string | null = null;
   private isRefreshing = false;
   private refreshFailed = false;
-  private refreshSubscribers: ((token: string | null) => void)[] = [];
+  private refreshSubscribers: {
+    resolve: () => void;
+    reject: (e: ApiError) => void;
+  }[] = [];
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
-    this.token = localStorage.getItem("authToken");
-    this.refreshToken = localStorage.getItem("refreshToken");
   }
 
-  setTokens(token: string | null, refreshToken: string | null) {
-    this.token = token;
-    this.refreshToken = refreshToken;
-    this.refreshFailed = false;
-
-    if (token) {
-      localStorage.setItem("authToken", token);
-    } else {
-      localStorage.removeItem("authToken");
-    }
-
-    if (refreshToken) {
-      localStorage.setItem("refreshToken", refreshToken);
-    } else {
-      localStorage.removeItem("refreshToken");
-    }
+  private getCsrfToken(): string | null {
+    const re = /(?:^|;\s*)__Host-csrf_token=([^;]*)/;
+    const match = re.exec(document.cookie);
+    return match ? decodeURIComponent(match[1]) : null;
   }
 
-  getToken() {
-    return this.token;
+  hasCsrfCookie(): boolean {
+    return this.getCsrfToken() !== null;
   }
 
   isRefreshFailed() {
     return this.refreshFailed;
   }
 
-  private onRefreshed(token: string | null) {
-    this.refreshSubscribers.forEach((cb) => {
-      cb(token);
-    });
+  resetRefreshState() {
+    this.refreshFailed = false;
+  }
+
+  private notifySubscribersSuccess() {
+    this.refreshSubscribers.forEach((s) => s.resolve());
     this.refreshSubscribers = [];
   }
 
-  private addRefreshSubscriber(cb: (token: string | null) => void) {
-    this.refreshSubscribers.push(cb);
+  private notifySubscribersFailure() {
+    this.refreshSubscribers.forEach((s) =>
+      s.reject(SESSION_EXPIRED_ERROR),
+    );
+    this.refreshSubscribers = [];
   }
 
   private async handleRefreshFlow<T>(
@@ -62,51 +82,30 @@ class ApiClient {
       try {
         const refreshResponse = await fetch(`${this.baseUrl}/auth/refresh`, {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ refreshToken: this.refreshToken }),
+          credentials: "include",
         });
 
         if (!refreshResponse.ok) {
-          if (refreshResponse.status < 500) {
-            this.setTokens(null, null);
-          }
+          this.refreshFailed = true;
           throw new Error("Refresh failed");
         }
 
-        const { data } = await refreshResponse.json();
-
-        if (!data?.token || !data?.refreshToken) {
-          throw new Error("Invalid refresh response");
-        }
-
-        this.setTokens(data.token, data.refreshToken);
         this.isRefreshing = false;
-        this.onRefreshed(data.token);
-
+        this.notifySubscribersSuccess();
         return retryAction();
       } catch (error) {
+        this.refreshFailed = true;
         this.isRefreshing = false;
-        this.onRefreshed(null);
+        this.notifySubscribersFailure();
         console.error("Token refresh failed:", error);
-        throw {
-          message: "Session expired",
-          statusCode: 401,
-          isRefreshFailure: true,
-        } as ApiError;
+        throw SESSION_EXPIRED_ERROR;
       }
     }
 
     return new Promise<T>((resolve, reject) => {
-      this.addRefreshSubscriber((newToken) => {
-        if (newToken) {
-          retryAction().then(resolve).catch(reject);
-        } else {
-          reject({
-            message: "Session expired",
-            statusCode: 401,
-            isRefreshFailure: true,
-          } as ApiError);
-        }
+      this.refreshSubscribers.push({
+        resolve: () => { retryAction().then(resolve).catch(reject); },
+        reject,
       });
     });
   }
@@ -117,51 +116,38 @@ class ApiClient {
     isRetry = false,
   ): Promise<T> {
     if (this.refreshFailed) {
-      throw {
-        message: "Session expired",
-        statusCode: 401,
-        isRefreshFailure: true,
-      } as ApiError;
+      throw SESSION_EXPIRED_ERROR;
     }
 
     const url = `${this.baseUrl}${endpoint}`;
+    const method = options.method || "GET";
 
     const headers: HeadersInit = {
-      "Content-Type": "application/json",
+      ...(options.body ? { "Content-Type": "application/json" } : {}),
       ...options.headers,
     };
 
-    if (this.token) {
-      (headers as Record<string, string>)["Authorization"] =
-        `Bearer ${this.token}`;
+    if (method !== "GET" && method !== "HEAD") {
+      const csrf = this.getCsrfToken();
+      if (csrf) {
+        (headers as Record<string, string>)["X-CSRF-Token"] = csrf;
+      }
     }
 
     const response = await fetch(url, {
       ...options,
       headers,
+      credentials: "include",
     });
 
-    if (response.status === 401 && !isRetry && this.refreshToken) {
+    if (response.status === 401 && !isRetry) {
       return this.handleRefreshFlow(() =>
         this.request<T>(endpoint, options, true),
       );
     }
 
     if (!response.ok) {
-      const error: ApiError = await response.json().catch(() => ({
-        message: "An unexpected error occurred",
-        statusCode: response.status,
-      }));
-
-      // Normalize message for validation errors
-      if (!error.message && error.errors?.[0]?.detail) {
-        error.message = error.errors[0].detail;
-      }
-      if (!error.statusCode) {
-        error.statusCode = response.status;
-      }
-
-      throw error;
+      throw await parseErrorResponse(response);
     }
 
     if (response.status === 204) {
@@ -169,12 +155,7 @@ class ApiClient {
     }
 
     const data = await response.json();
-
-    if (data && typeof data === "object" && "data" in data) {
-      return data.data;
-    }
-
-    return data;
+    return data && typeof data === "object" && "data" in data ? data.data : data;
   }
 
   get<T>(
@@ -204,10 +185,10 @@ class ApiClient {
     });
   }
 
-  put<T>(endpoint: string, data: unknown) {
+  put<T>(endpoint: string, data?: unknown) {
     return this.request<T>(endpoint, {
       method: "PUT",
-      body: JSON.stringify(data),
+      body: data ? JSON.stringify(data) : undefined,
     });
   }
 
@@ -228,54 +209,36 @@ class ApiClient {
     isRetry = false,
   ): Promise<T> {
     if (this.refreshFailed) {
-      throw {
-        message: "Session expired",
-        statusCode: 401,
-        isRefreshFailure: true,
-      } as ApiError;
+      throw SESSION_EXPIRED_ERROR;
     }
 
     const url = `${this.baseUrl}${endpoint}`;
 
     const headers: HeadersInit = {};
-    if (this.token) {
-      headers["Authorization"] = `Bearer ${this.token}`;
+    const csrf = this.getCsrfToken();
+    if (csrf) {
+      headers["X-CSRF-Token"] = csrf;
     }
 
     const response = await fetch(url, {
       method: "POST",
       headers,
       body: formData,
+      credentials: "include",
     });
 
-    if (response.status === 401 && !isRetry && this.refreshToken) {
+    if (response.status === 401 && !isRetry) {
       return this.handleRefreshFlow(() =>
         this.uploadFile<T>(endpoint, formData, true),
       );
     }
 
     if (!response.ok) {
-      const error: ApiError = await response.json().catch(() => ({
-        message: "An unexpected error occurred",
-        statusCode: response.status,
-      }));
-
-      // Normalize message for validation errors
-      if (!error.message && error.errors?.[0]?.detail) {
-        error.message = error.errors[0].detail;
-      }
-      if (!error.statusCode) {
-        error.statusCode = response.status;
-      }
-
-      throw error;
+      throw await parseErrorResponse(response);
     }
 
     const data = await response.json();
-    if (data && typeof data === "object" && "data" in data) {
-      return data.data;
-    }
-    return data;
+    return data && typeof data === "object" && "data" in data ? data.data : data;
   }
 }
 

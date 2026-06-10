@@ -1,11 +1,9 @@
 import { apiClient } from "./client";
 import {
-  TokenResponse,
   LoginRequest,
   RegisterRequest,
   ResetPasswordRequest,
   UserProfile,
-  RefreshTokenRequest,
 } from "./types";
 
 export interface UpdateProfileRequest {
@@ -15,7 +13,7 @@ export interface UpdateProfileRequest {
 
 export const authApi = {
   login: (data: LoginRequest) =>
-    apiClient.post<TokenResponse>("/auth/login", data),
+    apiClient.post<void>("/auth/login", data),
 
   register: (data: RegisterRequest) =>
     apiClient.post<{ message: string }>("/auth/register", data),
@@ -25,8 +23,8 @@ export const authApi = {
       `/auth/verify-registration?token=${token}`,
     ),
 
-  refreshToken: (data: RefreshTokenRequest) =>
-    apiClient.put<TokenResponse>("/auth/refresh", data),
+  refreshToken: () =>
+    apiClient.put<void>("/auth/refresh"),
 
   forgotPassword: (email: string) =>
     apiClient.post<{ message: string }>("/auth/password-reset", { email }),
@@ -47,7 +45,7 @@ export const authApi = {
     }/v1/auth/${provider}`,
 
   handleOAuthCallback: (provider: string, code: string, state: string | null) =>
-    apiClient.get<TokenResponse>(`/auth/${provider}/callback`, {
+    apiClient.get<void>(`/auth/${provider}/callback`, {
       code,
       state,
     }),
