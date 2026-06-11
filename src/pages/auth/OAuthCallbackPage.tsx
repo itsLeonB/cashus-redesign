@@ -42,13 +42,15 @@ export default function OAuthCallbackPage() {
     handleOAuth(
       { provider, code, state },
       {
-        onSuccess: (data) => {
+        onSuccess: async (data) => {
           apiClient.setCsrfToken(data.csrfToken);
+          apiClient.resetRefreshState();
           clearServiceWorkerCache().catch((error) => {
             console.error("Failed to clear service worker cache:", error);
           });
           queryClient.clear();
           globalThis.location.replace("/dashboard");
+          await new Promise(() => {});
         },
         onError: (err: unknown) => {
           const error = err as { message?: string };
