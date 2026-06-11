@@ -59,7 +59,9 @@ export default function ProfilePage() {
   const { mutate: forgotPassword, isPending: isResetting } =
     useForgotPassword();
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [waitingForCaptcha, setWaitingForCaptcha] = useState(false);
   const turnstileRef = useRef<TurnstileInstance>(null);
+  const pendingReset = useRef(false);
 
   useEffect(() => {
     if (!isEditing) {
@@ -70,9 +72,37 @@ export default function ProfilePage() {
   }, [isEditing, user?.homeCurrency, user?.name]);
 
   const handleResetPassword = () => {
-    if (!user?.email || !captchaToken) return;
+    if (!user?.email) return;
 
-    forgotPassword({ email: user.email, captchaToken }, {
+    if (captchaToken) {
+      submitReset(captchaToken);
+    } else if (config.TURNSTILE_SITE_KEY) {
+      pendingReset.current = true;
+      setWaitingForCaptcha(true);
+    } else {
+      forgotPassword({ email: user.email, captchaToken: "" }, {
+        onSuccess: () => {
+          toast({
+            title: "Password reset email sent",
+            description:
+              "Check your email for instructions to reset your password",
+          });
+        },
+        onError: (error: unknown) => {
+          const err = error as { message?: string };
+          toast({
+            variant: "destructive",
+            title: "Failed to send reset email",
+            description: err.message || "Something went wrong",
+          });
+        },
+      });
+    }
+  };
+
+  const submitReset = (token: string) => {
+    setWaitingForCaptcha(false);
+    forgotPassword({ email: user!.email, captchaToken: token }, {
       onSuccess: () => {
         toast({
           title: "Password reset email sent",
@@ -93,6 +123,14 @@ export default function ProfilePage() {
         setCaptchaToken(null);
       },
     });
+  };
+
+  const handleCaptchaSuccess = (token: string) => {
+    setCaptchaToken(token);
+    if (pendingReset.current) {
+      pendingReset.current = false;
+      submitReset(token);
+    }
   };
 
   const handleSave = () => {
@@ -398,7 +436,7 @@ export default function ProfilePage() {
               <Turnstile
                 ref={turnstileRef}
                 siteKey={config.TURNSTILE_SITE_KEY}
-                onSuccess={setCaptchaToken}
+                onSuccess={handleCaptchaSuccess}
                 onExpire={() => setCaptchaToken(null)}
                 options={{ size: "invisible" }}
               />
@@ -407,7 +445,7 @@ export default function ProfilePage() {
               variant="outline"
               size="sm"
               onClick={handleResetPassword}
-              disabled={isResetting || !captchaToken}
+              disabled={isResetting || waitingForCaptcha}
               className="flex-shrink-0 self-start sm:self-auto"
             >
               {isResetting ? (

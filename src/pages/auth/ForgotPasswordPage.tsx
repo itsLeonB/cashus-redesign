@@ -19,7 +19,9 @@ import { useForgotPassword } from "@/hooks/useApi";
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [waitingForCaptcha, setWaitingForCaptcha] = useState(false);
   const turnstileRef = useRef<TurnstileInstance>(null);
+  const pendingSubmit = useRef(false);
   const { toast } = useToast();
   const {
     mutate: forgotPassword,
@@ -27,11 +29,9 @@ export default function ForgotPasswordPage() {
     isSuccess,
   } = useForgotPassword();
 
-  const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
-    e.preventDefault();
-    if (!captchaToken) return;
-
-    forgotPassword({ email, captchaToken }, {
+  const submit = (token: string) => {
+    setWaitingForCaptcha(false);
+    forgotPassword({ email, captchaToken: token }, {
       onSuccess: () => {
         turnstileRef.current?.reset();
         setCaptchaToken(null);
@@ -48,6 +48,37 @@ export default function ForgotPasswordPage() {
       },
     });
   };
+
+  const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
+    e.preventDefault();
+    if (captchaToken) {
+      submit(captchaToken);
+    } else if (config.TURNSTILE_SITE_KEY) {
+      pendingSubmit.current = true;
+      setWaitingForCaptcha(true);
+    } else {
+      forgotPassword({ email, captchaToken: "" }, {
+        onError: (error: unknown) => {
+          const err = error as { message?: string };
+          toast({
+            variant: "destructive",
+            title: "Request failed",
+            description: err.message || "Something went wrong",
+          });
+        },
+      });
+    }
+  };
+
+  const handleCaptchaSuccess = (token: string) => {
+    setCaptchaToken(token);
+    if (pendingSubmit.current) {
+      pendingSubmit.current = false;
+      submit(token);
+    }
+  };
+
+  const isBusy = isLoading || waitingForCaptcha;
 
   if (isSuccess) {
     return (
@@ -108,7 +139,7 @@ export default function ForgotPasswordPage() {
               <Turnstile
                 ref={turnstileRef}
                 siteKey={config.TURNSTILE_SITE_KEY}
-                onSuccess={setCaptchaToken}
+                onSuccess={handleCaptchaSuccess}
                 onExpire={() => setCaptchaToken(null)}
                 options={{ size: "invisible" }}
               />
@@ -117,9 +148,9 @@ export default function ForgotPasswordPage() {
               type="submit"
               className="w-full"
               size="lg"
-              disabled={isLoading || !captchaToken}
+              disabled={isBusy}
             >
-              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isBusy && <Loader2 className="h-4 w-4 animate-spin" />}
               Send reset link
             </Button>
           </form>
