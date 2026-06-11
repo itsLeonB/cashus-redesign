@@ -103,16 +103,11 @@ export function AddFriendModal({ open, onOpenChange }: AddFriendModalProps) {
                   >
                     <AvatarCircle
                       name={profile.name}
-                      imageUrl={profile.avatarUrl}
+                      imageUrl={profile.avatar}
                       size="sm"
                     />
                     <div className="flex-1">
                       <p className="text-sm font-medium">{profile.name}</p>
-                      {profile.email && (
-                        <p className="text-xs text-muted-foreground">
-                          {profile.email}
-                        </p>
-                      )}
                     </div>
                     <Button
                       size="sm"

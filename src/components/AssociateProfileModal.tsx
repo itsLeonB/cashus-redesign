@@ -121,16 +121,11 @@ export function AssociateProfileModal({
                 <div className="flex items-center gap-3">
                   <AvatarCircle
                     name={profile.name}
-                    imageUrl={profile.avatarUrl}
+                    imageUrl={profile.avatar}
                     size="sm"
                   />
                   <div>
                     <p className="font-medium">{profile.name}</p>
-                    {profile.email && (
-                      <p className="text-xs text-muted-foreground">
-                        {profile.email}
-                      </p>
-                    )}
                   </div>
                 </div>
                 <Button

@@ -69,6 +69,12 @@ export interface FriendProfile {
   email?: string;
 }
 
+export interface SearchProfileResult {
+  id: string;
+  name: string;
+  avatar?: string;
+}
+
 export interface FriendDetailsResponse {
   friend: FriendDetails;
   balance: FriendBalance;
