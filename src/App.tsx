@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import flagsmith from "@flagsmith/flagsmith";
 import { FlagsmithProvider } from "@flagsmith/flagsmith/react";
+import config from "@/config/config";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -86,7 +87,7 @@ const App = () => {
             >
               <FlagsmithProvider
                 options={{
-                  environmentID: import.meta.env.VITE_FLAGSMITH_ENVIRONMENT_ID,
+                  environmentID: config.FLAGSMITH_ENVIRONMENT_ID,
                 }}
                 flagsmith={flagsmith}
               >

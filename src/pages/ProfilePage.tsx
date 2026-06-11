@@ -1,5 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
+import config from "@/config/config";
 import { AvatarCircle } from "@/components/AvatarCircle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +58,8 @@ export default function ProfilePage() {
   const { mutate: updateProfile, isPending: isUpdating } = useUpdateProfile();
   const { mutate: forgotPassword, isPending: isResetting } =
     useForgotPassword();
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   useEffect(() => {
     if (!isEditing) {
@@ -68,13 +72,23 @@ export default function ProfilePage() {
   const handleResetPassword = () => {
     if (!user?.email) return;
 
-    forgotPassword(user.email, {
+    if (captchaToken) {
+      submitReset(captchaToken);
+    } else {
+      turnstileRef.current?.execute();
+    }
+  };
+
+  const submitReset = (token: string) => {
+    forgotPassword({ email: user!.email, captchaToken: token }, {
       onSuccess: () => {
         toast({
           title: "Password reset email sent",
           description:
             "Check your email for instructions to reset your password",
         });
+        turnstileRef.current?.reset();
+        setCaptchaToken(null);
       },
       onError: (error: unknown) => {
         const err = error as { message?: string };
@@ -83,8 +97,17 @@ export default function ProfilePage() {
           title: "Failed to send reset email",
           description: err.message || "Something went wrong",
         });
+        turnstileRef.current?.reset();
+        setCaptchaToken(null);
       },
     });
+  };
+
+  const handleCaptchaSuccess = (token: string) => {
+    setCaptchaToken(token);
+    if (user?.email) {
+      submitReset(token);
+    }
   };
 
   const handleSave = () => {
@@ -386,6 +409,15 @@ export default function ProfilePage() {
                 Send a password reset link to your email
               </p>
             </div>
+            {config.TURNSTILE_SITE_KEY && (
+              <Turnstile
+                ref={turnstileRef}
+                siteKey={config.TURNSTILE_SITE_KEY}
+                onSuccess={handleCaptchaSuccess}
+                onExpire={() => setCaptchaToken(null)}
+                options={{ size: "invisible", execution: "execute" }}
+              />
+            )}
             <Button
               variant="outline"
               size="sm"

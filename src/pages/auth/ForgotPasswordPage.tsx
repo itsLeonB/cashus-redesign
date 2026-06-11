@@ -1,5 +1,7 @@
-import { useState, type FormEventHandler } from "react";
+import { useRef, useState, type FormEventHandler } from "react";
 import { Link } from "react-router-dom";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
+import config from "@/config/config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +18,9 @@ import { useForgotPassword } from "@/hooks/useApi";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance>(null);
+  const pendingSubmit = useRef(false);
   const { toast } = useToast();
   const {
     mutate: forgotPassword,
@@ -23,10 +28,12 @@ export default function ForgotPasswordPage() {
     isSuccess,
   } = useForgotPassword();
 
-  const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
-    e.preventDefault();
-
-    forgotPassword(email, {
+  const submit = (token: string) => {
+    forgotPassword({ email, captchaToken: token }, {
+      onSuccess: () => {
+        turnstileRef.current?.reset();
+        setCaptchaToken(null);
+      },
       onError: (error: unknown) => {
         const err = error as { message?: string };
         toast({
@@ -34,8 +41,28 @@ export default function ForgotPasswordPage() {
           title: "Request failed",
           description: err.message || "Something went wrong",
         });
+        turnstileRef.current?.reset();
+        setCaptchaToken(null);
       },
     });
+  };
+
+  const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
+    e.preventDefault();
+    if (captchaToken) {
+      submit(captchaToken);
+    } else {
+      pendingSubmit.current = true;
+      turnstileRef.current?.execute();
+    }
+  };
+
+  const handleCaptchaSuccess = (token: string) => {
+    setCaptchaToken(token);
+    if (pendingSubmit.current) {
+      pendingSubmit.current = false;
+      submit(token);
+    }
   };
 
   if (isSuccess) {
@@ -93,6 +120,15 @@ export default function ForgotPasswordPage() {
                 />
               </div>
             </div>
+            {config.TURNSTILE_SITE_KEY && (
+              <Turnstile
+                ref={turnstileRef}
+                siteKey={config.TURNSTILE_SITE_KEY}
+                onSuccess={handleCaptchaSuccess}
+                onExpire={() => setCaptchaToken(null)}
+                options={{ size: "invisible", execution: "execute" }}
+              />
+            )}
             <Button
               type="submit"
               className="w-full"

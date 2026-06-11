@@ -1,4 +1,5 @@
 import { apiClient } from "./client";
+import config from "@/config/config";
 import {
   LoginRequest,
   RegisterRequest,
@@ -31,8 +32,8 @@ export const authApi = {
   refreshToken: () =>
     apiClient.put<AuthResponse>("/auth/refresh"),
 
-  forgotPassword: (email: string) =>
-    apiClient.post<{ message: string }>("/auth/password-reset", { email }),
+  forgotPassword: (email: string, captchaToken: string) =>
+    apiClient.post<{ message: string }>("/auth/password-reset", { email, captchaToken }),
 
   resetPassword: (data: ResetPasswordRequest) =>
     apiClient.patch<AuthResponse>("/auth/reset-password", data),
@@ -45,9 +46,7 @@ export const authApi = {
   logout: () => apiClient.delete("/auth/logout"),
 
   getOAuthUrl: (provider: string) =>
-    `${
-      import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api"
-    }/v1/auth/${provider}`,
+    `${config.API_BASE_URL}/v1/auth/${provider}`,
 
   handleOAuthCallback: (provider: string, code: string, state: string | null) =>
     apiClient.get<AuthResponse>(`/auth/${provider}/callback`, {

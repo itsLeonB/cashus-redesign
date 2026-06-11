@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
+import config from "@/config/config";
 
 declare global {
   var uj:
@@ -25,7 +26,7 @@ export function useUserJotTracker() {
   const initialized = useRef<boolean>(false);
 
   useEffect(() => {
-    const projectId = import.meta.env.VITE_USERJOT_PROJECT_ID;
+    const projectId = config.USERJOT_PROJECT_ID;
 
     if (!projectId) {
       console.error("UserJot: VITE_USERJOT_PROJECT_ID is missing");

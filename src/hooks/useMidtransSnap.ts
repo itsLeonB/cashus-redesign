@@ -1,9 +1,8 @@
 import { useEffect, useRef, useCallback } from "react";
+import config from "@/config/config";
 
-const snapJsSrc =
-  import.meta.env.VITE_MIDTRANS_SNAP_JS_SRC ||
-  "https://app.sandbox.midtrans.com/snap/snap.js";
-const clientKey = import.meta.env.VITE_MIDTRANS_CLIENT_KEY;
+const snapJsSrc = config.MIDTRANS_SNAP_JS_SRC;
+const clientKey = config.MIDTRANS_CLIENT_KEY;
 
 type SnapResult = Record<string, unknown>;
 

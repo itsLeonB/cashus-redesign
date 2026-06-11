@@ -1,2 +1,3 @@
-export const subscriptionPurchaseEnabled =
-  import.meta.env.VITE_SUBSCRIPTION_PURCHASE_ENABLED === "true";
+import config from "@/config/config";
+
+export const subscriptionPurchaseEnabled = config.SUBSCRIPTION_PURCHASE_ENABLED;

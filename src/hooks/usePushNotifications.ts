@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useSubscribeToPush } from "./useApi";
 import { urlBase64ToUint8Array } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import config from "@/config/config";
 
 export function usePushNotifications() {
   const [permission, setPermission] =
@@ -41,7 +42,7 @@ export function usePushNotifications() {
         let subscription = await registration.pushManager.getSubscription();
 
         if (!subscription) {
-          const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+          const vapidKey = config.VAPID_PUBLIC_KEY;
           if (!vapidKey) {
             throw new Error("VAPID public key not found");
           }

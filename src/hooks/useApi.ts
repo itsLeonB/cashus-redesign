@@ -369,7 +369,8 @@ export function useUpdateProfile() {
 
 export function useForgotPassword() {
   return useMutation({
-    mutationFn: (email: string) => authApi.forgotPassword(email),
+    mutationFn: ({ email, captchaToken }: { email: string; captchaToken: string }) =>
+      authApi.forgotPassword(email, captchaToken),
   });
 }
 
