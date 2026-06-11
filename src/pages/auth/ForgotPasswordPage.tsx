@@ -20,7 +20,6 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileInstance>(null);
-  const pendingSubmit = useRef(false);
   const { toast } = useToast();
   const {
     mutate: forgotPassword,
@@ -28,8 +27,11 @@ export default function ForgotPasswordPage() {
     isSuccess,
   } = useForgotPassword();
 
-  const submit = (token: string) => {
-    forgotPassword({ email, captchaToken: token }, {
+  const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
+    e.preventDefault();
+    if (!captchaToken) return;
+
+    forgotPassword({ email, captchaToken }, {
       onSuccess: () => {
         turnstileRef.current?.reset();
         setCaptchaToken(null);
@@ -45,24 +47,6 @@ export default function ForgotPasswordPage() {
         setCaptchaToken(null);
       },
     });
-  };
-
-  const handleSubmit: FormEventHandler<HTMLFormElement> = (e) => {
-    e.preventDefault();
-    if (captchaToken) {
-      submit(captchaToken);
-    } else {
-      pendingSubmit.current = true;
-      turnstileRef.current?.execute();
-    }
-  };
-
-  const handleCaptchaSuccess = (token: string) => {
-    setCaptchaToken(token);
-    if (pendingSubmit.current) {
-      pendingSubmit.current = false;
-      submit(token);
-    }
   };
 
   if (isSuccess) {
@@ -124,16 +108,16 @@ export default function ForgotPasswordPage() {
               <Turnstile
                 ref={turnstileRef}
                 siteKey={config.TURNSTILE_SITE_KEY}
-                onSuccess={handleCaptchaSuccess}
+                onSuccess={setCaptchaToken}
                 onExpire={() => setCaptchaToken(null)}
-                options={{ size: "invisible", execution: "execute" }}
+                options={{ size: "invisible" }}
               />
             )}
             <Button
               type="submit"
               className="w-full"
               size="lg"
-              disabled={isLoading}
+              disabled={isLoading || !captchaToken}
             >
               {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
               Send reset link

@@ -70,17 +70,9 @@ export default function ProfilePage() {
   }, [isEditing, user?.homeCurrency, user?.name]);
 
   const handleResetPassword = () => {
-    if (!user?.email) return;
+    if (!user?.email || !captchaToken) return;
 
-    if (captchaToken) {
-      submitReset(captchaToken);
-    } else {
-      turnstileRef.current?.execute();
-    }
-  };
-
-  const submitReset = (token: string) => {
-    forgotPassword({ email: user!.email, captchaToken: token }, {
+    forgotPassword({ email: user.email, captchaToken }, {
       onSuccess: () => {
         toast({
           title: "Password reset email sent",
@@ -101,13 +93,6 @@ export default function ProfilePage() {
         setCaptchaToken(null);
       },
     });
-  };
-
-  const handleCaptchaSuccess = (token: string) => {
-    setCaptchaToken(token);
-    if (user?.email) {
-      submitReset(token);
-    }
   };
 
   const handleSave = () => {
@@ -413,16 +398,16 @@ export default function ProfilePage() {
               <Turnstile
                 ref={turnstileRef}
                 siteKey={config.TURNSTILE_SITE_KEY}
-                onSuccess={handleCaptchaSuccess}
+                onSuccess={setCaptchaToken}
                 onExpire={() => setCaptchaToken(null)}
-                options={{ size: "invisible", execution: "execute" }}
+                options={{ size: "invisible" }}
               />
             )}
             <Button
               variant="outline"
               size="sm"
               onClick={handleResetPassword}
-              disabled={isResetting}
+              disabled={isResetting || !captchaToken}
               className="flex-shrink-0 self-start sm:self-auto"
             >
               {isResetting ? (
