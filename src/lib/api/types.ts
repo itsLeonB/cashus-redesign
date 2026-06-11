@@ -17,16 +17,6 @@ export interface ResetPasswordRequest {
   passwordConfirmation: string;
 }
 
-export interface TokenResponse {
-  type: string;
-  token: string;
-  refreshToken: string;
-}
-
-export interface RefreshTokenRequest {
-  refreshToken: string;
-}
-
 // User Profile
 export interface UserProfile {
   id: string;

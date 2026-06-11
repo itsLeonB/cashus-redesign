@@ -1,11 +1,9 @@
 import { apiClient } from "./client";
 import {
-  TokenResponse,
   LoginRequest,
   RegisterRequest,
   ResetPasswordRequest,
   UserProfile,
-  RefreshTokenRequest,
 } from "./types";
 
 export interface UpdateProfileRequest {
@@ -13,26 +11,31 @@ export interface UpdateProfileRequest {
   homeCurrency: string;
 }
 
+interface AuthResponse {
+  message: string;
+  csrfToken: string;
+}
+
 export const authApi = {
   login: (data: LoginRequest) =>
-    apiClient.post<TokenResponse>("/auth/login", data),
+    apiClient.post<AuthResponse>("/auth/login", data),
 
   register: (data: RegisterRequest) =>
     apiClient.post<{ message: string }>("/auth/register", data),
 
   verifyRegistration: (token: string) =>
-    apiClient.get<{ message: string }>(
+    apiClient.get<AuthResponse>(
       `/auth/verify-registration?token=${token}`,
     ),
 
-  refreshToken: (data: RefreshTokenRequest) =>
-    apiClient.put<TokenResponse>("/auth/refresh", data),
+  refreshToken: () =>
+    apiClient.put<AuthResponse>("/auth/refresh"),
 
   forgotPassword: (email: string) =>
     apiClient.post<{ message: string }>("/auth/password-reset", { email }),
 
   resetPassword: (data: ResetPasswordRequest) =>
-    apiClient.patch<{ message: string }>("/auth/reset-password", data),
+    apiClient.patch<AuthResponse>("/auth/reset-password", data),
 
   getProfile: () => apiClient.get<UserProfile>("/profile"),
 
@@ -47,7 +50,7 @@ export const authApi = {
     }/v1/auth/${provider}`,
 
   handleOAuthCallback: (provider: string, code: string, state: string | null) =>
-    apiClient.get<TokenResponse>(`/auth/${provider}/callback`, {
+    apiClient.get<AuthResponse>(`/auth/${provider}/callback`, {
       code,
       state,
     }),
