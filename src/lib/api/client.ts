@@ -45,7 +45,7 @@ class ApiClient {
   }
 
   private getCsrfToken(): string | null {
-    const re = /(?:^|;\s*)__Host-csrf_token=([^;]*)/;
+    const re = /(?:^|;\s*)csrf_token=([^;]*)/;
     const match = re.exec(document.cookie);
     return match ? decodeURIComponent(match[1]) : null;
   }
