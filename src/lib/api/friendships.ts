@@ -2,7 +2,7 @@ import { apiClient } from "./client";
 import {
   FriendshipResponse,
   NewAnonymousFriendshipRequest,
-  FriendProfile,
+  SearchProfileResult,
   FriendRequest,
   FriendDetailsResponse,
 } from "./types";
@@ -17,7 +17,7 @@ export const friendshipsApi = {
     apiClient.post<FriendshipResponse>("/friendships", data),
 
   searchProfiles: (query: string) =>
-    apiClient.get<FriendProfile[]>(
+    apiClient.get<SearchProfileResult[]>(
       `/profiles?query=${encodeURIComponent(query)}`
     ),
 
