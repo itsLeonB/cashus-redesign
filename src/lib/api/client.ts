@@ -9,6 +9,8 @@ if (typeof localStorage !== "undefined") {
   localStorage.removeItem("refreshToken");
 }
 
+const CSRF_STORAGE_KEY = "csrfToken";
+
 const SESSION_EXPIRED_ERROR: ApiError = {
   message: "Session expired",
   statusCode: 401,
@@ -45,12 +47,18 @@ class ApiClient {
   }
 
   private getCsrfToken(): string | null {
-    const re = /(?:^|;\s*)csrf_token=([^;]*)/;
-    const match = re.exec(document.cookie);
-    return match ? decodeURIComponent(match[1]) : null;
+    return sessionStorage.getItem(CSRF_STORAGE_KEY);
   }
 
-  hasCsrfCookie(): boolean {
+  setCsrfToken(token: string) {
+    sessionStorage.setItem(CSRF_STORAGE_KEY, token);
+  }
+
+  clearCsrfToken() {
+    sessionStorage.removeItem(CSRF_STORAGE_KEY);
+  }
+
+  hasSession(): boolean {
     return this.getCsrfToken() !== null;
   }
 
@@ -87,7 +95,14 @@ class ApiClient {
 
         if (!refreshResponse.ok) {
           this.refreshFailed = true;
+          this.clearCsrfToken();
           throw new Error("Refresh failed");
+        }
+
+        const data = await refreshResponse.json();
+        const csrfToken = data?.data?.csrfToken ?? data?.csrfToken;
+        if (csrfToken) {
+          this.setCsrfToken(csrfToken);
         }
 
         this.isRefreshing = false;

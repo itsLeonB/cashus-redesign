@@ -6,6 +6,7 @@ import { Loader2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 import { clearServiceWorkerCache } from "@/lib/sw-utils";
+import { apiClient } from "@/lib/api";
 
 export default function OAuthCallbackPage() {
   const { provider } = useParams<{ provider: string }>();
@@ -41,8 +42,8 @@ export default function OAuthCallbackPage() {
     handleOAuth(
       { provider, code, state },
       {
-        onSuccess: () => {
-          // Cookies are set by the backend response
+        onSuccess: (data) => {
+          apiClient.setCsrfToken(data.csrfToken);
           clearServiceWorkerCache().catch((error) => {
             console.error("Failed to clear service worker cache:", error);
           });

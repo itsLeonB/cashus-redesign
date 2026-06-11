@@ -57,7 +57,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
   }, []);
 
   useEffect(() => {
-    if (apiClient.hasCsrfCookie()) {
+    if (apiClient.hasSession()) {
       refreshUser().finally(() => setIsLoading(false));
     } else {
       setIsLoading(false);
@@ -66,7 +66,8 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
 
   const login = useCallback(
     async (email: string, password: string) => {
-      await authApi.login({ email, password });
+      const resp = await authApi.login({ email, password });
+      apiClient.setCsrfToken(resp.csrfToken);
       apiClient.resetRefreshState();
 
       clearServiceWorkerCache().catch((error) => {
@@ -95,6 +96,7 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     } catch (error) {
       console.error("Logout API failed (swallowed):", error);
     } finally {
+      apiClient.clearCsrfToken();
       clearNotificationContext();
       queryClient.clear();
 
