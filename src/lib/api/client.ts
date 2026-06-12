@@ -47,15 +47,15 @@ class ApiClient {
   }
 
   private getCsrfToken(): string | null {
-    return sessionStorage.getItem(CSRF_STORAGE_KEY);
+    return localStorage.getItem(CSRF_STORAGE_KEY);
   }
 
   setCsrfToken(token: string) {
-    sessionStorage.setItem(CSRF_STORAGE_KEY, token);
+    localStorage.setItem(CSRF_STORAGE_KEY, token);
   }
 
   clearCsrfToken() {
-    sessionStorage.removeItem(CSRF_STORAGE_KEY);
+    localStorage.removeItem(CSRF_STORAGE_KEY);
   }
 
   hasSession(): boolean {
