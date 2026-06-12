@@ -1,2 +1,3 @@
-export const SUPPORT_EMAIL =
-  import.meta.env.VITE_SUPPORT_EMAIL || "support@cashus.app";
+import config from "@/config/config";
+
+export const SUPPORT_EMAIL = config.SUPPORT_EMAIL;
