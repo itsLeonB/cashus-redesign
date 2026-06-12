@@ -438,6 +438,12 @@ export default function ProfilePage() {
                 siteKey={config.TURNSTILE_SITE_KEY}
                 onSuccess={handleCaptchaSuccess}
                 onExpire={() => setCaptchaToken(null)}
+                onError={() => {
+                  setCaptchaToken(null);
+                  setWaitingForCaptcha(false);
+                  pendingReset.current = false;
+                  toast({ variant: "destructive", title: "Captcha failed", description: "Please try again" });
+                }}
                 options={{ size: "invisible" }}
               />
             )}
