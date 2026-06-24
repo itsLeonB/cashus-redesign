@@ -6,10 +6,6 @@ export default {
     import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api",
   FARO_COLLECTOR_URL: import.meta.env.VITE_FARO_COLLECTOR_URL,
   FLAGSMITH_ENVIRONMENT_ID: import.meta.env.VITE_FLAGSMITH_ENVIRONMENT_ID,
-  MIDTRANS_SNAP_JS_SRC:
-    import.meta.env.VITE_MIDTRANS_SNAP_JS_SRC ||
-    "https://app.sandbox.midtrans.com/snap/snap.js",
-  MIDTRANS_CLIENT_KEY: import.meta.env.VITE_MIDTRANS_CLIENT_KEY,
   SUPPORT_EMAIL: import.meta.env.VITE_SUPPORT_EMAIL || "support@cashus.app",
   SUBSCRIPTION_PURCHASE_ENABLED:
     import.meta.env.VITE_SUBSCRIPTION_PURCHASE_ENABLED === "true",

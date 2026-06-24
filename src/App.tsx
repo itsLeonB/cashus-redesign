@@ -48,6 +48,7 @@ const LandingPage = lazy(() => import("@/pages/LandingPage"));
 const PublicFriendPage = lazy(() => import("@/pages/PublicFriendPage"));
 const PrivacyPolicyPage = lazy(() => import("@/pages/PrivacyPolicyPage"));
 const TermsOfServicePage = lazy(() => import("@/pages/TermsOfServicePage"));
+const PaymentReturnPage = lazy(() => import("@/pages/PaymentReturnPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -133,12 +134,22 @@ const App = () => {
                           element={<SubscriptionPage />}
                         />
                       )}
+                      <Route
+                        path="/payment/return"
+                        element={<PaymentReturnPage />}
+                      />
                     </Route>
                   </Route>
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/f/:slug" element={<PublicFriendPage />} />
-                  <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
-                  <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+                  <Route
+                    path="/privacy-policy"
+                    element={<PrivacyPolicyPage />}
+                  />
+                  <Route
+                    path="/terms-of-service"
+                    element={<TermsOfServicePage />}
+                  />
                   <Route path="*" element={<NotFound />} />
                 </FaroRoutes>
               </FlagsmithProvider>
