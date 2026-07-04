@@ -1,6 +1,7 @@
 import { Outlet, Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Logo } from "@/components/Logo";
+import { Seo } from "@/components/Seo";
 
 export function AuthLayout() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -21,6 +22,7 @@ export function AuthLayout() {
 
   return (
     <div className="min-h-dvh flex bg-background">
+      <Seo noindex />
       {/* Left side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
         <div className="absolute inset-0 gradient-primary opacity-10" />

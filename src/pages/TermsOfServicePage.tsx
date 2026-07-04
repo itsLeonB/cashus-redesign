@@ -1,9 +1,15 @@
 import { LegalPageLayout } from "@/components/LegalPageLayout";
+import { Seo } from "@/components/Seo";
 import { SUPPORT_EMAIL } from "@/lib/constants";
 
 export default function TermsOfServicePage() {
   return (
     <LegalPageLayout>
+      <Seo
+        title="Terms of Service"
+        path="/terms-of-service"
+        description="The terms and conditions for using Cashus."
+      />
       <h1 className="text-3xl font-bold">Terms of Service</h1>
       <p className="text-sm text-muted-foreground">
         Last updated: June 9, 2026
