@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react";
+import { Seo } from "@/components/Seo";
 import { LandingHeader } from "./landing/LandingHeader";
 import { HeroSection } from "./landing/HeroSection";
 import { FeaturesSection } from "./landing/FeaturesSection";
@@ -16,6 +17,10 @@ const PricingSection = subscriptionPurchaseEnabled
 export default function LandingPage() {
   return (
     <div className="min-h-dvh bg-background">
+      <Seo
+        path="/"
+        description="Cashus makes splitting bills and tracking debts with friends effortless. Record shared expenses, see who owes what, and settle up — never forget a debt again."
+      />
       <LandingHeader />
       <main>
         <HeroSection />

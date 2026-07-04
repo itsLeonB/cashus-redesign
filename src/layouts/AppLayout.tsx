@@ -19,6 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { NotificationHandler } from "@/components/NotificationHandler";
+import { Seo } from "@/components/Seo";
 import { Separator } from "@/components/ui/separator";
 import { subscriptionPurchaseEnabled } from "@/lib/flags";
 
@@ -78,6 +79,7 @@ export function AppLayout() {
 
   return (
     <div className="min-h-dvh bg-background">
+      <Seo noindex />
       <NotificationHandler />
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
