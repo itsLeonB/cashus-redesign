@@ -23,7 +23,7 @@ export default defineConfig(({ mode }) => ({
       name: "inject-site-url",
       enforce: "pre" as const,
       transformIndexHtml(html: string) {
-        const siteUrl = process.env.VITE_SITE_URL || "https://cashus.app";
+        const siteUrl = process.env.VITE_SITE_URL || "https://cashus.online";
         return html.replaceAll("%VITE_SITE_URL%", siteUrl);
       },
     },

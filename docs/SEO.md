@@ -50,16 +50,18 @@ and the per-route value both being present.
   surface while keeping them out of the app.
 
 ### Configuration
-- `config.SITE_URL` (env `VITE_SITE_URL`, default `https://cashus.app`)
+- The production origin is `https://cashus.online`.
+- `config.SITE_URL` (env `VITE_SITE_URL`, default `https://cashus.online`)
   is the canonical origin used by the `<Seo>` component.
 - `index.html` uses a `%VITE_SITE_URL%` placeholder for its canonical, OG,
   Twitter, and JSON-LD URLs. The `inject-site-url` Vite plugin
   (`vite.config.ts`) replaces it at build time with `VITE_SITE_URL`, falling
-  back to `https://cashus.app` when the env var is unset — so staging and
-  preview builds never advertise the wrong origin.
+  back to `https://cashus.online` when the env var is unset — so staging and
+  preview builds never advertise the wrong origin. Set `VITE_SITE_URL` in
+  Vercel to the deployed origin so previews use their own URL.
 - Static URLs in `sitemap.xml`, `robots.txt`, and `llms.txt` live in
   `public/` (served verbatim, not build-substituted) and are hardcoded to
-  `https://cashus.app`. **When the canonical marketing domain changes (see
+  `https://cashus.online`. **When the canonical marketing domain changes (see
   domain split below), these must be updated.**
 
 ## Follow-up: domain split (www marketing / app)
@@ -67,9 +69,9 @@ and the per-route value both being present.
 The issue also calls for splitting the marketing site and the app onto
 separate subdomains:
 
-- `www.cashus.app` → marketing surface (landing, privacy, terms) —
+- `www.cashus.online` → marketing surface (landing, privacy, terms) —
   indexable, canonical.
-- `app.cashus.app` → the authenticated app — `noindex`, redirect root to
+- `app.cashus.online` → the authenticated app — `noindex`, redirect root to
   `/login` (or `/dashboard`).
 
 Recommended approach: **one Vercel project serving both subdomains** (least
@@ -77,12 +79,12 @@ infra, single codebase). Required work when it's scheduled:
 
 1. **DNS / Vercel** (dashboard, outside this repo): add `www` and `app` as
    domains on the Vercel project; point DNS accordingly. Decide the apex
-   (`cashus.app`) behavior — redirect apex → `www`.
-2. **Canonical origin**: set `VITE_SITE_URL=https://www.cashus.app` and
-   update the hardcoded `https://cashus.app` origins in `index.html`,
-   `sitemap.xml`, `robots.txt`, and `llms.txt` to `www`.
-3. **Host-aware routing** in `vercel.json`: on `app.cashus.app`, redirect
-   marketing paths to `www`; on `www.cashus.app`, redirect app paths to
+   (`cashus.online`) behavior — redirect apex → `www`.
+2. **Canonical origin**: set `VITE_SITE_URL=https://www.cashus.online` and
+   update the hardcoded `https://cashus.online` origins in `sitemap.xml`,
+   `robots.txt`, and `llms.txt` to `www`.
+3. **Host-aware routing** in `vercel.json`: on `app.cashus.online`, redirect
+   marketing paths to `www`; on `www.cashus.online`, redirect app paths to
    `app`. Serve a host-specific `robots.txt` (or a `noindex` header for the
    whole `app.` host).
 4. **`app.` host**: add `X-Robots-Tag: noindex` response header so the
