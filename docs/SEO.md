@@ -18,13 +18,21 @@ server rendering, non-JS crawlers and social scrapers see only the static
    crawlers (Googlebot) pick these up so each route gets a unique title,
    description, canonical URL, and social card.
 
+The app is rendered client-side only (`createRoot`, no hydration), so React
+never reconciles against the static tags already in `index.html`. Those
+tags are marked with `data-default-seo` and removed by `<Seo>` on mount, so
+JS-rendering crawlers see exactly one (correct) `title`/`description`/
+`robots`/`canonical`/OG/Twitter tag per route instead of the static default
+and the per-route value both being present.
+
 ## What's implemented
 
 ### Traditional SEO
 - Per-route `<Seo>` on public pages (`/`, `/privacy-policy`,
   `/terms-of-service`) with unique title/description + canonical URL.
 - `noindex` on the authenticated app (`AppLayout`), auth pages
-  (`AuthLayout`), shared-profile pages (`/f/:slug`) and 404.
+  (`AuthLayout`), the standalone `/onboarding` and `/auth/reset-password`
+  routes, shared-profile pages (`/f/:slug`) and 404.
 - Full OG + `summary_large_image` Twitter cards.
 - Site-wide JSON-LD (`Organization`, `WebSite`, `SoftwareApplication`) in
   `index.html`.

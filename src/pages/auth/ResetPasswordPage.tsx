@@ -1,6 +1,7 @@
 import { useState, type FormEventHandler } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { useResetPassword } from "@/hooks/useApi";
+import { Seo } from "@/components/Seo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -87,6 +88,7 @@ export default function ResetPasswordPage() {
   if (!token) {
     return (
       <div className="min-h-dvh flex items-center justify-center p-4">
+        <Seo noindex />
         <Card className="w-full max-w-md border-border/50">
           <CardContent className="flex flex-col items-center gap-4 text-center py-8">
             <p className="text-foreground font-medium">
@@ -107,6 +109,7 @@ export default function ResetPasswordPage() {
   if (isSuccess) {
     return (
       <div className="min-h-dvh flex items-center justify-center p-4">
+        <Seo noindex />
         <Card className="w-full max-w-md border-border/50">
           <CardContent className="flex flex-col items-center gap-4 text-center py-8">
             <div className="h-16 w-16 rounded-full bg-success/10 flex items-center justify-center">
@@ -126,6 +129,7 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="min-h-dvh flex items-center justify-center p-4">
+      <Seo noindex />
       <Card className="w-full max-w-md border-border/50">
         <CardHeader className="text-center">
           <div className="mx-auto h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
