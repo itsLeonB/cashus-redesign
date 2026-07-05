@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import { CurrencySelect } from "@/components/CurrencySelect";
 import { Logo } from "@/components/Logo";
+import { Seo } from "@/components/Seo";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useUpdateProfile } from "@/hooks/useApi";
@@ -35,6 +36,7 @@ export default function OnboardingPage() {
   if (isLoading) {
     return (
       <div className="min-h-dvh flex items-center justify-center bg-background">
+        <Seo noindex />
         <Spinner className="size-6" />
       </div>
     );
@@ -86,6 +88,7 @@ export default function OnboardingPage() {
 
   return (
     <main className="min-h-dvh bg-background px-4 py-8 flex items-center justify-center">
+      <Seo noindex />
       <div className="w-full max-w-md space-y-6 animate-fade-up">
         <div className="flex justify-center">
           <Logo size="lg" />

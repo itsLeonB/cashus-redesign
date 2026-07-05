@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import config from "@/config/config";
 
 const SITE_NAME = config.APP_NAME;
@@ -27,6 +28,12 @@ interface SeoProps {
  * Per-route document metadata. Relies on React 19's native hoisting of
  * <title>/<meta>/<link> into <head>. Static defaults for non-JS crawlers and
  * social scrapers live in index.html; this augments them for rendered routes.
+ *
+ * The app is rendered client-side only (no hydration), so React never sees
+ * the static tags in index.html and would otherwise leave them in place
+ * alongside the ones rendered here — e.g. two conflicting `robots` or
+ * `canonical` tags. Those static tags are marked with `data-default-seo` so
+ * they can be removed once a route takes over.
  */
 export function Seo({
   title,
@@ -39,6 +46,12 @@ export function Seo({
   const fullTitle = title ? `${title} — ${SITE_NAME}` : DEFAULT_TITLE;
   const canonical = path ? `${siteUrl}${path}` : undefined;
   const imageUrl = toAbsolute(image);
+
+  useEffect(() => {
+    document
+      .querySelectorAll("[data-default-seo]")
+      .forEach((element) => element.remove());
+  }, []);
 
   return (
     <>
