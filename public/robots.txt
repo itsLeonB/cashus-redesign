@@ -172,4 +172,4 @@ Disallow: /forgot-password
 Disallow: /auth/
 Disallow: /f/
 
-Sitemap: https://cashus.app/sitemap.xml
+Sitemap: https://cashus.online/sitemap.xml
