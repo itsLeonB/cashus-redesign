@@ -16,6 +16,17 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    // Substitute %VITE_SITE_URL% in index.html with the configured origin,
+    // falling back to the production origin so staging/preview builds never
+    // emit a broken literal placeholder or advertise the wrong host.
+    {
+      name: "inject-site-url",
+      enforce: "pre" as const,
+      transformIndexHtml(html: string) {
+        const siteUrl = process.env.VITE_SITE_URL || "https://cashus.app";
+        return html.replaceAll("%VITE_SITE_URL%", siteUrl);
+      },
+    },
     mode === "development" &&
       visualizer({
         filename: "dist/stats.html",

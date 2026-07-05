@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { UserPlus } from "lucide-react";
 import { FriendBalanceSection } from "@/components/FriendBalanceSection";
+import { Seo } from "@/components/Seo";
 
 export default function PublicFriendPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -28,6 +29,7 @@ export default function PublicFriendPage() {
   if (isLoading) {
     return (
       <div className="max-w-3xl mx-auto p-4 space-y-6">
+        <Seo title="Shared Profile" noindex />
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-48" />
         <Skeleton className="h-64" />
@@ -38,6 +40,7 @@ export default function PublicFriendPage() {
   if (isError || !friendship) {
     return (
       <div className="max-w-3xl mx-auto p-4 text-center py-16">
+        <Seo title="Shared Profile" noindex />
         <p className="text-muted-foreground mb-4">
           {(error as { message?: string })?.message || "Profile not found"}
         </p>
@@ -57,6 +60,7 @@ export default function PublicFriendPage() {
 
   return (
     <div className="max-w-3xl mx-auto p-4 space-y-6 animate-fade-up">
+      <Seo title="Shared Profile" noindex />
       {/* Header */}
       <Card className="border-border/50">
         <CardContent className="p-6">

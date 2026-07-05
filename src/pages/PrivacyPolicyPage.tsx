@@ -1,9 +1,15 @@
 import { LegalPageLayout } from "@/components/LegalPageLayout";
+import { Seo } from "@/components/Seo";
 import { SUPPORT_EMAIL } from "@/lib/constants";
 
 export default function PrivacyPolicyPage() {
   return (
     <LegalPageLayout>
+      <Seo
+        title="Privacy Policy"
+        path="/privacy-policy"
+        description="How Cashus collects, uses, and protects your information."
+      />
       <h1 className="text-3xl font-bold">Privacy Policy</h1>
       <p className="text-sm text-muted-foreground">
         Last updated: June 9, 2026
