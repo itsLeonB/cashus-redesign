@@ -40,7 +40,9 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
-# AI crawlers — welcome on the public marketing surface, keep them out of the app
+# AI crawlers — welcome on the public marketing surface, keep them out of the app.
+# Every AI user-agent uses the same restricted allowlist as the search crawlers
+# above; a blanket "Allow: /" would expose /auth/ and the authenticated app.
 User-agent: GPTBot
 Allow: /$
 Allow: /privacy-policy
@@ -51,13 +53,43 @@ Disallow: /expenses
 Disallow: /profile
 Disallow: /subscription
 Disallow: /onboarding
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /auth/
 Disallow: /f/
 
 User-agent: OAI-SearchBot
-Allow: /
+Allow: /$
+Allow: /privacy-policy
+Allow: /terms-of-service
+Disallow: /dashboard
+Disallow: /friends
+Disallow: /expenses
+Disallow: /profile
+Disallow: /subscription
+Disallow: /onboarding
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /auth/
+Disallow: /f/
 
 User-agent: ChatGPT-User
-Allow: /
+Allow: /$
+Allow: /privacy-policy
+Allow: /terms-of-service
+Disallow: /dashboard
+Disallow: /friends
+Disallow: /expenses
+Disallow: /profile
+Disallow: /subscription
+Disallow: /onboarding
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /auth/
+Disallow: /f/
 
 User-agent: ClaudeBot
 Allow: /$
@@ -69,16 +101,59 @@ Disallow: /expenses
 Disallow: /profile
 Disallow: /subscription
 Disallow: /onboarding
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /auth/
 Disallow: /f/
 
 User-agent: Claude-Web
-Allow: /
+Allow: /$
+Allow: /privacy-policy
+Allow: /terms-of-service
+Disallow: /dashboard
+Disallow: /friends
+Disallow: /expenses
+Disallow: /profile
+Disallow: /subscription
+Disallow: /onboarding
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /auth/
+Disallow: /f/
 
 User-agent: PerplexityBot
-Allow: /
+Allow: /$
+Allow: /privacy-policy
+Allow: /terms-of-service
+Disallow: /dashboard
+Disallow: /friends
+Disallow: /expenses
+Disallow: /profile
+Disallow: /subscription
+Disallow: /onboarding
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /auth/
+Disallow: /f/
 
 User-agent: Google-Extended
-Allow: /
+Allow: /$
+Allow: /privacy-policy
+Allow: /terms-of-service
+Disallow: /dashboard
+Disallow: /friends
+Disallow: /expenses
+Disallow: /profile
+Disallow: /subscription
+Disallow: /onboarding
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /auth/
+Disallow: /f/
 
 # Default: allow public pages, disallow the authenticated app and shared profiles
 User-agent: *
