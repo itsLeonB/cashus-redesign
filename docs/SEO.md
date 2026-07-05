@@ -16,7 +16,8 @@ server rendering, non-JS crawlers and social scrapers see only the static
 2. **Per-route metadata via `src/components/Seo.tsx`** — uses React 19's
    native hoisting of `<title>`/`<meta>`/`<link>` into `<head>`. JS-rendering
    crawlers (Googlebot) pick these up so each route gets a unique title,
-   description, canonical URL, and social card.
+   description, canonical URL, and social card; non-JS scrapers never run this
+   code, so they still see the static baseline unless the route is prerendered.
 
 The app is rendered client-side only (`createRoot`, no hydration), so React
 never reconciles against the static tags already in `index.html`. Those
@@ -51,9 +52,15 @@ and the per-route value both being present.
 ### Configuration
 - `config.SITE_URL` (env `VITE_SITE_URL`, default `https://cashus.app`)
   is the canonical origin used by the `<Seo>` component.
-- Static URLs in `index.html`, `sitemap.xml`, `robots.txt`, and `llms.txt`
-  are hardcoded to `https://cashus.app`. **When the canonical marketing
-  domain changes (see domain split below), these must be updated.**
+- `index.html` uses a `%VITE_SITE_URL%` placeholder for its canonical, OG,
+  Twitter, and JSON-LD URLs. The `inject-site-url` Vite plugin
+  (`vite.config.ts`) replaces it at build time with `VITE_SITE_URL`, falling
+  back to `https://cashus.app` when the env var is unset — so staging and
+  preview builds never advertise the wrong origin.
+- Static URLs in `sitemap.xml`, `robots.txt`, and `llms.txt` live in
+  `public/` (served verbatim, not build-substituted) and are hardcoded to
+  `https://cashus.app`. **When the canonical marketing domain changes (see
+  domain split below), these must be updated.**
 
 ## Follow-up: domain split (www marketing / app)
 
