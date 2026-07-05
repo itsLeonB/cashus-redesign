@@ -14,12 +14,12 @@ Cashus is a client-side web application. The public marketing surface lives at t
 
 ## Key pages
 
-- [Home / product overview](https://cashus.app/): Features, how it works, and getting started.
-- [Privacy Policy](https://cashus.app/privacy-policy): What data Cashus collects and how it is used and protected.
-- [Terms of Service](https://cashus.app/terms-of-service): The terms and conditions for using Cashus.
+- [Home / product overview](https://cashus.online/): Features, how it works, and getting started.
+- [Privacy Policy](https://cashus.online/privacy-policy): What data Cashus collects and how it is used and protected.
+- [Terms of Service](https://cashus.online/terms-of-service): The terms and conditions for using Cashus.
 
 ## Notes for AI agents
 
 - Cashus is free to use.
 - The application dashboard, friends, expenses, profile, and shared-profile pages require an account and are intentionally excluded from indexing.
-- For support, contact support@cashus.app.
+- For support, contact ellionblessan@gmail.com.
