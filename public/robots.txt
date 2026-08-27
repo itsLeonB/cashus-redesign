@@ -15,7 +15,6 @@ Disallow: /login
 Disallow: /register
 Disallow: /forgot-password
 Disallow: /auth/
-Disallow: /f/
 
 User-agent: Bingbot
 Allow: /$
@@ -31,7 +30,6 @@ Disallow: /login
 Disallow: /register
 Disallow: /forgot-password
 Disallow: /auth/
-Disallow: /f/
 
 # Social preview crawlers (need access to render link cards)
 User-agent: Twitterbot
@@ -57,7 +55,6 @@ Disallow: /login
 Disallow: /register
 Disallow: /forgot-password
 Disallow: /auth/
-Disallow: /f/
 
 User-agent: OAI-SearchBot
 Allow: /$
@@ -73,7 +70,6 @@ Disallow: /login
 Disallow: /register
 Disallow: /forgot-password
 Disallow: /auth/
-Disallow: /f/
 
 User-agent: ChatGPT-User
 Allow: /$
@@ -89,7 +85,6 @@ Disallow: /login
 Disallow: /register
 Disallow: /forgot-password
 Disallow: /auth/
-Disallow: /f/
 
 User-agent: ClaudeBot
 Allow: /$
@@ -105,7 +100,6 @@ Disallow: /login
 Disallow: /register
 Disallow: /forgot-password
 Disallow: /auth/
-Disallow: /f/
 
 User-agent: Claude-Web
 Allow: /$
@@ -121,7 +115,6 @@ Disallow: /login
 Disallow: /register
 Disallow: /forgot-password
 Disallow: /auth/
-Disallow: /f/
 
 User-agent: PerplexityBot
 Allow: /$
@@ -137,7 +130,6 @@ Disallow: /login
 Disallow: /register
 Disallow: /forgot-password
 Disallow: /auth/
-Disallow: /f/
 
 User-agent: Google-Extended
 Allow: /$
@@ -153,7 +145,6 @@ Disallow: /login
 Disallow: /register
 Disallow: /forgot-password
 Disallow: /auth/
-Disallow: /f/
 
 # Default: allow public pages, disallow the authenticated app and shared profiles
 User-agent: *
