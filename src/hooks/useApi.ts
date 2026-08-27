@@ -286,11 +286,15 @@ export function useConfirmGroupExpense(expenseId: string) {
   return useMutation({
     mutationFn: (dryRun: boolean) =>
       groupExpensesApi.confirm(expenseId, dryRun),
-    onSuccess: () => {
+    onSuccess: (_data, dryRun) => {
+      if (dryRun) return;
+
       queryClient.invalidateQueries({ queryKey: queryKeys.groupExpenses.all });
       queryClient.invalidateQueries({
         queryKey: queryKeys.groupExpenses.recent,
       });
+      queryClient.invalidateQueries({ queryKey: queryKeys.friendships.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.debts.all });
     },
   });
 }
